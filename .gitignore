@@ -31,6 +31,7 @@ Artifacts/
 *.VC.db
 .DS_Store
 Thumbs.db
+*.log
 
 # Superpowers scratch workspace
 .superpowers/
