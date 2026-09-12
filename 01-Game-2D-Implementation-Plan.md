@@ -244,7 +244,7 @@ $unityExe = 'C:\Program Files\Unity\Hub\Editor\6000.3.23f1\Editor\Unity.exe'
 
 Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 nhưng thiếu XML hoặc log cho thấy không có test chạy thì không được ghi PASS.
 
-### T0 — Bootstrap project và build rỗng có kiểm soát (1–1,5 giờ)
+### Task 0 (T0) — Bootstrap project và build rỗng có kiểm soát (1–1,5 giờ)
 
 **Files:** tạo `Assets/`, `Packages/`, `ProjectSettings/`, `.gitignore`, `Assets/_Game/Scenes/Main.unity`, `Assets/_Game/Editor/BuildDemo.cs`, `docs/progress.md`, `docs/acceptance.md`, `docs/asset-register.md`.
 
@@ -260,7 +260,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Chạy compile/batchmode và một Windows build rỗng. Mở `.exe`; gate đạt khi không có Console exception và cửa sổ player mở được.
 - [ ] Khởi tạo ba tài liệu evidence với trạng thái ban đầu; commit `chore: bootstrap Unity 6000.3.23f1 project`.
 
-### T1 — Một màn chơi và vòng chơi chạy được (3 giờ)
+### Task 1 (T1) — Một màn chơi và vòng chơi chạy được (3 giờ)
 
 **Files:** Core/GameSession, Player/InputReader/Motor/Stats, Enemy/Controller/Spawner, World/CoreHealth, UI/HudPresenter, Main scene, Editor/DemoSceneBuilder; README và progress.
 
@@ -274,7 +274,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Build Windows sơ bộ ngay để phát hiện thiếu module/license/scene từ ngày đầu. Chưa có combat không đánh dấu các yêu cầu combat hoàn tất.
 - [ ] Commit `feat: add playable arena and session flow`; ghi remaining checks.
 
-### T2 — Ba tấn công và enemy projectile (3 giờ)
+### Task 2 (T2) — Ba tấn công và enemy projectile (3 giờ)
 
 **Files:** Combat/IDamageable, WeaponController, Projectile, Mine, Explosion; EnemyController; weapon/projectile prefabs; Tests/EditMode/CoreRulesTests, Tests/PlayMode/DemoAcceptanceTests.
 
@@ -290,7 +290,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Kiểm tra đổi vũ khí liên tục không bypass cooldown; click HUD không bắn; đầy mine không mất cooldown.
 - [ ] Commit `feat: add three distinct attacks and enemy fire`.
 
-### T3 — Shield và EMP (2 giờ)
+### Task 3 (T3) — Shield và EMP (2 giờ)
 
 **Files:** Combat/DefenseController, EnemyController, Projectile; defense VFX prefab; tests hiện có.
 
@@ -303,7 +303,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Kiểm tra thực tế Q trước đạn: HP/Armor không đổi; E khi 2 B gần và 1 B xa: chỉ 2 B dừng.
 - [ ] Kiểm tra cooldown, pause, Retry; commit `feat: add shield and EMP defense`.
 
-### T4 — X/Y/Z với sáu hiệu ứng (2 giờ)
+### Task 4 (T4) — X/Y/Z với sáu hiệu ứng (2 giờ)
 
 **Files:** Player/StatusEffects, World/InteractionObject, DefenseController.BreakShield, PlayerStats; X/Y/Z prefabs; tests.
 
@@ -317,7 +317,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Đi vào Y với shield đang bật để chứng minh E4; đứng trong Y không bị kéo dài vô hạn; thử ra/vào lại.
 - [ ] Commit `feat: add six collision effects across X Y Z`.
 
-### T5 — Âm thanh đúng đề và vùng cấm (3 giờ)
+### Task 5 (T5) — Âm thanh đúng đề và vùng cấm (3 giờ)
 
 **Files:** Audio/AudioService, World/ForbiddenZone, UI/AudioToggleView, audio asset, button prefab; tests.
 
@@ -335,7 +335,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Nghe thật trên Editor và bản build để xác nhận 4 tiếng rõ; automated scheduling test không chứng minh loa đã phát.
 - [ ] Commit `feat: implement audio controls and four-beep zone alert`.
 
-### T6 — Hoàn thiện HUD, asset và chế độ trình diễn (2 giờ)
+### Task 6 (T6) — Hoàn thiện HUD, asset và chế độ trình diễn (2 giờ)
 
 **Files:** UI/HudPresenter, UI/DemoDirector, VFX/FeedbackPresenter, Art/Audio/Prefabs, docs/asset-register.md.
 
@@ -351,7 +351,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Chốt asset register: tên file thực tế, tác giả, nguồn, license, vai trò, chỉnh sửa.
 - [ ] Commit `feat: polish HUD assets and repeatable demo scenarios`.
 
-### T7 — Nghiệm thu và đóng băng tính năng (2–3 giờ + dự phòng sửa lỗi)
+### Task 7 (T7) — Nghiệm thu và đóng băng tính năng (2–3 giờ + dự phòng sửa lỗi)
 
 **Files:** Editor/BuildDemo, README, docs/acceptance.md, docs/progress.md; build và video ngoài git.
 
@@ -362,7 +362,7 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 - [ ] Sửa mọi FAIL chặn R01–R09, chạy lại đúng test và scenario bị ảnh hưởng; sau 20:00 ngày 16/09 chỉ sửa lỗi chặn demo.
 - [ ] Khi toàn bộ R01–R09 là PASS hoặc có NOT RUN được nêu trung thực, commit `test: record Core Guard acceptance evidence` và chuyển sang T8.
 
-### T8 — Release, README và diễn tập báo cáo (1–2 giờ)
+### Task 8 (T8) — Release, README và diễn tập báo cáo (1–2 giờ)
 
 **Files:** `README.md`, `docs/acceptance.md`, `docs/progress.md`, `docs/asset-register.md`; build ZIP/video/screenshot dưới `Artifacts/` hoặc ngoài Git.
 
