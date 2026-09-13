@@ -8,6 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public static class BuildDemo
@@ -48,7 +49,46 @@ public static class BuildDemo
             throw new InvalidOperationException("Could not switch the active build target to Windows 64-bit.");
         }
 
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var scene = OpenOrCreateMainScene();
+        CreateCameraIfMissing(scene);
+        CreateCanvasIfMissing(scene);
+        CreateEventSystemIfMissing(scene);
+
+        if (!EditorSceneManager.SaveScene(scene, MainScenePath))
+        {
+            throw new InvalidOperationException($"Could not save scene at {MainScenePath}.");
+        }
+
+        var preservedBuildScenes = EditorBuildSettings.scenes
+            .Where(buildScene => buildScene.path != MainScenePath)
+            .ToList();
+        preservedBuildScenes.Add(new EditorBuildSettingsScene(MainScenePath, true));
+        EditorBuildSettings.scenes = preservedBuildScenes.ToArray();
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log($"Core Guard T0 configured: {MainScenePath} is enabled for Windows builds.");
+    }
+
+    private static Scene OpenOrCreateMainScene()
+    {
+        var loadedMainScene = SceneManager.GetSceneByPath(MainScenePath);
+        if (loadedMainScene.IsValid() && loadedMainScene.isLoaded)
+        {
+            return loadedMainScene;
+        }
+
+        return File.Exists(MainScenePath)
+            ? EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single)
+            : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+    }
+
+    private static void CreateCameraIfMissing(Scene scene)
+    {
+        if (FindFirstComponentInScene<Camera>(scene) != null)
+        {
+            return;
+        }
 
         var cameraObject = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
         cameraObject.tag = "MainCamera";
@@ -58,6 +98,14 @@ public static class BuildDemo
         camera.orthographicSize = 5f;
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.055f, 0.075f, 0.09f, 1f);
+    }
+
+    private static void CreateCanvasIfMissing(Scene scene)
+    {
+        if (FindFirstComponentInScene<Canvas>(scene) != null)
+        {
+            return;
+        }
 
         var canvasObject = new GameObject(
             "Canvas",
@@ -71,26 +119,27 @@ public static class BuildDemo
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1280f, 720f);
         scaler.matchWidthOrHeight = 0.5f;
+    }
+
+    private static void CreateEventSystemIfMissing(Scene scene)
+    {
+        if (FindFirstComponentInScene<EventSystem>(scene) != null)
+        {
+            return;
+        }
 
         var eventSystemObject = new GameObject(
             "EventSystem",
             typeof(EventSystem),
             typeof(InputSystemUIInputModule));
         eventSystemObject.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+    }
 
-        if (!EditorSceneManager.SaveScene(scene, MainScenePath))
-        {
-            throw new InvalidOperationException($"Could not save scene at {MainScenePath}.");
-        }
-
-        EditorBuildSettings.scenes = new[]
-        {
-            new EditorBuildSettingsScene(MainScenePath, true),
-        };
-
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        Debug.Log($"Core Guard T0 configured: {MainScenePath} is enabled for Windows builds.");
+    private static T FindFirstComponentInScene<T>(Scene scene) where T : Component
+    {
+        return scene.GetRootGameObjects()
+            .SelectMany(root => root.GetComponentsInChildren<T>(true))
+            .FirstOrDefault();
     }
 
     [MenuItem("Core Guard/Build Windows")]
