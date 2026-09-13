@@ -31,6 +31,7 @@ namespace CoreGuard.Tests.Editor
         [TearDown]
         public void TearDown()
         {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             File.WriteAllBytes(MainScenePath, _originalMainSceneBytes);
             EditorBuildSettings.scenes = _originalBuildScenes;
             AssetDatabase.DeleteAsset(UnrelatedScenePath);
@@ -79,6 +80,54 @@ namespace CoreGuard.Tests.Editor
                 "Reconfiguration must not duplicate the required Canvas.");
             Assert.That(CountComponentsInScene<EventSystem>(roots), Is.EqualTo(1),
                 "Reconfiguration must not duplicate the required EventSystem.");
+        }
+
+        [Test]
+        public void ConfigureProject_CreatesMissingRequirementsInLoadedMainAndPreservesActiveScene()
+        {
+            var mainScene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            DestroyRequiredRoots(mainScene);
+            Assert.That(EditorSceneManager.SaveScene(mainScene), Is.True);
+
+            var unrelatedScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            Assert.That(EditorSceneManager.SaveScene(unrelatedScene, UnrelatedScenePath), Is.True);
+            unrelatedScene = SceneManager.GetSceneByPath(UnrelatedScenePath);
+            Assert.That(unrelatedScene.IsValid() && unrelatedScene.isLoaded, Is.True);
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(UnrelatedScenePath),
+                "The unrelated additive scene must be active before invoking ConfigureProject.");
+
+            InvokeConfigureProject();
+
+            var mainRoots = mainScene.GetRootGameObjects();
+            var unrelatedRoots = unrelatedScene.GetRootGameObjects();
+
+            Assert.That(CountComponentsInScene<Camera>(mainRoots), Is.EqualTo(1),
+                "A missing camera must be created in Main even when another scene is active.");
+            Assert.That(CountComponentsInScene<Canvas>(mainRoots), Is.EqualTo(1),
+                "A missing Canvas must be created in Main even when another scene is active.");
+            Assert.That(CountComponentsInScene<EventSystem>(mainRoots), Is.EqualTo(1),
+                "A missing EventSystem must be created in Main even when another scene is active.");
+            Assert.That(CountComponentsInScene<Camera>(unrelatedRoots), Is.EqualTo(0),
+                "ConfigureProject must not add a camera to the active unrelated scene.");
+            Assert.That(CountComponentsInScene<Canvas>(unrelatedRoots), Is.EqualTo(0),
+                "ConfigureProject must not add a Canvas to the active unrelated scene.");
+            Assert.That(CountComponentsInScene<EventSystem>(unrelatedRoots), Is.EqualTo(0),
+                "ConfigureProject must not add an EventSystem to the active unrelated scene.");
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(UnrelatedScenePath),
+                "ConfigureProject must preserve the caller's active scene.");
+        }
+
+        private static void DestroyRequiredRoots(Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                if (root.GetComponentInChildren<Camera>(true) != null ||
+                    root.GetComponentInChildren<Canvas>(true) != null ||
+                    root.GetComponentInChildren<EventSystem>(true) != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
         }
 
         private static int CountComponentsInScene<T>(GameObject[] roots) where T : Component

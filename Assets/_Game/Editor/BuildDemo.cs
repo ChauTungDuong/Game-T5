@@ -91,6 +91,7 @@ public static class BuildDemo
         }
 
         var cameraObject = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
+        SceneManager.MoveGameObjectToScene(cameraObject, scene);
         cameraObject.tag = "MainCamera";
         cameraObject.transform.position = new Vector3(0f, 0f, -10f);
         var camera = cameraObject.GetComponent<Camera>();
@@ -113,6 +114,7 @@ public static class BuildDemo
             typeof(Canvas),
             typeof(CanvasScaler),
             typeof(GraphicRaycaster));
+        SceneManager.MoveGameObjectToScene(canvasObject, scene);
         var canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = canvasObject.GetComponent<CanvasScaler>();
@@ -132,6 +134,7 @@ public static class BuildDemo
             "EventSystem",
             typeof(EventSystem),
             typeof(InputSystemUIInputModule));
+        SceneManager.MoveGameObjectToScene(eventSystemObject, scene);
         eventSystemObject.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
     }
 
