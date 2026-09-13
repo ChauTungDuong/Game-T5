@@ -250,15 +250,15 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Produces:** project Unity `6000.3.23f1` mở/compile được, scene nằm trong build profile, repository có checkpoint đầu tiên và Windows player tối thiểu chạy được.
 
-- [ ] Chụp danh sách file và giữ nguyên hai Markdown hiện có; xác nhận `D:\Game-T5` chưa là Git repo và chưa có project Unity.
-- [ ] Từ Unity Hub đang cài, tạo project tại đúng `D:\Game-T5` bằng template **2D** có sẵn. Ưu tiên **Universal 2D** nếu Hub cung cấp; nếu chỉ có **2D Core**, dùng 2D Core và không đổi render pipeline giữa dự án.
-- [ ] Nếu tool không điều khiển được Hub, yêu cầu người dùng thực hiện đúng một bước tạo project bằng template; không tự tạo YAML project giả. Sau khi project xuất hiện, agent tiếp tục mà không hỏi lại các quyết định đã khóa.
-- [ ] Đọc `ProjectSettings/ProjectVersion.txt`; gate thất bại nếu không phải `6000.3.23f1`. Kiểm tra `Packages/manifest.json` có Input System, uGUI, TextMeshPro và Test Framework phiên bản được Unity resolve; chỉ thêm package còn thiếu qua Package Manager/manifest.
-- [ ] Bật Visible Meta Files và Force Text; tạo `.gitignore` Unity trước `git init`, sau đó kiểm tra không có `Library`, `Temp`, `Logs`, `obj`, `Builds` trong staged files.
-- [ ] Tạo cấu trúc `Assets/_Game/{Art,Audio,Editor,Prefabs,Scenes,Scripts,Settings,Tests}`; tạo `Main.unity`, một camera, một Canvas/EventSystem và đưa scene vào Windows build profile. Không bắt đầu gameplay ở T0.
-- [ ] Tạo `BuildDemo.BuildWindows()` xuất toàn bộ player vào `Builds/Windows/CoreGuard/`; lỗi nếu scene chưa được enable hoặc có compile error.
-- [ ] Chạy compile/batchmode và một Windows build rỗng. Mở `.exe`; gate đạt khi không có Console exception và cửa sổ player mở được.
-- [ ] Khởi tạo ba tài liệu evidence với trạng thái ban đầu; commit `chore: bootstrap Unity 6000.3.23f1 project`.
+- [x] Chụp danh sách file và giữ nguyên hai Markdown hiện có; xác nhận `D:\Game-T5` chưa là Git repo và chưa có project Unity.
+- [x] Từ Unity Hub đang cài, tạo project tại đúng `D:\Game-T5` bằng template **2D** có sẵn. Ưu tiên **Universal 2D** nếu Hub cung cấp; nếu chỉ có **2D Core**, dùng 2D Core và không đổi render pipeline giữa dự án.
+- [x] Nếu tool không điều khiển được Hub, yêu cầu người dùng thực hiện đúng một bước tạo project bằng template; không tự tạo YAML project giả. Sau khi project xuất hiện, agent tiếp tục mà không hỏi lại các quyết định đã khóa.
+- [x] Đọc `ProjectSettings/ProjectVersion.txt`; gate thất bại nếu không phải `6000.3.23f1`. Kiểm tra `Packages/manifest.json` có Input System, uGUI, TextMeshPro và Test Framework phiên bản được Unity resolve; chỉ thêm package còn thiếu qua Package Manager/manifest.
+- [x] Bật Visible Meta Files và Force Text; tạo `.gitignore` Unity trước `git init`, sau đó kiểm tra không có `Library`, `Temp`, `Logs`, `obj`, `Builds` trong staged files.
+- [x] Tạo cấu trúc `Assets/_Game/{Art,Audio,Editor,Prefabs,Scenes,Scripts,Settings,Tests}`; tạo `Main.unity`, một camera, một Canvas/EventSystem và đưa scene vào Windows build profile. Không bắt đầu gameplay ở T0.
+- [x] Tạo `BuildDemo.BuildWindows()` xuất toàn bộ player vào `Builds/Windows/CoreGuard/`; lỗi nếu scene chưa được enable hoặc có compile error.
+- [x] Chạy compile/batchmode và một Windows build rỗng. Mở `.exe`; gate đạt khi không có Console exception và cửa sổ player mở được.
+- [x] Khởi tạo ba tài liệu evidence với trạng thái ban đầu; commit `chore: bootstrap Unity 6000.3.23f1 project`.
 
 ### Task 1 (T1) — Một màn chơi và vòng chơi chạy được (3 giờ)
 
