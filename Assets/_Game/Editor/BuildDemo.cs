@@ -29,7 +29,7 @@ public static class BuildDemo
         "Assets/_Game/Tests",
     };
 
-    [MenuItem("Core Guard/Configure T0 Project")]
+    [MenuItem("Core Guard/Configure Project")]
     public static void ConfigureProject()
     {
         foreach (var directory in GameDirectories)
@@ -53,6 +53,7 @@ public static class BuildDemo
         CreateCameraIfMissing(scene);
         CreateCanvasIfMissing(scene);
         CreateEventSystemIfMissing(scene);
+        DemoSceneBuilder.Configure(scene);
 
         if (!EditorSceneManager.SaveScene(scene, MainScenePath))
         {
@@ -67,7 +68,7 @@ public static class BuildDemo
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"Core Guard T0 configured: {MainScenePath} is enabled for Windows builds.");
+        Debug.Log($"Core Guard configured: {MainScenePath} is enabled for Windows builds.");
     }
 
     private static Scene OpenOrCreateMainScene()

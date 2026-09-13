@@ -1,0 +1,5 @@
+{
+  "name": "CoreGuard.PlayMode.Tests",
+  "references": ["CoreGuard.Runtime", "Unity.InputSystem", "Unity.InputSystem.TestFramework", "Unity.ugui"],
+  "optionalUnityReferences": ["TestAssemblies"]
+}

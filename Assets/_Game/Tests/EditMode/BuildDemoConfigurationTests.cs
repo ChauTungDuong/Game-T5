@@ -130,6 +130,30 @@ namespace CoreGuard.Tests.Editor
             }
         }
 
+        [Test]
+        public void ConfigureProject_BuildsPlayableSceneAndKeepsGameplayRootsInMain()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            var unrelated = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            Assert.That(EditorSceneManager.SaveScene(unrelated, UnrelatedScenePath), Is.True);
+            InvokeConfigureProject();
+            InvokeConfigureProject();
+            var sessions = main.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<CoreGuard.GameSession>(true)).ToArray();
+            Assert.That(sessions.Length, Is.EqualTo(1), "Main must contain one playable session after repeated configuration.");
+            var session = sessions[0];
+            Assert.That(session.Player, Is.Not.Null);
+            Assert.That(session.Core, Is.Not.Null);
+            Assert.That(session.Motor, Is.Not.Null);
+            Assert.That(session.Spawner.Prefab, Is.Not.Null);
+            Assert.That(session.Spawner.Gates.Length, Is.EqualTo(4));
+            Assert.That(session.Motor.Turret, Is.Not.Null);
+            Assert.That(session.gameObject.scene.path, Is.EqualTo(MainScenePath));
+            Assert.That(session.Player.gameObject.scene.path, Is.EqualTo(MainScenePath));
+            Assert.That(session.Core.gameObject.scene.path, Is.EqualTo(MainScenePath));
+            Assert.That(session.Spawner.gameObject.scene.path, Is.EqualTo(MainScenePath));
+            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(UnrelatedScenePath));
+        }
+
         private static int CountComponentsInScene<T>(GameObject[] roots) where T : Component
         {
             return roots.Sum(root => root.GetComponentsInChildren<T>(true).Length);
