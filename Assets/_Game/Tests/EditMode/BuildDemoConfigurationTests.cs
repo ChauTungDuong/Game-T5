@@ -159,6 +159,85 @@ namespace CoreGuard.Tests.Editor
             return roots.Sum(root => root.GetComponentsInChildren<T>(true).Length);
         }
 
+        [Test]
+        public void ConfigureProject_PreservesAuthoredHudReferencesAndPresentation()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            var hud = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.HudPresenter>(true)).Single();
+            var alternateStats = new GameObject("Authored stats", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            alternateStats.transform.SetParent(hud.transform, false);
+            alternateStats.text = "Authored stats content";
+            alternateStats.color = Color.magenta;
+            alternateStats.rectTransform.anchoredPosition = new Vector2(37, -14);
+            hud.StatsText = alternateStats;
+            var alternatePanel = new GameObject("Authored result panel", typeof(RectTransform), typeof(Image));
+            alternatePanel.transform.SetParent(hud.transform, false);
+            var alternateRetry = new GameObject("Authored retry", typeof(RectTransform), typeof(Image), typeof(Button)).GetComponent<Button>();
+            alternateRetry.transform.SetParent(alternatePanel.transform, false);
+            hud.ResultPanel = alternatePanel;
+            hud.RetryButton = alternateRetry;
+            var resumeRect = (RectTransform)hud.ResumeButton.transform;
+            resumeRect.sizeDelta = new Vector2(333, 61);
+            hud.ResumeButton.GetComponent<Image>().color = Color.yellow;
+            var pauseRect = (RectTransform)hud.PausePanel.transform;
+            pauseRect.sizeDelta = new Vector2(601, 351);
+            hud.PausePanel.GetComponent<Image>().color = Color.blue;
+            hud.StartPanel.SetActive(false);
+            hud.PausePanel.SetActive(true);
+            alternatePanel.SetActive(true);
+            ((RectTransform)hud.transform).anchoredPosition = new Vector2(12, 13);
+            var initialObjectCount = main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length);
+
+            InvokeConfigureProject();
+            InvokeConfigureProject();
+
+            Assert.That(hud.StatsText, Is.SameAs(alternateStats), "An authored stats text reference must not be replaced.");
+            Assert.That(hud.RetryButton, Is.SameAs(alternateRetry), "An authored retry button reference must not be replaced.");
+            Assert.That(hud.ResultPanel, Is.SameAs(alternatePanel));
+            Assert.That(alternateStats.text, Is.EqualTo("Authored stats content"));
+            Assert.That(alternateStats.color, Is.EqualTo(Color.magenta));
+            Assert.That(alternateStats.rectTransform.anchoredPosition, Is.EqualTo(new Vector2(37, -14)));
+            Assert.That(resumeRect.sizeDelta, Is.EqualTo(new Vector2(333, 61)));
+            Assert.That(hud.ResumeButton.GetComponent<Image>().color, Is.EqualTo(Color.yellow));
+            Assert.That(pauseRect.sizeDelta, Is.EqualTo(new Vector2(601, 351)));
+            Assert.That(hud.PausePanel.GetComponent<Image>().color, Is.EqualTo(Color.blue));
+            Assert.That(hud.StartPanel.activeSelf, Is.False);
+            Assert.That(hud.PausePanel.activeSelf, Is.True);
+            Assert.That(alternatePanel.activeSelf, Is.True);
+            Assert.That(((RectTransform)hud.transform).anchoredPosition, Is.EqualTo(new Vector2(12, 13)));
+            Assert.That(main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length), Is.EqualTo(initialObjectCount),
+                "Existing valid HUD references must not cause replacement defaults to be created.");
+        }
+
+        [Test]
+        public void ConfigureProject_RepairsOneDeletedGateAndPreservesValidGateAssignments()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            var spawner = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.EnemySpawner>(true)).Single();
+            var customGate = new GameObject("Authored gate").transform;
+            customGate.position = new Vector3(6.2f, 1.1f, 0);
+            spawner.Gates[0] = customGate;
+            var retainedThird = spawner.Gates[2];
+            var retainedFourth = spawner.Gates[3];
+            retainedThird.position = new Vector3(-6.4f, -.8f, 0);
+            UnityEngine.Object.DestroyImmediate(spawner.Gates[1].gameObject);
+
+            InvokeConfigureProject();
+            InvokeConfigureProject();
+
+            Assert.That(spawner.Gates[1] != null, Is.True, "A deleted gate in a nonempty array must be repaired.");
+            Assert.That(spawner.Gates.Length, Is.EqualTo(4));
+            Assert.That(spawner.Gates[0], Is.SameAs(customGate));
+            Assert.That(customGate.position, Is.EqualTo(new Vector3(6.2f, 1.1f, 0)));
+            Assert.That(spawner.Gates[2], Is.SameAs(retainedThird));
+            Assert.That(retainedThird.position, Is.EqualTo(new Vector3(-6.4f, -.8f, 0)));
+            Assert.That(spawner.Gates[3], Is.SameAs(retainedFourth));
+            Assert.That(spawner.Gates[1].position, Is.EqualTo(new Vector3(0, 3.6f, 0)));
+            Assert.That(spawner.Gates[1].gameObject.scene.path, Is.EqualTo(MainScenePath));
+            var gatesNamedTwo = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Transform>(true)).Count(t => t.name == "Gate 2");
+            Assert.That(gatesNamedTwo, Is.EqualTo(1), "Repeated repair must not duplicate the recreated gate.");
+        }
+
         private static void InvokeConfigureProject()
         {
             var buildDemoType = Type.GetType("BuildDemo, Assembly-CSharp-Editor");

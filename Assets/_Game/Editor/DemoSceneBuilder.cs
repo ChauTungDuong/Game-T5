@@ -68,16 +68,16 @@ public static class DemoSceneBuilder
         var spawner = GetOrAdd<EnemySpawner>(Root(scene, "Enemy Spawner"));
         if (!spawner.Prefab) spawner.Prefab = EnsureEnemyPrefab(scene, sprite);
         if (spawner.Gates == null || spawner.Gates.Length == 0)
-        {
-            var positions = new[] { new Vector2(7.4f, 0), new Vector2(0, 3.6f), new Vector2(-7.4f, 0), new Vector2(0, -3.6f) };
             spawner.Gates = new Transform[4];
-            for (var i = 0; i < 4; i++)
-            {
-                var gate = Child(world.transform, "Gate " + (i + 1));
-                gate.transform.localPosition = positions[i];
-                Visual(gate.transform, "Gate marker", sprite, Vector2.zero, new Vector2(.25f, .25f), new Color(1, .47f, .35f), 1);
-                spawner.Gates[i] = gate.transform;
-            }
+        var positions = new[] { new Vector2(7.4f, 0), new Vector2(0, 3.6f), new Vector2(-7.4f, 0), new Vector2(0, -3.6f) };
+        for (var i = 0; i < spawner.Gates.Length; i++)
+        {
+            if (spawner.Gates[i]) continue;
+            var existingGate = world.transform.Find("Gate " + (i + 1));
+            var gate = Child(world.transform, "Gate " + (i + 1));
+            if (!existingGate) gate.transform.localPosition = positions[i % positions.Length];
+            Visual(gate.transform, "Gate marker", sprite, Vector2.zero, new Vector2(.25f, .25f), new Color(1, .47f, .35f), 1);
+            spawner.Gates[i] = gate.transform;
         }
         if (!session.Player) session.Player = stats;
         if (!session.Core) session.Core = core;
@@ -102,35 +102,50 @@ public static class DemoSceneBuilder
 
     private static void BuildHud(Transform canvas, GameSession session)
     {
+        var existingRoot = canvas.Find("Core Guard HUD");
         var root = Child(canvas, "Core Guard HUD", typeof(RectTransform));
         var rect = (RectTransform)root.transform;
-        rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
+        if (!existingRoot)
+        {
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
         var hud = GetOrAdd<HudPresenter>(root); if (!hud.Session) hud.Session = session;
         Label(root.transform, "Title", "CORE / GUARD", new Vector2(-462, 323), new Vector2(300, 42), 27, Cyan);
-        hud.StatsText = Label(root.transform, "Stats", "HP 100     ARMOR 50     COINS 0", new Vector2(-200, 277), new Vector2(650, 35), 21, Color.white);
-        hud.CoreText = Label(root.transform, "Core health", "CORE 100", new Vector2(250, 323), new Vector2(170, 40), 23, Cyan);
-        hud.TimerText = Label(root.transform, "Timer", "90.0 s", new Vector2(490, 323), new Vector2(170, 40), 28, Color.white);
-        hud.StateText = Label(root.transform, "State", "READY", new Vector2(492, 278), new Vector2(170, 30), 16, Cyan);
+        if (!hud.StatsText) hud.StatsText = Label(root.transform, "Stats", "HP 100     ARMOR 50     COINS 0", new Vector2(-200, 277), new Vector2(650, 35), 21, Color.white);
+        if (!hud.CoreText) hud.CoreText = Label(root.transform, "Core health", "CORE 100", new Vector2(250, 323), new Vector2(170, 40), 23, Cyan);
+        if (!hud.TimerText) hud.TimerText = Label(root.transform, "Timer", "90.0 s", new Vector2(490, 323), new Vector2(170, 40), 28, Color.white);
+        if (!hud.StateText) hud.StateText = Label(root.transform, "State", "READY", new Vector2(492, 278), new Vector2(170, 30), 16, Cyan);
         Label(root.transform, "Controls", "WASD / ARROWS  Move     MOUSE  Aim     ESC  Pause     R  Retry after result", new Vector2(0, -329), new Vector2(1100, 35), 18, new Color(.62f, .73f, .8f));
-        hud.StartPanel = Panel(root.transform, "Start panel");
-        Label(hud.StartPanel.transform, "Heading", "HOLD THE CORE", new Vector2(0, 82), new Vector2(490, 50), 32, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "A  /  PILOT     B  /  INTRUDERS\nKeep the core online for 90 seconds.\nIntruders arrive from four gates.", new Vector2(0, 0), new Vector2(470, 110), 20, Color.white);
-        hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START", new Vector2(0, -103));
-        hud.PausePanel = Panel(root.transform, "Pause panel");
-        Label(hud.PausePanel.transform, "Heading", "PAUSED", new Vector2(0, 55), new Vector2(490, 55), 34, Cyan);
-        Label(hud.PausePanel.transform, "Hint", "Take a breath. The arena is waiting.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
-        hud.ResumeButton = Button(hud.PausePanel.transform, "Resume button", "RESUME  /  ESC", new Vector2(0, -103));
-        hud.ResultPanel = Panel(root.transform, "Result panel");
-        hud.ResultText = Label(hud.ResultPanel.transform, "Heading", "CORE OFFLINE — LOST", new Vector2(0, 55), new Vector2(510, 55), 30, Cyan);
-        Label(hud.ResultPanel.transform, "Hint", "Reset the arena and make another run.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
-        hud.RetryButton = Button(hud.ResultPanel.transform, "Retry button", "RETRY  /  R", new Vector2(0, -103));
-        hud.StartPanel.SetActive(true); hud.PausePanel.SetActive(false); hud.ResultPanel.SetActive(false);
+        if (!hud.StartPanel)
+        {
+            hud.StartPanel = Panel(root.transform, "Start panel", true);
+            Label(hud.StartPanel.transform, "Heading", "HOLD THE CORE", new Vector2(0, 82), new Vector2(490, 50), 32, Cyan);
+            Label(hud.StartPanel.transform, "Brief", "A  /  PILOT     B  /  INTRUDERS\nKeep the core online for 90 seconds.\nIntruders arrive from four gates.", new Vector2(0, 0), new Vector2(470, 110), 20, Color.white);
+        }
+        if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START", new Vector2(0, -103));
+        if (!hud.PausePanel)
+        {
+            hud.PausePanel = Panel(root.transform, "Pause panel", false);
+            Label(hud.PausePanel.transform, "Heading", "PAUSED", new Vector2(0, 55), new Vector2(490, 55), 34, Cyan);
+            Label(hud.PausePanel.transform, "Hint", "Take a breath. The arena is waiting.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
+        }
+        if (!hud.ResumeButton) hud.ResumeButton = Button(hud.PausePanel.transform, "Resume button", "RESUME  /  ESC", new Vector2(0, -103));
+        if (!hud.ResultPanel)
+        {
+            hud.ResultPanel = Panel(root.transform, "Result panel", false);
+            Label(hud.ResultPanel.transform, "Hint", "Reset the arena and make another run.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
+        }
+        if (!hud.ResultText) hud.ResultText = Label(hud.ResultPanel.transform, "Heading", "CORE OFFLINE — LOST", new Vector2(0, 55), new Vector2(510, 55), 30, Cyan);
+        if (!hud.RetryButton) hud.RetryButton = Button(hud.ResultPanel.transform, "Retry button", "RETRY  /  R", new Vector2(0, -103));
     }
-    private static GameObject Panel(Transform parent, string name)
+    private static GameObject Panel(Transform parent, string name, bool initiallyActive)
     {
+        var existing = parent.Find(name);
+        if (existing) return existing.gameObject;
         var panel = Child(parent, name, typeof(RectTransform), typeof(Image));
         Layout((RectTransform)panel.transform, Vector2.zero, new Vector2(560, 320));
         panel.GetComponent<Image>().color = Ink;
+        panel.SetActive(initiallyActive);
         return panel;
     }
     private static Text Label(Transform parent, string name, string value, Vector2 position, Vector2 size, int fontSize, Color color)
@@ -147,6 +162,8 @@ public static class DemoSceneBuilder
     }
     private static Button Button(Transform parent, string name, string title, Vector2 position)
     {
+        var existing = parent.Find(name);
+        if (existing && existing.TryGetComponent<Button>(out var retained)) return retained;
         var go = Child(parent, name, typeof(RectTransform), typeof(Image), typeof(Button));
         Layout((RectTransform)go.transform, position, new Vector2(290, 52));
         go.GetComponent<Image>().color = new Color(.13f, .43f, .46f);
