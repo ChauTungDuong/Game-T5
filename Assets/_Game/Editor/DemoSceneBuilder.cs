@@ -82,6 +82,9 @@ public static class DemoSceneBuilder
         Visual(coreObject.transform, "Core body", coreBodySprite, Vector2.zero, new Vector2(1.45f, 1.45f), Cyan, 1);
         ApplySprite(coreObject.transform, "Core body", coreBodySprite);
         Visual(coreObject.transform, "Core center", sprite, Vector2.zero, new Vector2(.55f, .55f), Ink, 2);
+        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.cyan);
+        core.HealthBar = coreHealthBar;
+        core.RefreshHealthBar();
 
         var playerObject = Root(scene, "Player");
         playerObject.layer = LayerMask.NameToLayer("Player");
@@ -97,6 +100,9 @@ public static class DemoSceneBuilder
         var playerBarrelSprite = ImportedSprite(PlayerBarrelPath, sprite);
         Visual(playerObject.transform, "Player body", playerBodySprite, Vector2.zero, new Vector2(1.6f, 1.6f), new Color(.3f, .65f, 1), 3);
         ApplySprite(playerObject.transform, "Player body", playerBodySprite);
+        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.green);
+        stats.HealthBar = playerHealthBar;
+        stats.RefreshHealthBar();
         var turret = Child(playerObject.transform, "Turret");
         var barrel = Visual(turret.transform, "Barrel", playerBarrelSprite, new Vector2(.68f, 0), new Vector2(1.3f, 1.9f), Color.white, 4);
         ApplySprite(turret.transform, "Barrel", playerBarrelSprite);
@@ -238,7 +244,7 @@ public static class DemoSceneBuilder
         if (!audioView.MusicOn) audioView.MusicOn = musicOn;
         if (!audioView.MusicOff) audioView.MusicOff = musicOff;
         Label(root.transform, "Title", "CORE GUARD", new Vector2(-480, 328), new Vector2(240, 38), 27, Cyan);
-        var statsText = Label(root.transform, "Stats", "PLAYER  HP 100   ARMOR 50   COINS 0", new Vector2(-240, 314), new Vector2(420, 30), 16, Color.white);
+        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100   ARMOR 50/50   COINS 0", new Vector2(-240, 314), new Vector2(420, 30), 16, Color.white);
         if (!hud.StatsText) hud.StatsText = statsText;
         var coreText = Label(root.transform, "Core health", "CORE 100", new Vector2(170, 328), new Vector2(170, 34), 21, Cyan);
         if (!hud.CoreText) hud.CoreText = coreText;
@@ -368,6 +374,16 @@ public static class DemoSceneBuilder
             var angle = i * Mathf.PI * 2f / ring.positionCount;
             ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * zone.Radius, Mathf.Sin(angle) * zone.Radius, 0));
         }
+    }
+    private static WorldHealthBar EnsureWorldHealthBar(Transform parent, string name, Vector3 position, float width, float height, Color fullColor)
+    {
+        var barObject = Child(parent, name);
+        barObject.transform.localPosition = position;
+        var bar = GetOrAdd<WorldHealthBar>(barObject);
+        bar.Width = width;
+        bar.BarHeight = height;
+        bar.FullColor = fullColor;
+        return bar;
     }
     private static GameObject Panel(Transform parent, string name, bool initiallyActive)
     {

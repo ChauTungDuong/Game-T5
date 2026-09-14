@@ -115,12 +115,12 @@ namespace CoreGuard.Tests.PlayMode
             hud.ResultPanel = Make<Transform>("Result panel").gameObject;
             hud.StartButton = Make<Button>("Start button"); hud.ResumeButton = Make<Button>("Resume"); hud.RetryButton = Make<Button>("Retry");
             hud.Bind();
-            Assert.That(hud.StatsText.text, Does.Contain("HP 100"));
+            Assert.That(hud.StatsText.text, Is.EqualTo("PLAYER HP 100/100   ARMOR 50/50   COINS 0"));
             Assert.That(hud.StartPanel.activeSelf, Is.True);
             Assert.That(hud.PausePanel.activeSelf, Is.False);
             hud.StartButton.onClick.Invoke(); s.Player.ApplyDamage(60); s.Player.AddCoins(7); s.Core.ApplyDamage(20); s.Advance(.5f);
-            Assert.That(hud.StatsText.text, Does.Contain("HP 90"));
-            Assert.That(hud.StatsText.text, Does.Contain("ARMOR 0"));
+            Assert.That(hud.StatsText.text, Does.Contain("PLAYER HP 90/100"));
+            Assert.That(hud.StatsText.text, Does.Contain("ARMOR 0/50"));
             Assert.That(hud.StatsText.text, Does.Contain("COINS 7"));
             Assert.That(hud.CoreText.text, Does.Contain("80"));
             Assert.That(hud.TimerText.text, Does.Contain("89.5"));

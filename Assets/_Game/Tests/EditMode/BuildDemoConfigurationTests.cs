@@ -165,6 +165,29 @@ namespace CoreGuard.Tests.Editor
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(UnrelatedScenePath));
         }
 
+        // Break caught: scene configuration omits shared world bars or gives the Core a player-sized bar that intersects its zone ring.
+        [Test]
+        public void ConfigureProject_ConfiguresDistinctSharedHealthBarsAbovePlayerAndCore()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            InvokeConfigureProject();
+
+            var player = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.PlayerStats>(true)).Single();
+            var core = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.CoreHealth>(true)).Single();
+            var playerBar = player.GetComponentInChildren<CoreGuard.WorldHealthBar>(true);
+            var coreBar = core.GetComponentInChildren<CoreGuard.WorldHealthBar>(true);
+            var zone = core.GetComponentInChildren<CoreGuard.ForbiddenZone>(true);
+
+            Assert.That(playerBar, Is.Not.Null);
+            Assert.That(coreBar, Is.Not.Null);
+            Assert.That(playerBar.transform.localPosition.y, Is.GreaterThan(0f));
+            Assert.That(coreBar.transform.localPosition.y, Is.GreaterThan(0f));
+            Assert.That(coreBar.transform.localPosition.y + .4f, Is.LessThan(zone.Radius));
+            Assert.That(coreBar.Width, Is.GreaterThan(playerBar.Width));
+            Assert.That(playerBar.FullColor, Is.EqualTo(Color.green));
+            Assert.That(coreBar.FullColor, Is.EqualTo(Color.cyan));
+        }
+
         private static int CountComponentsInScene<T>(GameObject[] roots) where T : Component
         {
             return roots.Sum(root => root.GetComponentsInChildren<T>(true).Length);

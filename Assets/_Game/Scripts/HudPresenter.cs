@@ -53,7 +53,7 @@ namespace CoreGuard
         private void ActivateEmp() => Session.Defense?.TryActivateEmp();
         private void Refresh()
         {
-            StatsText.text = $"PLAYER   HP {Session.Player.HP:0}   ARMOR {Session.Player.Armor:0}   COINS {Session.Player.Coins}";
+            StatsText.text = $"PLAYER HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}   ARMOR {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}   COINS {Session.Player.Coins}";
             CoreText.text = $"CORE {Session.Core.HP:0}";
             TimerText.text = $"{Session.Remaining:00.0} s";
             StateText.text = Session.State.ToString().ToUpperInvariant();
