@@ -158,24 +158,30 @@ public static class DemoSceneBuilder
         var spawner = GetOrAdd<EnemySpawner>(Root(scene, "Enemy Spawner"));
         var configuredEnemyPrefab = EnsureEnemyPrefab(scene, sprite);
         if (!spawner.Prefab || spawner.Prefab.name == "Enemy") spawner.Prefab = configuredEnemyPrefab;
-        if (spawner.Gates == null || spawner.Gates.Length == 0)
-            spawner.Gates = new Transform[4];
         var positions = new[]
         {
-            new Vector2(7.2f, 3.45f),
-            new Vector2(-7.2f, 3.45f),
-            new Vector2(-7.2f, -3.45f),
-            new Vector2(7.2f, -3.45f),
+            new Vector2(7.2f, 0f),
+            new Vector2(0f, 3.6f),
+            new Vector2(-7.2f, 0f),
+            new Vector2(0f, -3.6f),
         };
-        for (var i = 0; i < spawner.Gates.Length; i++)
+        var retainedGates = spawner.Gates;
+        var configuredGates = new Transform[positions.Length];
+        for (var i = 0; i < configuredGates.Length; i++)
         {
+            if (retainedGates != null && i < retainedGates.Length && retainedGates[i])
+            {
+                configuredGates[i] = retainedGates[i];
+                continue;
+            }
             var gate = Child(world.transform, "Gate " + (i + 1));
-            gate.transform.localPosition = positions[i % positions.Length];
+            gate.transform.localPosition = positions[i];
             var gateSprite = ImportedSprite(GateIconPath, sprite);
             Visual(gate.transform, "Gate marker", gateSprite, Vector2.zero, new Vector2(.25f, .25f), new Color(1, .47f, .35f), 1);
             ApplySprite(gate.transform, "Gate marker", gateSprite);
-            spawner.Gates[i] = gate.transform;
+            configuredGates[i] = gate.transform;
         }
+        spawner.Gates = configuredGates;
         if (!session.Player) session.Player = stats;
         if (!session.Core) session.Core = core;
         if (!session.Motor) session.Motor = motor;

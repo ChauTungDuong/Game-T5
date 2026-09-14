@@ -1,5 +1,35 @@
 # Core Guard — Next Implementation Plan
 
+## Handoff status — 2026-09-15
+
+Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this branch and continue from the first unchecked item below.
+
+### Completed and committed
+
+- [x] Task 1 — shared Player/Core world health bars and live current/max HUD values (`2453294`, `bade440`).
+- [x] Task 2 — enemy projectile damage plus visible firing flash/audio feedback (`3829191`, `90f44f8`).
+- [x] Task 3 — deterministic random X/Y/Z lifecycle, 5 seconds visible + 5 seconds hidden, pause/reset/session isolation (`c9187b2`, `1c027d2`, `e91ac0d`; focused tests 13/13).
+- [x] Task 4 — all six X/Y/Z effects plus procedural animation/VFX, floating text, and SFX (`cdffd02`; interaction tests 20/20 and audio tests 3/3).
+- [x] Task 5 — Shield/EMP mechanics, cooldown/reset/session filtering, shield/EMP rings, EMP affected count (`dab68ed`; defense 4/4 and presentation 4/4).
+- [x] Task 6 — compact anchored HUD, no large top/bottom surfaces, READY/active/cooldown states, 1280x720 and 1920x1080 bounds (`dab68ed`; layout 1/1 and HUD regression 2/2).
+- [x] Task 8 partial — idempotent repair of a missing enemy gate while preserving authored gate references (focused test 1/1; commit immediately after this handoff update).
+
+### Intentionally deferred
+
+- [ ] Task 7 — asset selection/integration, import settings, licenses, and `docs/asset-register.md`. The owner explicitly deferred this work. `D:/Game-T5/Resources` is user-supplied and must not be deleted or committed accidentally.
+
+### Continue here
+
+- [ ] Run the complete EditMode suite, fix any integration failures, and record the final count.
+- [ ] Run the complete PlayMode suite, fix any integration failures, and record the final count.
+- [ ] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
+- [ ] Perform the manual Editor smoke pass: movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, and HUD readability at both target resolutions.
+- [ ] Update `docs/progress.md` and `docs/acceptance.md` with fresh full-suite and smoke evidence. Leave `docs/asset-register.md` for the deferred asset pass.
+- [ ] Review the combined Task 5/6 commit `dab68ed`; the automated reviewer could not complete because its usage quota expired.
+- [ ] After the deferred asset pass, rerun full verification and merge this feature branch.
+
+Known local-only paths that must stay uncommitted: `Resources/`. Unity test/configuration runs may also touch `Assets/Settings/InputSystem_Actions.inputactions` and the Enemy/Mine/Projectile prefabs; inspect ownership before committing those files.
+
 ## 1. Mục tiêu
 
 Hoàn thiện demo Unity theo hướng người chơi phải vừa di chuyển né đạn enemy, vừa dùng kỹ năng phòng thủ và thu thập các object X/Y/Z trong arena.
