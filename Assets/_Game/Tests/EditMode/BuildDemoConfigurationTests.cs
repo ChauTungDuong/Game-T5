@@ -212,6 +212,32 @@ namespace CoreGuard.Tests.Editor
             Assert.That(coreBar.FullColor, Is.EqualTo(Color.cyan));
         }
 
+        [Test]
+        public void ConfigureProject_CompactHudStaysInsideBothSupportedResolutions()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            InvokeConfigureProject();
+            var hud = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.HudPresenter>(true)).Single();
+            Assert.That(hud.transform.Find("Top bar")?.gameObject.activeSelf ?? false, Is.False);
+            Assert.That(hud.transform.Find("Bottom bar")?.gameObject.activeSelf ?? false, Is.False);
+            Assert.That(hud.StatsText.alignment, Is.EqualTo(TextAnchor.UpperLeft));
+            Assert.That(hud.CoreText.alignment, Is.EqualTo(TextAnchor.UpperRight));
+            Assert.That(hud.CooldownsText.alignment, Is.EqualTo(TextAnchor.LowerRight));
+
+            var compactRects = new[] { hud.StatsText.rectTransform, hud.CoreText.rectTransform,
+                hud.TimerText.rectTransform, hud.WeaponText.rectTransform, hud.CooldownsText.rectTransform };
+            foreach (var resolution in new[] { new Vector2(1280, 720), new Vector2(1920, 1080) })
+            foreach (var rect in compactRects)
+            {
+                var minimum = Vector2.Scale(rect.anchorMin, resolution) + rect.anchoredPosition - Vector2.Scale(rect.pivot, rect.sizeDelta);
+                var maximum = minimum + rect.sizeDelta;
+                Assert.That(minimum.x, Is.GreaterThanOrEqualTo(0), $"{rect.name} leaves {resolution} on the left.");
+                Assert.That(minimum.y, Is.GreaterThanOrEqualTo(0), $"{rect.name} leaves {resolution} below.");
+                Assert.That(maximum.x, Is.LessThanOrEqualTo(resolution.x), $"{rect.name} leaves {resolution} on the right.");
+                Assert.That(maximum.y, Is.LessThanOrEqualTo(resolution.y), $"{rect.name} leaves {resolution} above.");
+            }
+        }
+
         // Break caught: a domain/scene reload loses visual references and duplicates the generated bar children.
         [Test]
         public void ConfigureProject_ReopenedSceneReusesEachHealthBarsExistingVisualChildren()

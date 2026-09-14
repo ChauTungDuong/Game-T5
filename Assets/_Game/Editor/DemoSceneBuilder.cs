@@ -240,26 +240,43 @@ public static class DemoSceneBuilder
         var soundOn = AudioButton(root.transform, "SoundOn", "SFX\nON", new Vector2(548, 320));
         var musicOn = AudioButton(root.transform, "MusicOn", "BGM\nON", new Vector2(610, 320));
         var musicOff = AudioButton(root.transform, "MusicOff", "BGM\nOFF", new Vector2(610, 320));
+        Anchor((RectTransform)soundOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
+        Anchor((RectTransform)soundOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
+        Anchor((RectTransform)musicOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
+        Anchor((RectTransform)musicOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
         if (!audioView.SoundOff) audioView.SoundOff = soundOff;
         if (!audioView.SoundOn) audioView.SoundOn = soundOn;
         if (!audioView.MusicOn) audioView.MusicOn = musicOn;
         if (!audioView.MusicOff) audioView.MusicOff = musicOff;
-        Label(root.transform, "Title", "CORE GUARD", new Vector2(-480, 328), new Vector2(240, 38), 27, Cyan);
-        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100   ARMOR 50/50   COINS 0", new Vector2(-240, 314), new Vector2(420, 30), 16, Color.white);
+        var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
+        Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
+        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100\nARMOR 50/50\nCOINS 0", Vector2.zero, new Vector2(280, 72), 16, Color.white);
+        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(280, 72));
+        statsText.alignment = TextAnchor.UpperLeft;
         if (!hud.StatsText) hud.StatsText = statsText;
-        var coreText = Label(root.transform, "Core health", "CORE 100", new Vector2(170, 328), new Vector2(170, 34), 21, Cyan);
+        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(220, 30), 20, Cyan);
+        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(220, 30));
+        coreText.alignment = TextAnchor.UpperRight;
         if (!hud.CoreText) hud.CoreText = coreText;
-        var timerText = Label(root.transform, "Timer", "90.0 s", new Vector2(355, 328), new Vector2(150, 34), 24, Color.white);
+        var timerText = Label(root.transform, "Timer", "TIME 90.0", Vector2.zero, new Vector2(220, 30), 20, Color.white);
+        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -54), new Vector2(220, 30));
+        timerText.alignment = TextAnchor.UpperRight;
         if (!hud.TimerText) hud.TimerText = timerText;
-        var stateText = Label(root.transform, "State", "READY", new Vector2(355, 297), new Vector2(150, 24), 14, Cyan);
+        var stateText = Label(root.transform, "State", "READY", Vector2.zero, new Vector2(220, 24), 14, Cyan);
+        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -86), new Vector2(220, 24));
+        stateText.alignment = TextAnchor.UpperRight;
         if (!hud.StateText) hud.StateText = stateText;
         Label(root.transform, "Objective", "OBJECTIVE  Protect the blue core from red invaders", new Vector2(0, 235), new Vector2(680, 30), 17, Color.white);
         Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LEFT MOUSE BUTTON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
         Label(root.transform, "Actions", "WEAPONS  1 Bullet  •  2 Rocket  •  3 Mine     DEFENSE  Q Shield  •  E EMP     R RETRY  •  F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
-        var weaponText = Label(root.transform, "Weapon", "SELECT WEAPON", new Vector2(-480, -245), new Vector2(230, 26), 15, Color.white);
+        var weaponText = Label(root.transform, "Weapon", "WEAPON: BULLET", Vector2.zero, new Vector2(230, 26), 15, Color.white);
+        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(230, 26));
+        weaponText.alignment = TextAnchor.LowerLeft;
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "Cooldowns  —", new Vector2(390, -245), new Vector2(280, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 50));
+        hud.CooldownsText.alignment = TextAnchor.LowerRight;
         var bulletButton = ActionButton(root.transform, "Bullet button", "1  BULLET", new Vector2(-315, -271));
         var rocketButton = ActionButton(root.transform, "Rocket button", "2  ROCKET", new Vector2(-185, -271));
         var mineButton = ActionButton(root.transform, "Mine button", "3  MINE", new Vector2(-55, -271));
@@ -545,6 +562,13 @@ public static class DemoSceneBuilder
     {
         rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
         rect.anchoredPosition = position; rect.sizeDelta = size;
+    }
+    private static void Anchor(RectTransform rect, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size)
+    {
+        rect.anchorMin = rect.anchorMax = anchor;
+        rect.pivot = pivot;
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
     }
     private static void Border(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
     {

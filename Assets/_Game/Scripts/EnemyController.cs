@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 namespace CoreGuard
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
     public sealed class EnemyController : MonoBehaviour, IDamageable
     {
+        private static readonly HashSet<EnemyController> Active = new HashSet<EnemyController>();
+        public static IReadOnlyCollection<EnemyController> ActiveEnemies => Active;
         public GameSession Session;
         public CoreHealth Core;
         public PlayerStats Player;
@@ -28,6 +31,9 @@ namespace CoreGuard
         private float fireFlashRemaining;
         private float shootRemaining;
         private float stunRemaining;
+        private void OnEnable() => Active.Add(this);
+        private void OnDisable() => Active.Remove(this);
+        private void OnDestroy() => Active.Remove(this);
         private void Awake()
         {
             body = GetComponent<Rigidbody2D>();
@@ -40,6 +46,7 @@ namespace CoreGuard
         }
         public void Initialize(GameSession session, CoreHealth core)
         {
+            Active.Add(this);
             Session = session; Core = core; Player = session ? session.Player : null;
             EnemyProjectilePrefab = session ? session.EnemyProjectilePrefab : null;
             HP = MaxHP; retired = false; shootRemaining = .6f; stunRemaining = 0;

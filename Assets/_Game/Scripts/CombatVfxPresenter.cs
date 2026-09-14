@@ -15,6 +15,7 @@ namespace CoreGuard
 
         private WeaponController boundWeapon;
         private DefenseController boundDefense;
+        private GameObject shieldIndicator;
 
         private void OnEnable()
         {
@@ -36,6 +37,7 @@ namespace CoreGuard
             {
                 boundDefense.ShieldActivated += HandleShield;
                 boundDefense.EmpActivated += HandleEmp;
+                boundDefense.Changed += HandleDefenseChanged;
             }
         }
 
@@ -52,9 +54,64 @@ namespace CoreGuard
                 kind == WeaponKind.Rocket ? new Color(1f, .6f, .25f) : Color.white, .09f);
         }
 
-        private void HandleShield() => Spawn(ShieldFlash, transform.position, Quaternion.identity, 1.5f, new Color(.25f, .9f, .85f, .8f), .28f);
+        private void HandleShield()
+        {
+            Spawn(ShieldFlash, transform.position, Quaternion.identity, 1.5f, new Color(.25f, .9f, .85f, .8f), .28f);
+            if (!Application.isPlaying) return;
+            if (shieldIndicator) Destroy(shieldIndicator);
+            shieldIndicator = CreateRing("Shield Indicator", 1f, new Color(.15f, 1f, .9f, .9f), 0f, null);
+        }
 
-        private void HandleEmp() => Spawn(EmpFlash, transform.position, Quaternion.identity, 2.2f, new Color(.75f, .35f, 1f, .85f), .32f);
+        private void HandleEmp()
+        {
+            Spawn(EmpFlash, transform.position, Quaternion.identity, 2.2f, new Color(.75f, .35f, 1f, .85f), .32f);
+            if (!Application.isPlaying) return;
+            CreateRing("EMP Indicator", boundDefense ? boundDefense.EmpRadius : 3f,
+                new Color(.75f, .35f, 1f, .85f), .45f,
+                $"EMP {(boundDefense ? boundDefense.LastEmpAffectedCount : 0)}");
+        }
+
+        private void HandleDefenseChanged()
+        {
+            if (boundDefense && boundDefense.ShieldActive) return;
+            if (shieldIndicator) Destroy(shieldIndicator);
+            shieldIndicator = null;
+        }
+
+        private GameObject CreateRing(string name, float radius, Color color, float lifetime, string label)
+        {
+            var previous = transform.Find(name);
+            if (previous) Destroy(previous.gameObject);
+            var effect = new GameObject(name);
+            effect.transform.SetParent(transform, false);
+            var line = effect.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = 48;
+            line.startWidth = line.endWidth = .06f;
+            line.startColor = line.endColor = color;
+            line.sortingOrder = 8;
+            for (var i = 0; i < line.positionCount; i++)
+            {
+                var angle = i * Mathf.PI * 2f / line.positionCount;
+                line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius));
+            }
+            if (!string.IsNullOrEmpty(label))
+            {
+                var textObject = new GameObject("Affected count");
+                textObject.transform.SetParent(effect.transform, false);
+                textObject.transform.localPosition = new Vector3(0f, radius + .25f, 0f);
+                var text = textObject.AddComponent<TextMesh>();
+                text.text = label;
+                text.anchor = TextAnchor.MiddleCenter;
+                text.alignment = TextAlignment.Center;
+                text.characterSize = .07f;
+                text.fontSize = 32;
+                text.color = color;
+            }
+            if (lifetime > 0f) Destroy(effect, lifetime);
+            return effect;
+        }
 
         private void Spawn(Sprite sprite, Vector3 position, Quaternion rotation, float scale, Color color, float lifetime)
         {
@@ -78,9 +135,16 @@ namespace CoreGuard
             {
                 boundDefense.ShieldActivated -= HandleShield;
                 boundDefense.EmpActivated -= HandleEmp;
+                boundDefense.Changed -= HandleDefenseChanged;
             }
             boundWeapon = null;
             boundDefense = null;
+            if (shieldIndicator)
+            {
+                if (Application.isPlaying) Destroy(shieldIndicator);
+                else DestroyImmediate(shieldIndicator);
+            }
+            shieldIndicator = null;
         }
     }
 }

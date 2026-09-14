@@ -91,12 +91,25 @@ namespace CoreGuard.Tests.Editor
         public void Emp_StunsOnlyEnemiesInsideRadius()
         {
             var session = MakeSession(out var defense);
-            var near = MakeEnemy(session, "Near", new Vector2(2, 0));
-            var far = MakeEnemy(session, "Far", new Vector2(4, 0));
+            var origin = (Vector2)session.Player.transform.position;
+            var near = MakeEnemy(session, "Near", origin + new Vector2(2, 0));
+            var far = MakeEnemy(session, "Far", origin + new Vector2(4, 0));
+            var foreignSession = Make<GameSession>("Foreign session");
+            foreignSession.enabled = false;
+            var foreign = MakeEnemy(foreignSession, "Foreign near", origin + new Vector2(1, 0));
+            var reportedCount = -1;
+            defense.EmpResolved += count => reportedCount = count;
 
+            Assert.That(near.Session, Is.SameAs(session));
+            Assert.That(near.IsAlive, Is.True);
+            Assert.That(Vector2.Distance(near.transform.position, session.Player.transform.position), Is.LessThanOrEqualTo(defense.EmpRadius));
+            Assert.That(EnemyController.ActiveEnemies, Does.Contain(near));
             Assert.That(defense.TryActivateEmp(), Is.True);
+            Assert.That(defense.LastEmpAffectedCount, Is.EqualTo(1));
+            Assert.That(reportedCount, Is.EqualTo(1));
             Assert.That(near.IsStunned, Is.True);
             Assert.That(far.IsStunned, Is.False);
+            Assert.That(foreign.IsStunned, Is.False);
             Assert.That(defense.TryActivateEmp(), Is.False, "EMP cooldown must reject an immediate second pulse.");
         }
 
@@ -113,6 +126,28 @@ namespace CoreGuard.Tests.Editor
             session.Advance(3);
             Assert.That(defense.ShieldActive, Is.False);
             Assert.That(defense.ShieldCooldownRemaining, Is.EqualTo(5).Within(.001));
+        }
+
+        [Test]
+        public void Defense_PauseFreezesEmpCooldownAndResetClearsAllState()
+        {
+            var session = MakeSession(out var defense);
+            MakeEnemy(session, "Near", new Vector2(1, 0));
+            Assert.That(defense.TryActivateShield(), Is.True);
+            Assert.That(defense.TryActivateEmp(), Is.True);
+
+            session.TogglePause();
+            defense.Advance(20f);
+            Assert.That(defense.EmpCooldownRemaining, Is.EqualTo(6f).Within(.001f));
+            Assert.That(defense.ShieldRemaining, Is.EqualTo(3f).Within(.001f));
+
+            session.ResetForDemo();
+            Assert.That(defense.ShieldActive, Is.False);
+            Assert.That(defense.ShieldCooldownRemaining, Is.Zero);
+            Assert.That(defense.EmpCooldownRemaining, Is.Zero);
+            Assert.That(defense.LastEmpAffectedCount, Is.Zero);
+            Assert.That(defense.TryActivateShield(), Is.True);
+            Assert.That(defense.TryActivateEmp(), Is.True);
         }
     }
 }

@@ -104,18 +104,60 @@ namespace CoreGuard.Tests.PlayMode
             s.TogglePause(); Assert.That(reader.FireHeld, Is.False);
         }
 
+        [UnityTest] public IEnumerator DefenseFeedback_ShowsShieldRingAndEmpAreaWithAffectedCount()
+        {
+            var s = Session();
+            var defense = s.Player.gameObject.AddComponent<DefenseController>();
+            defense.Session = s; defense.Player = s.Player; s.Defense = defense;
+            var presenter = s.Player.gameObject.AddComponent<CombatVfxPresenter>();
+            presenter.Defense = defense; presenter.Bind();
+            s.StartMatch();
+
+            Assert.That(defense.TryActivateShield(), Is.True);
+            yield return null;
+            var shield = s.Player.transform.Find("Shield Indicator");
+            Assert.That(shield, Is.Not.Null);
+            Assert.That(shield.GetComponent<LineRenderer>(), Is.Not.Null);
+
+            var enemy = Make<EnemyController>("EMP target");
+            enemy.Initialize(s, s.Core);
+            enemy.transform.position = s.Player.transform.position + Vector3.right;
+            Assert.That(defense.TryActivateEmp(), Is.True);
+            yield return null;
+            var pulse = s.Player.transform.Find("EMP Indicator");
+            Assert.That(pulse, Is.Not.Null);
+            Assert.That(pulse.GetComponent<LineRenderer>(), Is.Not.Null);
+            Assert.That(pulse.GetComponentInChildren<TextMesh>().text, Is.EqualTo("EMP 1"));
+
+            s.Advance(3f);
+            yield return null;
+            Assert.That(s.Player.transform.Find("Shield Indicator"), Is.Null);
+        }
+
         // Missing subscriptions or button listeners would leave stale numbers/panels.
         [Test] public void Hud_ShowsLiveValuesAndButtonsDriveSingleSceneFlow()
         {
-            var s = Session(); var hud = Make<HudPresenter>("HUD"); hud.Session = s;
+            var s = Session();
+            s.Weapon = s.Player.gameObject.AddComponent<WeaponController>(); s.Weapon.Session = s;
+            s.Defense = s.Player.gameObject.GetComponent<DefenseController>() ?? s.Player.gameObject.AddComponent<DefenseController>();
+            s.Defense.Session = s; s.Defense.Player = s.Player;
+            var hud = Make<HudPresenter>("HUD"); hud.Session = s;
             hud.StatsText = Make<Text>("Stats"); hud.CoreText = Make<Text>("Core text");
             hud.TimerText = Make<Text>("Timer"); hud.StateText = Make<Text>("State"); hud.ResultText = Make<Text>("Result");
+            hud.WeaponText = Make<Text>("Weapon"); hud.CooldownsText = Make<Text>("Defense state");
             hud.StartPanel = Make<Transform>("Start").gameObject;
             hud.PausePanel = Make<Transform>("Pause").gameObject;
             hud.ResultPanel = Make<Transform>("Result panel").gameObject;
             hud.StartButton = Make<Button>("Start button"); hud.ResumeButton = Make<Button>("Resume"); hud.RetryButton = Make<Button>("Retry");
+            hud.BulletButton = Make<Button>("Bullet"); hud.RocketButton = Make<Button>("Rocket"); hud.MineButton = Make<Button>("Mine");
+            hud.ShieldButton = Make<Button>("Shield"); hud.EmpButton = Make<Button>("EMP");
             hud.Bind();
-            Assert.That(hud.StatsText.text, Is.EqualTo("PLAYER HP 100/100   ARMOR 50/50   COINS 0"));
+            Assert.That(hud.StatsText.text, Is.EqualTo("PLAYER HP 100/100\nARMOR 50/50\nCOINS 0"));
+            Assert.That(hud.CoreText.text, Is.EqualTo("CORE 100/100"));
+            Assert.That(hud.TimerText.text, Is.EqualTo("TIME 90.0"));
+            Assert.That(hud.WeaponText.text, Is.EqualTo("WEAPON: BULLET"));
+            Assert.That(hud.CooldownsText.text, Does.Contain("SHIELD: READY"));
+            Assert.That(hud.CooldownsText.text, Does.Contain("EMP: READY"));
             Assert.That(hud.StartPanel.activeSelf, Is.True);
             Assert.That(hud.PausePanel.activeSelf, Is.False);
             hud.StartButton.onClick.Invoke(); s.Player.ApplyDamage(60); s.Player.AddCoins(7); s.Core.ApplyDamage(20); s.Advance(.5f);
@@ -125,6 +167,9 @@ namespace CoreGuard.Tests.PlayMode
             Assert.That(hud.CoreText.text, Does.Contain("80"));
             Assert.That(hud.TimerText.text, Does.Contain("89.5"));
             Assert.That(hud.StartPanel.activeSelf, Is.False);
+            Assert.That(s.Defense.TryActivateShield(), Is.True);
+            Assert.That(hud.CooldownsText.text, Does.Contain("SHIELD: 3/3"));
+            Assert.That(hud.ShieldButton.interactable, Is.False);
             s.TogglePause(); Assert.That(hud.PausePanel.activeSelf, Is.True);
             hud.ResumeButton.onClick.Invoke(); Assert.That(hud.PausePanel.activeSelf, Is.False);
             s.Core.ApplyDamage(100); s.Advance(.02f);

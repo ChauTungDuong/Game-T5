@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace CoreGuard
@@ -19,9 +18,11 @@ namespace CoreGuard
         public float ShieldRemaining => Mathf.Max(0, shieldRemaining);
         public float ShieldCooldownRemaining => Mathf.Max(0, shieldCooldownRemaining);
         public float EmpCooldownRemaining => Mathf.Max(0, empCooldownRemaining);
+        public int LastEmpAffectedCount { get; private set; }
         public event Action Changed;
         public event Action ShieldActivated;
         public event Action EmpActivated;
+        public event Action<int> EmpResolved;
 
         private float shieldRemaining;
         private int shieldHitsRemaining;
@@ -64,16 +65,20 @@ namespace CoreGuard
         public bool TryActivateEmp()
         {
             if (!CanUse() || empCooldownRemaining > 0 || !Player) return false;
-            var stunned = new HashSet<EnemyController>();
-            foreach (var collider in Physics2D.OverlapCircleAll(Player.transform.position, EmpRadius))
+            var affectedCount = 0;
+            var radiusSquared = EmpRadius * EmpRadius;
+            foreach (var enemy in EnemyController.ActiveEnemies)
             {
-                var enemy = collider ? collider.GetComponentInParent<EnemyController>() : null;
                 if (!enemy || !enemy.IsAlive || enemy.Session != Session) continue;
-                if (stunned.Add(enemy)) enemy.Stun(EmpDuration);
+                if (((Vector2)(enemy.transform.position - Player.transform.position)).sqrMagnitude > radiusSquared) continue;
+                enemy.Stun(EmpDuration);
+                affectedCount++;
             }
 
+            LastEmpAffectedCount = affectedCount;
             empCooldownRemaining = EmpCooldown;
             EmpActivated?.Invoke();
+            EmpResolved?.Invoke(LastEmpAffectedCount);
             Changed?.Invoke();
             return true;
         }
@@ -107,6 +112,7 @@ namespace CoreGuard
             shieldHitsRemaining = 0;
             shieldCooldownRemaining = 0;
             empCooldownRemaining = 0;
+            LastEmpAffectedCount = 0;
             Changed?.Invoke();
         }
 
