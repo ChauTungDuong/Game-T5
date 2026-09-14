@@ -171,6 +171,24 @@ namespace CoreGuard.Tests.Editor
             Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(UnrelatedScenePath));
         }
 
+        [Test]
+        public void ConfigureProject_RemovesDuplicateInteractionCyclesAndPreservesTheSessionOwnedOne()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            InvokeConfigureProject();
+            var session = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.GameSession>(true)).Single();
+            var authored = session.InteractionCycle;
+            var duplicateRoot = new GameObject("Duplicate interaction cycle");
+            SceneManager.MoveGameObjectToScene(duplicateRoot, main);
+            duplicateRoot.AddComponent<CoreGuard.InteractionCycleController>();
+
+            InvokeConfigureProject();
+
+            var cycles = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.InteractionCycleController>(true)).ToArray();
+            Assert.That(cycles.Length, Is.EqualTo(1));
+            Assert.That(session.InteractionCycle, Is.SameAs(authored));
+        }
+
         // Break caught: scene configuration omits shared world bars or gives the Core a player-sized bar that intersects its zone ring.
         [Test]
         public void ConfigureProject_ConfiguresDistinctSharedHealthBarsAbovePlayerAndCore()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -37,6 +38,7 @@ namespace CoreGuard.Tests.Editor
             controller.Player = player;
             controller.Core = core;
             controller.Seed = 17;
+            controller.BlockedLayers = LayerMask.GetMask("Arena");
             return controller;
         }
 
@@ -114,6 +116,7 @@ namespace CoreGuard.Tests.Editor
 
             var wall = new GameObject("Wall");
             objects.Add(wall);
+            wall.layer = LayerMask.NameToLayer("Arena");
             wall.transform.position = new Vector2(-4f, -2f);
             wall.AddComponent<CircleCollider2D>().radius = .75f;
             Physics2D.SyncTransforms();
@@ -129,6 +132,98 @@ namespace CoreGuard.Tests.Editor
             controller.MaxPlacementAttempts = 2;
 
             Assert.That(controller.TryFindValidPosition(0, out _), Is.False);
+        }
+
+        [Test]
+        public void Advance_LargeDeltaMatchesEquivalentSmallAdvances()
+        {
+            var large = MakeController(out var largeX, out var largeY, out var largeZ);
+            var stepped = MakeController(out var steppedX, out var steppedY, out var steppedZ);
+            large.ResetCycle();
+            stepped.ResetCycle();
+
+            large.Advance(60f);
+            for (var i = 0; i < 12; i++) stepped.Advance(5f);
+
+            Assert.That(largeX.gameObject.activeSelf, Is.EqualTo(steppedX.gameObject.activeSelf));
+            Assert.That(largeY.gameObject.activeSelf, Is.EqualTo(steppedY.gameObject.activeSelf));
+            Assert.That(largeZ.gameObject.activeSelf, Is.EqualTo(steppedZ.gameObject.activeSelf));
+            Assert.That(largeX.transform.position, Is.EqualTo(steppedX.transform.position));
+            Assert.That(largeY.transform.position, Is.EqualTo(steppedY.transform.position));
+            Assert.That(largeZ.transform.position, Is.EqualTo(steppedZ.transform.position));
+        }
+
+        [Test]
+        public void GameSession_PauseFreezesCycleAndResetRestoresSeededVisiblePositions()
+        {
+            var cycle = MakeController(out var x, out _, out _);
+            var session = Make<GameSession>("Session");
+            session.enabled = false;
+            session.Player = cycle.Player;
+            session.Core = cycle.Core;
+            session.Motor = cycle.Player.gameObject.AddComponent<PlayerMotor>();
+            session.Motor.Session = session;
+            session.Spawner = Make<EnemySpawner>("Spawner");
+            session.Spawner.enabled = false;
+            session.Spawner.Session = session;
+            session.Spawner.Core = cycle.Core;
+            session.InteractionCycle = cycle;
+            cycle.Configure(session, cycle.Player, cycle.Core, cycle.X, cycle.Y, cycle.Z);
+            session.Initialize();
+            session.StartMatch();
+            var initial = x.transform.position;
+
+            session.TogglePause();
+            session.Advance(5f);
+            Assert.That(x.gameObject.activeSelf, Is.True);
+            session.TogglePause();
+            session.Advance(5f);
+            Assert.That(x.gameObject.activeSelf, Is.False);
+
+            session.ResetForDemo();
+            Assert.That(x.gameObject.activeSelf, Is.True);
+            Assert.That(x.transform.position, Is.EqualTo(initial));
+        }
+
+        [Test]
+        public void IsValidPosition_NonZeroMaskBlocksArenaButIgnoresUnrelatedLayers()
+        {
+            var controller = MakeController(out var x, out _, out _);
+            var candidate = new Vector2(-4f, -2f);
+            var unrelated = new GameObject("Unrelated collider");
+            objects.Add(unrelated);
+            unrelated.transform.position = candidate;
+            unrelated.AddComponent<CircleCollider2D>().radius = .2f;
+            controller.BlockedLayers = LayerMask.GetMask("Arena");
+            Physics2D.SyncTransforms();
+            Assert.That(controller.IsValidPosition(candidate, x), Is.True);
+
+            var wall = new GameObject("Arena wall");
+            objects.Add(wall);
+            wall.layer = LayerMask.NameToLayer("Arena");
+            wall.transform.position = candidate;
+            wall.AddComponent<CircleCollider2D>().radius = .2f;
+            Physics2D.SyncTransforms();
+            Assert.That(controller.IsValidPosition(candidate, x), Is.False);
+        }
+
+        [Test]
+        public void DestroyController_UnsubscribesFromInteractions()
+        {
+            var controller = MakeController(out var x, out _, out _);
+            controller.Configure(null, controller.Player, controller.Core, controller.X, controller.Y, controller.Z);
+            controller.enabled = true;
+            var eventField = typeof(InteractionObject).GetField("Activated", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(eventField, Is.Not.Null);
+            Assert.That(((System.Action<InteractionObject>)eventField.GetValue(x)).GetInvocationList().Length, Is.EqualTo(1));
+
+            var onDestroy = typeof(InteractionCycleController).GetMethod("OnDestroy", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(onDestroy, Is.Not.Null);
+            onDestroy.Invoke(controller, null);
+            UnityEngine.Object.DestroyImmediate(controller.gameObject);
+
+            var remaining = eventField.GetValue(x) as System.Action<InteractionObject>;
+            Assert.That(remaining, Is.Null);
         }
     }
 }

@@ -323,11 +323,17 @@ public static class DemoSceneBuilder
 
     private static void EnsureInteractionCycle(Scene scene, Transform parent, GameSession session, PlayerStats player, CoreHealth core)
     {
+        var allCycles = scene.GetRootGameObjects()
+            .SelectMany(root => root.GetComponentsInChildren<InteractionCycleController>(true))
+            .ToArray();
         var cycle = session.InteractionCycle;
+        if (cycle && (cycle.gameObject.scene != scene || (cycle.Session && cycle.Session != session))) cycle = null;
         if (!cycle) cycle = session.GetComponent<InteractionCycleController>();
-        if (!cycle)
-            cycle = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<InteractionCycleController>(true)).FirstOrDefault();
+        if (!cycle) cycle = allCycles.FirstOrDefault(candidate => candidate.Session == session);
         if (!cycle) cycle = GetOrAdd<InteractionCycleController>(session.gameObject);
+
+        foreach (var duplicate in allCycles)
+            if (duplicate && duplicate != cycle) UnityEngine.Object.DestroyImmediate(duplicate);
 
         var x = parent.Find("X") ? parent.Find("X").GetComponent<InteractionObject>() : null;
         var y = parent.Find("Y") ? parent.Find("Y").GetComponent<InteractionObject>() : null;

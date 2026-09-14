@@ -43,6 +43,9 @@ namespace CoreGuard
             Bind();
         }
 
+        private void OnEnable() => Bind();
+        private void OnDisable() => Unbind();
+
         public void Configure(GameSession session, PlayerStats player, CoreHealth core,
             InteractionObject x, InteractionObject y, InteractionObject z)
         {
@@ -88,7 +91,40 @@ namespace CoreGuard
             if (delta <= 0f) return;
             Bind();
             EnsureSlots();
-            for (var i = 0; i < slots.Length; i++) AdvanceSlot(i, delta);
+            if (VisibleDuration <= 0f && HiddenDuration <= 0f)
+            {
+                for (var i = 0; i < slots.Length; i++)
+                {
+                    if (!slots[i].Interaction) continue;
+                    slots[i].Visible = false;
+                    slots[i].Remaining = 0f;
+                    slots[i].Interaction.HideForCycle();
+                }
+                return;
+            }
+
+            var remainingDelta = delta;
+            while (remainingDelta > 0f)
+            {
+                var step = remainingDelta;
+                for (var i = 0; i < slots.Length; i++)
+                    if (slots[i].Interaction && slots[i].Remaining > 0f)
+                        step = Mathf.Min(step, slots[i].Remaining);
+
+                for (var i = 0; i < slots.Length; i++)
+                    if (slots[i].Interaction)
+                        slots[i].Remaining = Mathf.Max(0f, slots[i].Remaining - step);
+                remainingDelta = Mathf.Max(0f, remainingDelta - step);
+
+                var transitioned = false;
+                for (var i = 0; i < slots.Length; i++)
+                {
+                    if (!slots[i].Interaction || slots[i].Remaining > .00001f) continue;
+                    TransitionSlot(i);
+                    transitioned = true;
+                }
+                if (step <= 0f && !transitioned) break;
+            }
         }
 
         // Candidate generation is deliberately independent from lifecycle timing so
@@ -119,6 +155,7 @@ namespace CoreGuard
 
         public bool IsValidPosition(Vector2 candidate, InteractionObject ignored)
         {
+            EnsureSlots();
             var min = PositionMin + Vector2.one * PlacementRadius;
             var max = PositionMax - Vector2.one * PlacementRadius;
             if (candidate.x < min.x || candidate.x > max.x || candidate.y < min.y || candidate.y > max.y)
@@ -149,42 +186,28 @@ namespace CoreGuard
             return true;
         }
 
-        private void AdvanceSlot(int index, float delta)
+        private void TransitionSlot(int index)
         {
             var slot = slots[index];
             if (!slot.Interaction) return;
-            var remainingDelta = delta;
-            var transitionsRemaining = 8;
-            while (remainingDelta > 0f && transitionsRemaining-- > 0)
+            if (slot.Visible)
             {
-                var duration = Mathf.Max(0f, slot.Remaining);
-                if (duration - remainingDelta > .00001f)
+                slot.Visible = false;
+                slot.Remaining = Mathf.Max(0f, HiddenDuration);
+                slot.Interaction.HideForCycle();
+            }
+            else
+            {
+                Vector2 position;
+                if (TryFindValidPosition(index, out position))
                 {
-                    slot.Remaining = duration - remainingDelta;
-                    remainingDelta = 0f;
-                    break;
-                }
-
-                remainingDelta = Mathf.Max(0f, remainingDelta - duration);
-                if (slot.Visible)
-                {
-                    slot.Visible = false;
-                    slot.Remaining = HiddenDuration;
-                    slot.Interaction.HideForCycle();
+                    slot.Interaction.ShowForCycle(position);
+                    slot.Visible = true;
+                    slot.Remaining = Mathf.Max(0f, VisibleDuration);
                 }
                 else
                 {
-                    Vector2 position;
-                    if (TryFindValidPosition(index, out position))
-                    {
-                        slot.Interaction.ShowForCycle(position);
-                        slot.Visible = true;
-                        slot.Remaining = VisibleDuration;
-                    }
-                    else
-                    {
-                        slot.Remaining = HiddenDuration;
-                    }
+                    slot.Remaining = Mathf.Max(0f, HiddenDuration);
                 }
             }
             slots[index] = slot;
@@ -207,13 +230,21 @@ namespace CoreGuard
         {
             var current = new[] { X, Y, Z };
             if (bound != null && Same(bound, current)) return;
-            if (bound != null)
-                foreach (var interaction in bound)
-                    if (interaction) interaction.Activated -= OnInteractionActivated;
+            Unbind();
             bound = current;
             foreach (var interaction in bound)
                 if (interaction) interaction.Activated += OnInteractionActivated;
             EnsureSlots();
+        }
+
+        private void OnDestroy() => Unbind();
+
+        private void Unbind()
+        {
+            if (bound == null) return;
+            foreach (var interaction in bound)
+                if (interaction) interaction.Activated -= OnInteractionActivated;
+            bound = null;
         }
 
         private void EnsureSlots()
