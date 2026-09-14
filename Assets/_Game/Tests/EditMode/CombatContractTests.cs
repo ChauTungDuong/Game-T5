@@ -140,6 +140,9 @@ namespace CoreGuard.Tests.Editor
         public void Enemy_FiresProjectileThatUsesArmorFirstDamage()
         {
             var session = MakeSession();
+            session.Player.transform.position = Vector2.zero;
+            session.Player.GetComponent<Rigidbody2D>().position = Vector2.zero;
+            Physics2D.SyncTransforms();
             var playerCollider = session.Player.GetComponent<CircleCollider2D>();
             var enemyProjectilePrefab = Make<Projectile>("Enemy projectile prefab");
             enemyProjectilePrefab.gameObject.SetActive(false);
@@ -152,6 +155,94 @@ namespace CoreGuard.Tests.Editor
 
             Assert.That(session.Player.HP, Is.EqualTo(100));
             Assert.That(session.Player.Armor, Is.EqualTo(40));
+        }
+
+        // Break caught: a successful enemy shot has no distinct firing feedback.
+        [Test]
+        public void Enemy_FiringFlashesOrangeInsteadOfUsingTheHitFlash()
+        {
+            var session = MakeSession();
+            session.Player.transform.position = Vector2.zero;
+            session.Player.GetComponent<Rigidbody2D>().position = Vector2.zero;
+            var enemyProjectilePrefab = Make<Projectile>("Enemy projectile prefab");
+            enemyProjectilePrefab.gameObject.SetActive(false);
+            session.EnemyProjectilePrefab = enemyProjectilePrefab;
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(5, 0));
+            var renderer = enemy.gameObject.AddComponent<SpriteRenderer>();
+
+            enemy.Step(.61f);
+
+            Assert.That(renderer.color, Is.EqualTo(new Color(1f, .55f, .15f)));
+        }
+
+        // Break caught: changing the player's position after the shot makes an enemy projectile home.
+        [Test]
+        public void EnemyShot_KeepsItsCapturedDirectionAfterPlayerMoves()
+        {
+            var session = MakeSession();
+            session.Player.transform.position = Vector2.zero;
+            session.Player.GetComponent<Rigidbody2D>().position = Vector2.zero;
+            var enemyProjectilePrefab = Make<Projectile>("Enemy projectile prefab");
+            enemyProjectilePrefab.gameObject.SetActive(false);
+            session.EnemyProjectilePrefab = enemyProjectilePrefab;
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(-5, 0));
+
+            enemy.Step(.61f);
+            var shot = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
+            session.Player.transform.position = new Vector2(0, 4);
+            session.Player.GetComponent<Rigidbody2D>().position = new Vector2(0, 4);
+
+            Assert.That(shot.transform.up.x, Is.EqualTo(1f).Within(.0001f));
+            Assert.That(shot.transform.up.y, Is.EqualTo(0f).Within(.0001f));
+        }
+
+        [Test]
+        public void EnemyProjectile_IgnoresEnemiesWithoutRetiring()
+        {
+            var session = MakeSession();
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(1, 0));
+            var shot = Make<Projectile>("Enemy shot");
+            shot.InitializeEnemyShot(session, Vector2.right, 10, 7, 4);
+
+            Assert.That(shot.ResolveAgainst(enemy.GetComponent<CircleCollider2D>()), Is.False);
+            Assert.That(shot.IsLive, Is.True);
+        }
+
+        // Break caught: the audio service has no observable firing-SFX contract.
+        [Test]
+        public void AudioService_ExposesSfxPlayedContract()
+        {
+            Assert.That(typeof(AudioService).GetEvent("SfxPlayed"), Is.Not.Null);
+        }
+
+        // Break caught: enemy shots instantiate successfully but do not request the project SFX service.
+        [Test]
+        public void Enemy_FiringRequestsTheConfiguredAudioServiceSfx()
+        {
+            var session = MakeSession();
+            session.Player.transform.position = Vector2.zero;
+            session.Player.GetComponent<Rigidbody2D>().position = Vector2.zero;
+            var audio = Make<AudioService>("Audio");
+            audio.Session = session;
+            session.Audio = audio;
+            var firingClip = AudioClip.Create("Enemy firing", 32, 1, 8000, false);
+            audio.BulletFire = firingClip;
+            var enemyProjectilePrefab = Make<Projectile>("Enemy projectile prefab");
+            enemyProjectilePrefab.gameObject.SetActive(false);
+            session.EnemyProjectilePrefab = enemyProjectilePrefab;
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(5, 0));
+            AudioClip played = null;
+            audio.SfxPlayed += clip => played = clip;
+
+            try
+            {
+                enemy.Step(.61f);
+                Assert.That(played, Is.SameAs(firingClip));
+            }
+            finally
+            {
+                Object.DestroyImmediate(firingClip);
+            }
         }
     }
 }

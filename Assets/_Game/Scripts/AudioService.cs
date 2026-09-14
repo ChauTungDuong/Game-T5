@@ -24,6 +24,7 @@ namespace CoreGuard
         public int AlertBeepsPlayed { get; private set; }
         public int PendingAlertJobs => alertJobs.Count;
         public event Action Changed;
+        public event Action<AudioClip> SfxPlayed;
 
         private readonly Queue<AlertJob> alertJobs = new Queue<AlertJob>();
         private float timeUntilAlertEvent;
@@ -74,6 +75,7 @@ namespace CoreGuard
             if (!SfxEnabled || !clip) return;
             EnsureSources();
             SfxSource.PlayOneShot(clip);
+            SfxPlayed?.Invoke(clip);
         }
 
         public void RequestAlert()

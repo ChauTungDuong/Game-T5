@@ -16,13 +16,16 @@ namespace CoreGuard
         public const float MaxHP = 60f;
         public bool IsAlive => HP > 0 && !retired;
         public bool IsStunned => stunRemaining > 0;
+        private static readonly Color FireFlashColor = new Color(1f, .55f, .15f);
         private bool retired;
         private Rigidbody2D body;
         private SpriteRenderer bodyRenderer;
         private Color bodyColor;
+        private bool bodyColorCaptured;
         private LineRenderer healthBack;
         private LineRenderer healthFill;
         private float hitFlashRemaining;
+        private float fireFlashRemaining;
         private float shootRemaining;
         private float stunRemaining;
         private void Awake()
@@ -32,8 +35,7 @@ namespace CoreGuard
             body.bodyType = RigidbodyType2D.Kinematic;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             GetComponent<CircleCollider2D>().isTrigger = true;
-            bodyRenderer = GetComponentInChildren<SpriteRenderer>();
-            if (bodyRenderer) bodyColor = bodyRenderer.color;
+            CacheBodyRenderer();
             CreateHealthBar();
         }
         public void Initialize(GameSession session, CoreHealth core)
@@ -41,7 +43,7 @@ namespace CoreGuard
             Session = session; Core = core; Player = session ? session.Player : null;
             EnemyProjectilePrefab = session ? session.EnemyProjectilePrefab : null;
             HP = MaxHP; retired = false; shootRemaining = .6f; stunRemaining = 0;
-            hitFlashRemaining = 0;
+            hitFlashRemaining = 0; fireFlashRemaining = 0;
             RefreshHealthBar();
         }
         public void Step(float delta)
@@ -74,7 +76,12 @@ namespace CoreGuard
             if (hitFlashRemaining > 0)
             {
                 hitFlashRemaining -= Time.deltaTime;
-                if (hitFlashRemaining <= 0 && bodyRenderer) bodyRenderer.color = bodyColor;
+                if (hitFlashRemaining <= 0 && fireFlashRemaining <= 0 && bodyRenderer) bodyRenderer.color = bodyColor;
+            }
+            if (fireFlashRemaining > 0)
+            {
+                fireFlashRemaining -= Time.deltaTime;
+                if (fireFlashRemaining <= 0 && hitFlashRemaining <= 0 && bodyRenderer) bodyRenderer.color = bodyColor;
             }
             RefreshHealthBar();
         }
@@ -97,6 +104,8 @@ namespace CoreGuard
             var projectile = Instantiate(EnemyProjectilePrefab, body.position, Quaternion.identity, Session.transform);
             projectile.InitializeEnemyShot(Session, direction, EnemyShotDamage, EnemyShotSpeed, 4);
             shootRemaining = AttackInterval;
+            FlashWhenFiring();
+            if (Session.Audio) Session.Audio.PlaySfx(Session.Audio.BulletFire);
         }
         public void TouchCore()
         {
@@ -109,6 +118,7 @@ namespace CoreGuard
             if (!IsAlive || amount <= 0 || float.IsNaN(amount)) return;
             HP = Mathf.Max(0, HP - amount);
             hitFlashRemaining = .12f;
+            CacheBodyRenderer();
             if (bodyRenderer) bodyRenderer.color = Color.white;
             RefreshHealthBar();
             if (HP <= 0) Retire();
@@ -118,6 +128,23 @@ namespace CoreGuard
             if (!Application.isPlaying) return;
             healthBack = CreateBar("Enemy health background", new Color(.04f, .06f, .08f, .9f), .1f);
             healthFill = CreateBar("Enemy health", new Color(.2f, .95f, .35f, 1f), .12f);
+        }
+
+        private void FlashWhenFiring()
+        {
+            fireFlashRemaining = .1f;
+            CacheBodyRenderer();
+            if (bodyRenderer) bodyRenderer.color = FireFlashColor;
+        }
+
+        private void CacheBodyRenderer()
+        {
+            if (!bodyRenderer) bodyRenderer = GetComponentInChildren<SpriteRenderer>();
+            if (bodyRenderer && !bodyColorCaptured)
+            {
+                bodyColor = bodyRenderer.color;
+                bodyColorCaptured = true;
+            }
         }
 
         private LineRenderer CreateBar(string name, Color color, float width)
