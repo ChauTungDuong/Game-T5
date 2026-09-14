@@ -225,5 +225,79 @@ namespace CoreGuard.Tests.Editor
             var remaining = eventField.GetValue(x) as System.Action<InteractionObject>;
             Assert.That(remaining, Is.Null);
         }
+
+        [Test]
+        public void Advance_BothDurationsZeroHidesSafelyWithoutLooping()
+        {
+            var controller = MakeController(out var x, out var y, out var z);
+            controller.VisibleDuration = 0f;
+            controller.HiddenDuration = 0f;
+            controller.ResetCycle();
+
+            controller.Advance(60f);
+
+            Assert.That(x.gameObject.activeSelf || y.gameObject.activeSelf || z.gameObject.activeSelf, Is.False);
+        }
+
+        [Test]
+        public void ForeignSessionCannotAdvanceAnotherSessionsCycle()
+        {
+            var controller = MakeController(out var x, out _, out _);
+            var owner = Make<GameSession>("Owner session");
+            var foreign = Make<GameSession>("Foreign session");
+            owner.enabled = false;
+            foreign.enabled = false;
+            controller.Configure(owner, controller.Player, controller.Core, controller.X, controller.Y, controller.Z);
+            controller.ResetCycle();
+            foreign.InteractionCycle = controller;
+            foreign.Player = controller.Player;
+            foreign.Core = controller.Core;
+            foreign.Motor = controller.Player.GetComponent<PlayerMotor>() ?? controller.Player.gameObject.AddComponent<PlayerMotor>();
+            foreign.Motor.Session = foreign;
+            foreign.Spawner = Make<EnemySpawner>("Foreign spawner");
+            foreign.Spawner.enabled = false;
+            foreign.Spawner.Session = foreign;
+            foreign.Spawner.Core = controller.Core;
+            foreign.Initialize();
+            foreign.StartMatch();
+            var position = x.transform.position;
+
+            foreign.RestoreInteractions();
+            foreign.Advance(10f);
+
+            Assert.That(x.gameObject.activeSelf, Is.True);
+            Assert.That(x.transform.position, Is.EqualTo(position));
+        }
+
+        [Test]
+        public void Configure_RebindsActivationFromOldInteractionToReplacement()
+        {
+            var controller = MakeController(out var original, out var y, out var z);
+            controller.Configure(null, controller.Player, controller.Core, original, y, z);
+            var replacement = Make<InteractionObject>("Replacement X");
+            replacement.Kind = InteractionKind.X;
+            replacement.Player = controller.Player;
+
+            controller.Configure(null, controller.Player, controller.Core, replacement, y, z);
+
+            var eventField = typeof(InteractionObject).GetField("Activated", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(eventField.GetValue(original), Is.Null);
+            var replacementHandlers = eventField.GetValue(replacement) as System.Action<InteractionObject>;
+            Assert.That(replacementHandlers, Is.Not.Null);
+            Assert.That(replacementHandlers.GetInvocationList().Length, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ResetCycle_RevivesInactiveSerializedInteractions()
+        {
+            var controller = MakeController(out var x, out var y, out var z);
+            x.gameObject.SetActive(false);
+            y.gameObject.SetActive(false);
+            z.gameObject.SetActive(false);
+
+            controller.ResetCycle();
+
+            Assert.That(x.gameObject.activeSelf && y.gameObject.activeSelf && z.gameObject.activeSelf, Is.True);
+        }
     }
 }
