@@ -38,30 +38,40 @@ namespace CoreGuard
         {
             if (!target || IsConsumed || (Player && target != Player)) return false;
             Player = target;
+            var applied = false;
             switch (Kind)
             {
                 case InteractionKind.X:
                     target.ApplyEnvironmentHit(20, 10);
-                    Consume();
-                    return true;
+                    applied = true;
+                    break;
 
                 case InteractionKind.Y:
                     var effects = target.GetComponent<StatusEffects>();
                     if (effects) effects.ApplySlow(.5f, 3f);
                     if (Session && Session.Defense) Session.Defense.BreakShield();
-                    Consume();
-                    return true;
+                    applied = true;
+                    break;
 
                 case InteractionKind.Z:
                     target.AddCoins(10);
                     var boost = target.GetComponent<StatusEffects>();
                     if (boost) boost.ApplyBoost(1.5f, 4f);
-                    Consume();
-                    return true;
+                    applied = true;
+                    break;
 
                 default:
                     return false;
             }
+
+            if (applied)
+            {
+                InteractionFeedbackCue.Spawn(Kind, transform.position);
+                if (Session && Session.Audio)
+                    Session.Audio.PlaySfx(Session.Audio.GetInteractionClip(Kind));
+                Consume();
+            }
+            return applied;
         }
 
         public void ResetObject()

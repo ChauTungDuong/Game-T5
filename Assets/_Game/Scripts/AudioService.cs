@@ -18,6 +18,9 @@ namespace CoreGuard
         public AudioClip AlertBeep;
         public AudioClip ShieldActivate;
         public AudioClip EmpActivate;
+        public AudioClip InteractionDamage;
+        public AudioClip InteractionEmp;
+        public AudioClip InteractionBoost;
         public AudioClip MusicLoop;
         public bool SfxEnabled { get; private set; } = true;
         public bool MusicEnabled { get; private set; }
@@ -76,6 +79,18 @@ namespace CoreGuard
             EnsureSources();
             SfxSource.PlayOneShot(clip);
             SfxPlayed?.Invoke(clip);
+        }
+
+        public AudioClip GetInteractionClip(InteractionKind kind)
+        {
+            EnsureClips();
+            switch (kind)
+            {
+                case InteractionKind.X: return InteractionDamage;
+                case InteractionKind.Y: return InteractionEmp;
+                case InteractionKind.Z: return InteractionBoost;
+                default: return null;
+            }
         }
 
         public void RequestAlert()
@@ -214,6 +229,9 @@ namespace CoreGuard
             AlertBeep = AlertBeep ? AlertBeep : Tone("Alert beep", 900, .16f);
             ShieldActivate = ShieldActivate ? ShieldActivate : Tone("Shield activate", 520, .18f);
             EmpActivate = EmpActivate ? EmpActivate : Tone("EMP activate", 180, .2f);
+            InteractionDamage = InteractionDamage ? InteractionDamage : Tone("Interaction damage", 120, .24f);
+            InteractionEmp = InteractionEmp ? InteractionEmp : Tone("Interaction EMP", 190, .28f);
+            InteractionBoost = InteractionBoost ? InteractionBoost : Tone("Interaction boost", 760, .24f);
             MusicLoop = MusicLoop ? MusicLoop : Tone("Arena loop", 110, 2f);
         }
 
