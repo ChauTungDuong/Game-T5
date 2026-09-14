@@ -1114,6 +1114,16 @@
                     "interactions": "",
                     "initialStateCheck": false,
                     "priority": 0
+                },
+                {
+                    "name": "DemoMode",
+                    "type": "Button",
+                    "id": "38ebdf6b-8301-4f23-be33-1ea1e31add80",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
                 }
             ],
             "bindings": [
@@ -1323,6 +1333,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Retry",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "49d98f71-ad02-40d9-af59-d74b17cddb8b",
+                    "path": "<Keyboard>/f1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DemoMode",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

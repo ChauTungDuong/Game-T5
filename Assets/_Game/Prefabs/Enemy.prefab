@@ -97,7 +97,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.35
+  m_Radius: 0.45
 --- !u!114 &1002246112874206181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112,6 +112,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: CoreGuard.Runtime::CoreGuard.EnemyController
   Session: {fileID: 0}
   Core: {fileID: 0}
+  Player: {fileID: 0}
+  EnemyProjectilePrefab: {fileID: 0}
+  AttackRange: 7
+  AttackInterval: 1.5
+  EnemyShotDamage: 10
+  EnemyShotSpeed: 7
 --- !u!1 &1873484756508061647
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,7 +145,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.7, y: 0.7, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1141541583010357593}
@@ -193,7 +199,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 3
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2933502072877646306, guid: e6e81f5b8e84ee246b3b595a44ffee7a, type: 2}
+  m_Sprite: {fileID: 21300000, guid: bac3091e729cffe188167c0eb0bcba49, type: 3}
   m_Color: {r: 1, g: 0.36, b: 0.3, a: 1}
   m_FlipX: 0
   m_FlipY: 0

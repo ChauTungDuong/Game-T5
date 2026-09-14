@@ -1,18 +1,20 @@
 # Core Guard Acceptance
 
-T1 register, verified 2026-09-13 with Unity 6000.3.23f1. Source checkpoint is the T1 commit based on `b565fb1`. Later-task combat/audio requirements remain open.
+> Current scope is Unity Editor demo only. Standalone Windows build checks below are historical T1 evidence and are not required for the current handoff.
+
+T1 register, verified 2026-09-13 with Unity 6000.3.23f1. Source checkpoint is the T1 commit based on `b565fb1`; T2–T6 source implementations have since started but have no fresh Unity evidence yet.
 
 | Requirement ID | Scenario | Expected | Actual | Status | Evidence |
 |---|---|---|---|---|---|
-| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | Weapons/audio outside T1 | NOT RUN | — |
-| R02 | B enters restricted zone | One four-beep warning sequence | Zone/audio outside T1 | NOT RUN | — |
-| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | Outside T1 | NOT RUN | — |
-| R04 | Toggle music | MusicOn/MusicOff control only music | Outside T1 | NOT RUN | — |
+| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | T2/T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
+| R02 | B enters restricted zone | One four-beep warning sequence | T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
+| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | T5 source implementation started; Unity/UI verification pending | NOT RUN | — |
+| R04 | Toggle music | MusicOn/MusicOff control only music | T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
 | R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics travel, clamp, aim retention and action/state gating pass; rendered player/turret observed; controlled physical key pass still open | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
-| R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | Outside T1 | NOT RUN | — |
-| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | Actions reserved only; behavior outside T1 | NOT RUN | — |
-| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | Outside T1 | NOT RUN | — |
-| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | HP/Armor/Coins/core/time/state and panel buttons pass; weapons/cooldowns outside T1 | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
+| R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | T2 source implementation started; Unity scene/test verification pending | NOT RUN | — |
+| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | T3 source implementation started; Unity verification pending | NOT RUN | — |
+| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | T4 source implementation started; Unity verification pending | NOT RUN | — |
+| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | T1 values/core/time/state pass; T6 weapon/cooldown HUD source added, Unity verification pending | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
 
 | T1 check | Result | Evidence |
 |---|---|---|

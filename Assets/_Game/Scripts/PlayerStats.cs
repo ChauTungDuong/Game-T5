@@ -21,6 +21,13 @@ namespace CoreGuard
             HP = Mathf.Max(0, HP - (amount - absorbed));
             Changed?.Invoke();
         }
+        public void ApplyEnvironmentHit(float hpLoss, float armorLoss)
+        {
+            if ((hpLoss <= 0 || float.IsNaN(hpLoss)) && (armorLoss <= 0 || float.IsNaN(armorLoss))) return;
+            HP = Mathf.Max(0, HP - Mathf.Max(0, hpLoss));
+            Armor = Mathf.Max(0, Armor - Mathf.Max(0, armorLoss));
+            Changed?.Invoke();
+        }
         public void AddCoins(int amount)
         {
             if (amount <= 0) return;

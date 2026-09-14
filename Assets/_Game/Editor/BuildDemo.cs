@@ -2,8 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,9 +11,8 @@ using UnityEngine.UI;
 
 public static class BuildDemo
 {
+    private const string ConfigureMenuPath = "Core Guard/Configure Project";
     private const string MainScenePath = "Assets/_Game/Scenes/Main.unity";
-    private const string WindowsBuildDirectory = "Builds/Windows/CoreGuard";
-    private const string WindowsExecutablePath = WindowsBuildDirectory + "/CoreGuard.exe";
 
     private static readonly string[] GameDirectories =
     {
@@ -29,25 +26,24 @@ public static class BuildDemo
         "Assets/_Game/Tests",
     };
 
-    [MenuItem("Core Guard/Configure Project")]
+    [MenuItem(ConfigureMenuPath)]
     public static void ConfigureProject()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogWarning("Core Guard: Stop Play Mode before running Configure Project.");
+            return;
+        }
+
         foreach (var directory in GameDirectories)
         {
             Directory.CreateDirectory(directory);
         }
 
         EditorSettings.serializationMode = SerializationMode.ForceText;
-        EditorSettings.externalVersionControl = "Visible Meta Files";
+        VersionControlSettings.mode = "Visible Meta Files";
         PlayerSettings.companyName = "Core Guard";
         PlayerSettings.productName = "Core Guard";
-
-        if (!EditorUserBuildSettings.SwitchActiveBuildTarget(
-                BuildTargetGroup.Standalone,
-                BuildTarget.StandaloneWindows64))
-        {
-            throw new InvalidOperationException("Could not switch the active build target to Windows 64-bit.");
-        }
 
         var scene = OpenOrCreateMainScene();
         CreateCameraIfMissing(scene);
@@ -68,7 +64,13 @@ public static class BuildDemo
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"Core Guard configured: {MainScenePath} is enabled for Windows builds.");
+        Debug.Log($"Core Guard configured for Unity Editor demo: {MainScenePath}");
+    }
+
+    [MenuItem(ConfigureMenuPath, true)]
+    private static bool ValidateConfigureProject()
+    {
+        return !EditorApplication.isPlayingOrWillChangePlaymode;
     }
 
     private static Scene OpenOrCreateMainScene()
@@ -86,8 +88,10 @@ public static class BuildDemo
 
     private static void CreateCameraIfMissing(Scene scene)
     {
-        if (FindFirstComponentInScene<Camera>(scene) != null)
+        var existingCamera = FindFirstComponentInScene<Camera>(scene);
+        if (existingCamera != null)
         {
+            ConfigureCamera(existingCamera);
             return;
         }
 
@@ -95,11 +99,15 @@ public static class BuildDemo
         SceneManager.MoveGameObjectToScene(cameraObject, scene);
         cameraObject.tag = "MainCamera";
         cameraObject.transform.position = new Vector3(0f, 0f, -10f);
-        var camera = cameraObject.GetComponent<Camera>();
+        ConfigureCamera(cameraObject.GetComponent<Camera>());
+    }
+
+    private static void ConfigureCamera(Camera camera)
+    {
         camera.orthographic = true;
         camera.orthographicSize = 5f;
         camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.055f, 0.075f, 0.09f, 1f);
+        camera.backgroundColor = new Color(.018f, .035f, .065f, 1f);
     }
 
     private static void CreateCanvasIfMissing(Scene scene)
@@ -146,43 +154,4 @@ public static class BuildDemo
             .FirstOrDefault();
     }
 
-    [MenuItem("Core Guard/Build Windows")]
-    public static void BuildWindows()
-    {
-        if (EditorUtility.scriptCompilationFailed)
-        {
-            throw new BuildFailedException("Cannot build Core Guard while script compilation errors exist.");
-        }
-
-        var mainScene = EditorBuildSettings.scenes.FirstOrDefault(scene => scene.path == MainScenePath);
-        if (mainScene == null || !mainScene.enabled || !File.Exists(MainScenePath))
-        {
-            throw new BuildFailedException($"Required scene is missing or disabled: {MainScenePath}");
-        }
-
-        var enabledScenes = EditorBuildSettings.scenes
-            .Where(scene => scene.enabled && File.Exists(scene.path))
-            .Select(scene => scene.path)
-            .ToArray();
-
-        Directory.CreateDirectory(WindowsBuildDirectory);
-        var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
-        {
-            scenes = enabledScenes,
-            locationPathName = WindowsExecutablePath,
-            target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.None,
-        });
-
-        if (report.summary.result != BuildResult.Succeeded)
-        {
-            throw new BuildFailedException(
-                $"Windows build failed: {report.summary.result} " +
-                $"({report.summary.totalErrors} errors, {report.summary.totalWarnings} warnings).");
-        }
-
-        Debug.Log(
-            $"Core Guard Windows build succeeded: {WindowsExecutablePath} " +
-            $"({report.summary.totalSize} bytes).");
-    }
 }

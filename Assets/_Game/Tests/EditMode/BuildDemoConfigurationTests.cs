@@ -144,9 +144,20 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.Player, Is.Not.Null);
             Assert.That(session.Core, Is.Not.Null);
             Assert.That(session.Motor, Is.Not.Null);
+            Assert.That(session.Weapon, Is.Not.Null);
+            Assert.That(session.Defense, Is.Not.Null);
+            Assert.That(session.Demo, Is.Not.Null);
+            Assert.That(session.Audio, Is.Not.Null);
+            Assert.That(session.Audio.GetComponents<AudioSource>().Length, Is.EqualTo(3));
+            Assert.That(session.Defense.Player, Is.Not.Null);
+            Assert.That(session.Weapon.Muzzle, Is.Not.Null);
+            Assert.That(session.Weapon.ProjectilePrefab, Is.Not.Null);
+            Assert.That(session.Weapon.MinePrefab, Is.Not.Null);
+            Assert.That(session.EnemyProjectilePrefab, Is.Not.Null);
             Assert.That(session.Spawner.Prefab, Is.Not.Null);
             Assert.That(session.Spawner.Gates.Length, Is.EqualTo(4));
             Assert.That(session.Motor.Turret, Is.Not.Null);
+            Assert.That(session.Demo.Panel, Is.Not.Null);
             Assert.That(session.gameObject.scene.path, Is.EqualTo(MainScenePath));
             Assert.That(session.Player.gameObject.scene.path, Is.EqualTo(MainScenePath));
             Assert.That(session.Core.gameObject.scene.path, Is.EqualTo(MainScenePath));
@@ -186,9 +197,8 @@ namespace CoreGuard.Tests.Editor
             hud.PausePanel.SetActive(true);
             alternatePanel.SetActive(true);
             ((RectTransform)hud.transform).anchoredPosition = new Vector2(12, 13);
-            var initialObjectCount = main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length);
-
             InvokeConfigureProject();
+            var configuredObjectCount = main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length);
             InvokeConfigureProject();
 
             Assert.That(hud.StatsText, Is.SameAs(alternateStats), "An authored stats text reference must not be replaced.");
@@ -205,7 +215,7 @@ namespace CoreGuard.Tests.Editor
             Assert.That(hud.PausePanel.activeSelf, Is.True);
             Assert.That(alternatePanel.activeSelf, Is.True);
             Assert.That(((RectTransform)hud.transform).anchoredPosition, Is.EqualTo(new Vector2(12, 13)));
-            Assert.That(main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length), Is.EqualTo(initialObjectCount),
+            Assert.That(main.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Transform>(true).Length), Is.EqualTo(configuredObjectCount),
                 "Existing valid HUD references must not cause replacement defaults to be created.");
         }
 

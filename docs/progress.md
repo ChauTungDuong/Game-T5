@@ -1,14 +1,25 @@
 # Progress
 
-- Project / branch / Unity: Core Guard / `demo/core-guard` / `6000.3.23f1`
+- Project / branch / Unity: Core Guard / `main` / `6000.3.23f1`
+- Runtime scope: Unity Editor demo only; standalone Windows build/export is intentionally out of scope
+- Editor menu scope: `Core Guard → Configure Project` is the only project action; the standalone `Build Windows` menu has been removed
 - Checkpoint: T1 implementation, based on accepted T0 commit `b565fb1`; commit message `feat: add playable arena and session flow`
 - Implemented: playable arena, normalized Rigidbody2D movement and mouse turret aim, player/core stats, rotating capped spawns, enemy core contact, session flow, shared Input System actions and live HUD
 - Automated verification: complete Core Guard EditMode suite **10/10 passed**, PlayMode suite **6/6 passed**; focused scene-builder suite **3/3 passed**; valid RED/GREEN evidence is recorded in the task report
-- Build: configuration and Windows build exited 0; build succeeded, 102,436,248 bytes, at `Builds/Windows/CoreGuard/CoreGuard.exe`
+- Historical T1 Windows build: previously succeeded, but it is not part of the current Editor-only demo scope
 - Player smoke: responsive visible windows and readable arena/HUD at **1280×720** and **1920×1080**; live timer/core damage and Lost result observed; player sessions closed through `CloseMainWindow` with `HasExited=True`; player logs have no exception/error/crash matches
 - Remaining manual checks: controlled physical keyboard/mouse verification of Start, all movement bindings/bounds, mouse aim, Esc pause/resume, and R/button Retry is **NOT RUN**. Active desktop interaction prevented reliable Win32 input injection. Exact steps are in `docs/acceptance.md`; corresponding real Input System, physics, and UI component tests pass
-- Scope remaining: weapons, Shield/EMP behavior, X/Y/Z interactions, audio and demo-mode controls are not implemented; combat acceptance is not marked complete
+- Scope remaining: T2 combat, T3 defense, T4 X/Y/Z and T5 audio have source implementations; T6 now has repeatable Demo Mode and HUD weapon/cooldown fields. Unity verification, T7 acceptance and T8 release work remain open
+- T2 started: Bullet/Rocket/Mine, hit-once projectile resolution, rocket/mine AoE deduplication, mine arming/limit, per-weapon cooldowns and enemy projectile firing are implemented in source; run `Core Guard → Configure Project` and the Unity test suites before marking T2 complete
+- T3/T4/T5 started: Shield/EMP defense, slow/boost status effects, X/Y/Z interaction objects, imported Kenney weapon/defense/alert audio with generated fallbacks, independent SFX/BGM toggles, FIFO four-beep alert scheduling and forbidden-zone occupancy are implemented in source; no task is marked complete without Unity evidence
+- Asset integration started: selected Kenney tank, particle, icon, sci-fi UI/font and sci-fi sound files are copied into `Assets/_Game/Art/Kenney/` and `Assets/_Game/Audio/Kenney/`; `DemoSceneBuilder` assigns them and adds short combat/defense VFX
+- Combat follow-up: player projectiles now ignore their own spawn collider, which previously caused them to retire immediately after the muzzle effect; player/enemy/core presentation and colliders are enlarged, and enemies show a runtime health bar/hit flash
+- T6 started: HUD selected weapon/cooldown display, F1 Demo Mode, scenario reset, real zone/shooter/cluster spawns and X/Y/Z restore controls are implemented in source; repeatable in-Unity verification is pending
+- Static follow-up review: `git diff --check` passes, new script/test GUIDs are unique, Shield break now clears its active timer immediately, and the four audio button labels describe the action they perform; Unity import/compile remains NOT RUN
+- T2 verification status: NOT RUN in this environment; the current checkout has no Unity Editor executable or generated `Logs/`/`Builds/` artifacts, and the existing T1 evidence predates the new combat files
+- Verification status for T2–T5: NOT RUN in this environment; imported assets and scene builder changes need a Unity import/compile pass before they can be called playable
+- Evidence note: the recorded T1 EditMode count (10/10) predates the current combat/defense/interaction/demo tests and the two additional builder tests; the source now contains 24 EditMode tests and 9 PlayMode tests, so the full suites must be rerun and the counts refreshed
 - Environment notes: Unity licensing requires approved execution outside the restricted sandbox. Windows visual inspection required elevated desktop access and DPI-aware coordinates. Incidental UniversalRP/ShaderGraph schema-only changes were excluded
 - Evidence: `Logs/t1-editmode-full.xml`, `Logs/t1-playmode-full.xml`, `t1-configure.log`, `t1-build.log`, `Logs/t1-player-1280.log`, `Logs/t1-player-1920.log`, `Logs/t1-ready1280.png`, `Logs/t1-playing1280.png`, `Logs/t1-ready1920.png`; full commands/self-review in `.superpowers/sdd/01-Game-2D-Implementation-Plan/task-1-report.md`
-- Next action: complete the physical input checklist, then T1 review before beginning T2 combat
+- Next action: run `Core Guard → Configure Project`, import/compile the updated scene, then run all EditMode/PlayMode suites on Unity 6000.3.23f1 and fix integration issues before T7 acceptance
 - Supplied plans preserved: SHA-256 `2466D53517F0B186B9110215B68A559CF2B77A1B88CB83F6B7775501FC4AEC63` for `01-Game-2D-Implementation-Plan.md`; `7AF38BE1C0018D3D755F5F55A0990A10D08E6D459BDB2452E7A804DD89D83A80` for `02-Tools-Assets-Agent-Guide.md`
