@@ -82,8 +82,8 @@ public static class DemoSceneBuilder
         Visual(coreObject.transform, "Core body", coreBodySprite, Vector2.zero, new Vector2(1.45f, 1.45f), Cyan, 1);
         ApplySprite(coreObject.transform, "Core body", coreBodySprite);
         Visual(coreObject.transform, "Core center", sprite, Vector2.zero, new Vector2(.55f, .55f), Ink, 2);
-        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.cyan);
-        core.HealthBar = coreHealthBar;
+        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, core.HealthBar, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.cyan);
+        if (!core.HealthBar) core.HealthBar = coreHealthBar;
         core.RefreshHealthBar();
 
         var playerObject = Root(scene, "Player");
@@ -100,8 +100,8 @@ public static class DemoSceneBuilder
         var playerBarrelSprite = ImportedSprite(PlayerBarrelPath, sprite);
         Visual(playerObject.transform, "Player body", playerBodySprite, Vector2.zero, new Vector2(1.6f, 1.6f), new Color(.3f, .65f, 1), 3);
         ApplySprite(playerObject.transform, "Player body", playerBodySprite);
-        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.green);
-        stats.HealthBar = playerHealthBar;
+        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, stats.HealthBar, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.green);
+        if (!stats.HealthBar) stats.HealthBar = playerHealthBar;
         stats.RefreshHealthBar();
         var turret = Child(playerObject.transform, "Turret");
         var barrel = Visual(turret.transform, "Barrel", playerBarrelSprite, new Vector2(.68f, 0), new Vector2(1.3f, 1.9f), Color.white, 4);
@@ -375,11 +375,15 @@ public static class DemoSceneBuilder
             ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * zone.Radius, Mathf.Sin(angle) * zone.Radius, 0));
         }
     }
-    private static WorldHealthBar EnsureWorldHealthBar(Transform parent, string name, Vector3 position, float width, float height, Color fullColor)
+    private static WorldHealthBar EnsureWorldHealthBar(Transform parent, WorldHealthBar authoredBar, string name, Vector3 position, float width, float height, Color fullColor)
     {
-        var barObject = Child(parent, name);
-        barObject.transform.localPosition = position;
-        var bar = GetOrAdd<WorldHealthBar>(barObject);
+        var bar = authoredBar;
+        if (!bar)
+        {
+            var barObject = Child(parent, name);
+            bar = GetOrAdd<WorldHealthBar>(barObject);
+        }
+        bar.transform.localPosition = position;
         bar.Width = width;
         bar.BarHeight = height;
         bar.FullColor = fullColor;

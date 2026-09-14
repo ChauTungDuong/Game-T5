@@ -188,6 +188,46 @@ namespace CoreGuard.Tests.Editor
             Assert.That(coreBar.FullColor, Is.EqualTo(Color.cyan));
         }
 
+        // Break caught: a domain/scene reload loses visual references and duplicates the generated bar children.
+        [Test]
+        public void ConfigureProject_ReopenedSceneReusesEachHealthBarsExistingVisualChildren()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            InvokeConfigureProject();
+            Assert.That(EditorSceneManager.SaveScene(main), Is.True);
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            InvokeConfigureProject();
+
+            foreach (var bar in main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.WorldHealthBar>(true)))
+            {
+                Assert.That(bar.GetComponentsInChildren<LineRenderer>(true).Length, Is.EqualTo(2));
+                Assert.That(bar.GetComponentsInChildren<TextMesh>(true).Length, Is.EqualTo(1));
+            }
+        }
+
+        // Break caught: configuration replaces valid authored health-bar references instead of retaining them.
+        [Test]
+        public void ConfigureProject_PreservesValidAuthoredPlayerAndCoreHealthBarReferences()
+        {
+            var main = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
+            var player = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.PlayerStats>(true)).Single();
+            var core = main.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<CoreGuard.CoreHealth>(true)).Single();
+            var playerBar = new GameObject("Authored player health bar").AddComponent<CoreGuard.WorldHealthBar>();
+            var coreBar = new GameObject("Authored Core health bar").AddComponent<CoreGuard.WorldHealthBar>();
+            playerBar.transform.SetParent(player.transform, false);
+            coreBar.transform.SetParent(core.transform, false);
+            player.HealthBar = playerBar;
+            core.HealthBar = coreBar;
+
+            InvokeConfigureProject();
+            InvokeConfigureProject();
+
+            Assert.That(player.HealthBar, Is.SameAs(playerBar));
+            Assert.That(core.HealthBar, Is.SameAs(coreBar));
+        }
+
         private static int CountComponentsInScene<T>(GameObject[] roots) where T : Component
         {
             return roots.Sum(root => root.GetComponentsInChildren<T>(true).Length);
