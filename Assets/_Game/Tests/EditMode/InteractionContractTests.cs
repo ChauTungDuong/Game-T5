@@ -68,7 +68,7 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void Y_SlowsPlayerAndBreaksShieldAndCanTriggerAgainAfterReentry()
+        public void Y_SlowsPlayerAndBreaksShieldAndConsumesAfterActivation()
         {
             var session = MakeSession(out var defense, out var effects);
             var interaction = MakeInteraction(session, InteractionKind.Y);
@@ -77,9 +77,10 @@ namespace CoreGuard.Tests.Editor
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(2).Within(.001));
             Assert.That(defense.ShieldActive, Is.False);
+            Assert.That(interaction.IsConsumed, Is.True);
             effects.ApplyBoost(1.5f, 4f);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(3).Within(.001));
-            Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(interaction.ApplyTo(session.Player), Is.False);
             Assert.That(effects.SlowRemaining, Is.EqualTo(3).Within(.001));
             effects.Advance(3f);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(6).Within(.001));

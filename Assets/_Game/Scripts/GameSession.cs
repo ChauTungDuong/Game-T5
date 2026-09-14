@@ -16,6 +16,7 @@ namespace CoreGuard
         public Projectile EnemyProjectilePrefab;
         public EnemySpawner Spawner;
         public InputReader Input;
+        public InteractionCycleController InteractionCycle;
         public MatchState State { get; private set; }
         public float Remaining { get; private set; }
         public event Action Reset;
@@ -48,7 +49,7 @@ namespace CoreGuard
         public void ResetForDemo() => ResetRun(MatchState.Playing);
         public void RestoreInteractions()
         {
-            ResetInteractions();
+            if (InteractionCycle && InteractionCycle.Session == this) InteractionCycle.ResetCycle();
             Changed?.Invoke();
         }
         private void ResetRun(MatchState next)
@@ -60,7 +61,7 @@ namespace CoreGuard
             if (Weapon) Weapon.ResetRun();
             if (Defense) Defense.ResetRun();
             if (Effects) Effects.ResetRun();
-            ResetInteractions();
+            if (InteractionCycle && InteractionCycle.Session == this) InteractionCycle.ResetCycle();
             foreach (var zone in FindObjectsByType<ForbiddenZone>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 if (zone && zone.Session == this) zone.ResetOccupancy();
             Spawner.ResetSpawns(); Remaining = 90;
@@ -73,6 +74,7 @@ namespace CoreGuard
             if (Weapon) Weapon.Advance(delta);
             if (Defense) Defense.Advance(delta);
             if (Effects) Effects.Advance(delta);
+            if (InteractionCycle && InteractionCycle.Session == this) InteractionCycle.Advance(delta);
             if (Audio) Audio.Advance(delta);
             if (Spawner.enabled)
             {
@@ -101,10 +103,5 @@ namespace CoreGuard
             else DestroyImmediate(target);
         }
 
-        private void ResetInteractions()
-        {
-            foreach (var interaction in FindObjectsByType<InteractionObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                if (interaction && interaction.Session == this) interaction.ResetObject();
-        }
     }
 }

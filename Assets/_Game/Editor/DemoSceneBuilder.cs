@@ -193,6 +193,7 @@ public static class DemoSceneBuilder
         if (!spawner.Session) spawner.Session = session;
         if (!spawner.Core) spawner.Core = core;
         EnsureInteractions(world.transform, session, stats, sprite);
+        EnsureInteractionCycle(scene, world.transform, session, stats, core);
         EnsureForbiddenZone(coreObject.transform, session, audio, sprite);
         var input = GetOrAdd<InputReader>(session.gameObject);
         if (!input.Actions) input.Actions = actions;
@@ -318,6 +319,22 @@ public static class DemoSceneBuilder
         CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5, 2), new Color(1, .25f, .25f), "X  -20 HP / -10 ARMOR", session, player, sprite);
         CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(3, -2), new Color(.7f, .3f, 1), "Y  SLOW / BREAK SHIELD", session, player, sprite);
         CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(5, 2), new Color(1, .75f, .15f), "Z  +10 COINS / BOOST", session, player, sprite);
+    }
+
+    private static void EnsureInteractionCycle(Scene scene, Transform parent, GameSession session, PlayerStats player, CoreHealth core)
+    {
+        var cycle = session.InteractionCycle;
+        if (!cycle) cycle = session.GetComponent<InteractionCycleController>();
+        if (!cycle)
+            cycle = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<InteractionCycleController>(true)).FirstOrDefault();
+        if (!cycle) cycle = GetOrAdd<InteractionCycleController>(session.gameObject);
+
+        var x = parent.Find("X") ? parent.Find("X").GetComponent<InteractionObject>() : null;
+        var y = parent.Find("Y") ? parent.Find("Y").GetComponent<InteractionObject>() : null;
+        var z = parent.Find("Z") ? parent.Find("Z").GetComponent<InteractionObject>() : null;
+        cycle.BlockedLayers = LayerMask.GetMask("Arena");
+        cycle.Configure(session, player, core, x, y, z);
+        session.InteractionCycle = cycle;
     }
 
     private static void CreateInteraction(

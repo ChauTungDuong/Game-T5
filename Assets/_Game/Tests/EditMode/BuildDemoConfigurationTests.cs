@@ -156,6 +156,12 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.EnemyProjectilePrefab, Is.Not.Null);
             Assert.That(session.Spawner.Prefab, Is.Not.Null);
             Assert.That(session.Spawner.Gates.Length, Is.EqualTo(4));
+            Assert.That(session.InteractionCycle, Is.Not.Null);
+            Assert.That(CountComponentsInScene<CoreGuard.InteractionCycleController>(main.GetRootGameObjects()), Is.EqualTo(1));
+            Assert.That(session.InteractionCycle.Session, Is.SameAs(session));
+            Assert.That(session.InteractionCycle.X, Is.Not.Null);
+            Assert.That(session.InteractionCycle.Y, Is.Not.Null);
+            Assert.That(session.InteractionCycle.Z, Is.Not.Null);
             Assert.That(session.Motor.Turret, Is.Not.Null);
             Assert.That(session.Demo.Panel, Is.Not.Null);
             Assert.That(session.gameObject.scene.path, Is.EqualTo(MainScenePath));

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace CoreGuard
@@ -16,6 +17,7 @@ namespace CoreGuard
         public GameSession Session;
         public PlayerStats Player;
         public bool IsConsumed { get; private set; }
+        public event Action<InteractionObject> Activated;
 
         private CircleCollider2D trigger;
 
@@ -47,6 +49,7 @@ namespace CoreGuard
                     var effects = target.GetComponent<StatusEffects>();
                     if (effects) effects.ApplySlow(.5f, 3f);
                     if (Session && Session.Defense) Session.Defense.BreakShield();
+                    Consume();
                     return true;
 
                 case InteractionKind.Z:
@@ -67,10 +70,22 @@ namespace CoreGuard
             gameObject.SetActive(true);
         }
 
+        public void HideForCycle()
+        {
+            gameObject.SetActive(false);
+        }
+
+        public void ShowForCycle(Vector2 position)
+        {
+            transform.position = position;
+            ResetObject();
+        }
+
         private void Consume()
         {
             IsConsumed = true;
             gameObject.SetActive(false);
+            Activated?.Invoke(this);
         }
     }
 }
