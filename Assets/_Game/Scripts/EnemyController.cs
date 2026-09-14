@@ -73,17 +73,20 @@ namespace CoreGuard
 
         private void LateUpdate()
         {
-            if (hitFlashRemaining > 0)
-            {
-                hitFlashRemaining -= Time.deltaTime;
-                if (hitFlashRemaining <= 0 && fireFlashRemaining <= 0 && bodyRenderer) bodyRenderer.color = bodyColor;
-            }
-            if (fireFlashRemaining > 0)
-            {
-                fireFlashRemaining -= Time.deltaTime;
-                if (fireFlashRemaining <= 0 && hitFlashRemaining <= 0 && bodyRenderer) bodyRenderer.color = bodyColor;
-            }
+            AdvanceFeedback(Time.deltaTime);
             RefreshHealthBar();
+        }
+
+        private void AdvanceFeedback(float delta)
+        {
+            hitFlashRemaining = Mathf.Max(0, hitFlashRemaining - Mathf.Max(0, delta));
+            fireFlashRemaining = Mathf.Max(0, fireFlashRemaining - Mathf.Max(0, delta));
+            if (!bodyRenderer) return;
+            bodyRenderer.color = hitFlashRemaining > 0
+                ? Color.white
+                : fireFlashRemaining > 0
+                    ? FireFlashColor
+                    : bodyColor;
         }
 
         public void Stun(float seconds)

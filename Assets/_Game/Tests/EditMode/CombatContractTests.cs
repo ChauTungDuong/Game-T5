@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -175,6 +176,33 @@ namespace CoreGuard.Tests.Editor
             Assert.That(renderer.color, Is.EqualTo(new Color(1f, .55f, .15f)));
         }
 
+        [Test]
+        public void Enemy_FlashRestoresTheHighestPriorityActiveColorThenBaseColor()
+        {
+            var session = MakeSession();
+            session.Player.transform.position = Vector2.zero;
+            session.Player.GetComponent<Rigidbody2D>().position = Vector2.zero;
+            var enemyProjectilePrefab = Make<Projectile>("Enemy projectile prefab");
+            enemyProjectilePrefab.gameObject.SetActive(false);
+            session.EnemyProjectilePrefab = enemyProjectilePrefab;
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(5, 0));
+            var visual = new GameObject("Authored enemy visual");
+            objects.Add(visual);
+            visual.transform.SetParent(enemy.transform, false);
+            var renderer = visual.AddComponent<SpriteRenderer>();
+            renderer.color = Color.blue;
+
+            enemy.ApplyDamage(1);
+            enemy.Step(.61f);
+            Assert.That(renderer.color, Is.EqualTo(new Color(1f, .55f, .15f)));
+
+            AdvanceFeedback(enemy, .105f);
+            Assert.That(renderer.color, Is.EqualTo(Color.white), "The still-active hit flash must reappear after the fire flash expires.");
+
+            AdvanceFeedback(enemy, .02f);
+            Assert.That(renderer.color, Is.EqualTo(Color.blue), "The authored base color must return after both flashes expire.");
+        }
+
         // Break caught: changing the player's position after the shot makes an enemy projectile home.
         [Test]
         public void EnemyShot_KeepsItsCapturedDirectionAfterPlayerMoves()
@@ -206,6 +234,19 @@ namespace CoreGuard.Tests.Editor
 
             Assert.That(shot.ResolveAgainst(enemy.GetComponent<CircleCollider2D>()), Is.False);
             Assert.That(shot.IsLive, Is.True);
+        }
+
+        [Test]
+        public void EnemyProjectile_DamagesHpAfterArmorIsDepleted()
+        {
+            var session = MakeSession();
+            session.Player.ApplyEnvironmentHit(0, PlayerStats.MaxArmor);
+            var shot = Make<Projectile>("Enemy shot");
+            shot.InitializeEnemyShot(session, Vector2.right, 10, 7, 4);
+
+            Assert.That(shot.ResolveAgainst(session.Player.GetComponent<CircleCollider2D>()), Is.True);
+            Assert.That(session.Player.Armor, Is.Zero);
+            Assert.That(session.Player.HP, Is.EqualTo(90));
         }
 
         // Break caught: the audio service has no observable firing-SFX contract.
@@ -243,6 +284,14 @@ namespace CoreGuard.Tests.Editor
             {
                 Object.DestroyImmediate(firingClip);
             }
+        }
+
+
+        private static void AdvanceFeedback(EnemyController enemy, float delta)
+        {
+            var method = typeof(EnemyController).GetMethod("AdvanceFeedback", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, "EnemyController needs a deterministic feedback lifecycle seam.");
+            method.Invoke(enemy, new object[] { delta });
         }
     }
 }
