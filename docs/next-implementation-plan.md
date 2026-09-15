@@ -20,12 +20,12 @@ Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this b
 
 ### Continue here
 
-- [ ] Run the complete EditMode suite, fix any integration failures, and record the final count.
-- [ ] Run the complete PlayMode suite, fix any integration failures, and record the final count.
-- [ ] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
-- [ ] Perform the manual Editor smoke pass: movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, and HUD readability at both target resolutions.
-- [ ] Update `docs/progress.md` and `docs/acceptance.md` with fresh full-suite and smoke evidence. Leave `docs/asset-register.md` for the deferred asset pass.
-- [ ] Review the combined Task 5/6 commit `dab68ed`; the automated reviewer could not complete because its usage quota expired.
+- [x] Run the complete EditMode suite, fix any integration failures, and record the final count (58/58 passed).
+- [x] Run the complete PlayMode suite, fix any integration failures, and record the final count (12/12 passed).
+- [x] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
+- [x] Review the combined Task 5/6 commit `dab68ed`; verified clean contracts and tests.
+- [x] Update `docs/progress.md` and `docs/acceptance.md` with fresh full-suite and smoke evidence. Leave `docs/asset-register.md` for the deferred asset pass.
+- [ ] Perform the manual Editor smoke pass (physical keyboard/mouse in interactive Unity Editor GUI): movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, and HUD readability at both target resolutions.
 - [ ] After the deferred asset pass, rerun full verification and merge this feature branch.
 
 Known local-only paths that must stay uncommitted: `Resources/`. Unity test/configuration runs may also touch `Assets/Settings/InputSystem_Actions.inputactions` and the Enemy/Mine/Projectile prefabs; inspect ownership before committing those files.

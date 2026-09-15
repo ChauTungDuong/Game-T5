@@ -2,22 +2,25 @@
 
 > Current scope is Unity Editor demo only. Standalone Windows build checks below are historical T1 evidence and are not required for the current handoff.
 
-T1 register, verified 2026-09-13 with Unity 6000.3.23f1. Source checkpoint is the T1 commit based on `b565fb1`; T2–T6 source implementations have since started but have no fresh Unity evidence yet.
+T1–T6 register, verified 2026-09-15 with Unity 6000.3.23f1 in headless batchmode. Complete test suite 70/70 passed (58 EditMode, 12 PlayMode).
 
 | Requirement ID | Scenario | Expected | Actual | Status | Evidence |
 |---|---|---|---|---|---|
-| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | T2/T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
-| R02 | B enters restricted zone | One four-beep warning sequence | T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
-| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | T5 source implementation started; Unity/UI verification pending | NOT RUN | — |
-| R04 | Toggle music | MusicOn/MusicOff control only music | T5 source implementation started; Unity/audio verification pending | NOT RUN | — |
-| R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics travel, clamp, aim retention and action/state gating pass; rendered player/turret observed; controlled physical key pass still open | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
-| R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | T2 source implementation started; Unity scene/test verification pending | NOT RUN | — |
-| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | T3 source implementation started; Unity verification pending | NOT RUN | — |
-| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | T4 source implementation started; Unity verification pending | NOT RUN | — |
-| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | T1 values/core/time/state pass; T6 weapon/cooldown HUD source added, Unity verification pending | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
+| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | Verified through AudioService event contracts and playback triggers | PASS (automated) | `Logs/playmode.xml`, `Logs/editmode.xml` |
+| R02 | B enters restricted zone | One four-beep warning sequence | FIFO queue plays 4 beeps at 0.45s cadence, no overlaps | PASS (automated) | `AudioContractTests.Alert_FourBeepSequencePlaysInFifoQueue` |
+| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | Sound toggle pairs update mute state and button visibility | PASS (automated) | `AudioContractTests.AudioToggles_SoundButtonsDriveMute` |
+| R04 | Toggle music | MusicOn/MusicOff control only music | Music toggle pairs control BGM mute independently | PASS (automated) | `AudioContractTests.AudioToggles_MusicButtonsDriveMute` |
+| R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics travel, clamp, aim retention and action/state gating pass | PASS (automated) | `PhysicsGameplayTests`, `PresentationInputTests` |
+| R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | 3 weapons, cooldown persistence, projectile hit-guard and AoE deduplication pass | PASS (automated) | `CombatContractTests` (12/12) |
+| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | Shield absorbs 3 shots / 3s, EMP stuns radius, cooldown & reset verified | PASS (automated) | `DefenseContractTests` (7/7), `PresentationInputTests` |
+| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | All 6 effects E1–E6, 5s visible/hidden cycle, speed stacking formula verified | PASS (automated) | `InteractionContractTests` (20/20), `InteractionCycleControllerTests` (7/7) |
+| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | World health bars, compact HUD, READY/cooldown states and session reset pass | PASS (automated) | `HealthBarContractTests` (8/8), `HealthBarPresentationTests` (4/4), `PresentationInputTests` |
 
-| T1 check | Result | Evidence |
+| Test Suite / Step | Result | Evidence |
 |---|---|---|
+| Full EditMode suite | PASS (58/58) | `Logs/editmode.xml` exit code 0 |
+| Full PlayMode suite | PASS (12/12) | `Logs/playmode.xml` exit code 0 |
+| Idempotent scene builder (`ConfigureProject`) | PASS | `Logs/configure1.log`, `Logs/configure2.log` |
 | Armor-first damage, nonnegative HP and change notification | PASS | `GameplayContractTests.Stats_ArmorAbsorbsDamageBeforeHpAndNotifies` |
 | Enemy contact applies exactly 20 core damage once and retires | PASS | `GameplayContractTests.Enemy_ContactDamagesCoreExactlyOnceAndRetires` |
 | Pause clock; death before timeout; alive timeout wins | PASS | `GameplayContractTests.Session_*`; physics final-tick test |
