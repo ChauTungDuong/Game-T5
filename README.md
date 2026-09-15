@@ -1,29 +1,81 @@
 # Core Guard
 
-A small, single-scene 2D arena prototype built with Unity **6000.3.23f1**, Universal 2D, and the Input System.
+A 2D top-down arena defense prototype built with Unity **6000.3.23f1**, Universal 2D, and the new Input System. The player defends a central Core against incoming enemies while dodging projectiles, utilizing active defense abilities, and collecting dynamic power-up traps.
 
-After checkout, let Unity finish importing `Assets/_Game/Art/Kenney` and `Assets/_Game/Audio/Kenney`, then run **Core Guard → Configure Project** once. Open `Assets/_Game/Scenes/Main.unity` and press Play. Click **Start**, move with **WASD or arrow keys**, aim with the mouse, select Bullet/Rocket/Mine with **1/2/3**, fire with the left mouse button, activate Shield/EMP with **Q/E**, and interact with X/Y/Z. **Esc** pauses/resumes. The result panel's **Retry** button or **R** resets the run after a win/loss; **F1** opens the repeatable Demo Mode panel.
+## Quick Start (Unity Editor Demo)
 
-The player starts with 100 HP, 50 Armor and 0 Coins; the core has 100 HP. Enemies spawn every five seconds, rotate through four gates, and stop at six living enemies. Each enemy reaching the core deals 20 damage once. The timer lasts 90 seconds; player/core death takes priority over timeout. Movement, aiming, spawning and time stop outside Playing.
+1. Open the project in Unity **6000.3.23f1**.
+2. Run **Core Guard → Configure Project** from the top menu once to verify scene setup and wire all references.
+3. Open `Assets/_Game/Scenes/Main.unity` and press **Play**.
+4. Click **Start** to begin the match.
 
-This checkpoint contains the T1 arena/session flow plus source implementations for T2–T5: three weapons, enemy projectiles, Shield/EMP, X/Y/Z interactions, audio toggles, four-beep alerts and the restricted zone. T6 now adds weapon/cooldown HUD fields and an F1 Demo Mode with repeatable scenarios. Unity scene import, full test execution and build verification after these changes are still pending, so the feature set is not yet acceptance-complete.
+## Controls
 
-The visual/audio pass uses Kenney tank sprites for the player and enemies, Kenney particle sprites for core/mine/combat feedback, Kenney Game Icons for state markers and audio toggles, Kenney sci-fi UI panels/buttons and font, and Kenney Sci-fi Sounds for weapon, defense, alert and ambient-loop audio. See `docs/asset-register.md` for the exact local paths and licenses.
+| Action | Input Binding | Description |
+|---|---|---|
+| **Move** | `W, A, S, D` or Arrow Keys | Normalized 8-directional Rigidbody2D movement (base speed: 4.0 units/s) |
+| **Aim** | Mouse Pointer | Smooth turret rotation tracking the cursor |
+| **Fire** | Left Mouse Button | Fires active weapon towards cursor (suppressed over UI) |
+| **Select Weapon** | `1`, `2`, `3` | `1`: Bullet (rapid single-target, cooldown 0.2s)<br>`2`: Rocket (high damage AoE radius 1.5, cooldown 1.5s)<br>`3`: Mine (deployable trap, 0.5s arm delay, 50 AoE damage, max 3) |
+| **Shield Defense** | `Q` | Absorbs up to 3 enemy projectiles or lasts 3.0s (cooldown 8.0s) |
+| **EMP Blast** | `E` | Emits shockwave in radius 3.0, stunning enemies for 2.0s (cooldown 6.0s) |
+| **Demo Director** | `F1` | Toggles repeatable scenario controls (Spawn Shooter, Zone Enemy, Cluster, Reset) |
+| **Pause / Resume** | `Esc` | Freezes/resumes clock, movement, aiming, and weapon timers |
+| **Retry** | `R` or UI Button | Centrally resets stats, Core HP, clock, position, and clears all projectiles/mines |
 
-## Rebuild the scene and player
+## Gameplay Mechanics
 
-Use **Core Guard → Configure Project** to add missing arena objects, create the required assets, and wire references. The command preserves existing Main content and unrelated build entries and can be rerun while another additive scene is active. It uses the existing project Input Actions asset in `Assets/Settings/` for both gameplay and UI.
+- **Player Stats:** 100 HP, 50 Armor, 0 Coins. Incoming damage follows an Armor-first contract.
+- **Core:** 100 HP located at center `(0, 0)`. Enemies contacting the Core deal 20 damage once and self-destruct.
+- **Enemies:** Spawn every 5.0s rotating through 4 gates (max 6 active). When within 7.0 units, enemies shoot projectiles at the player (speed 7.5, damage 10).
+- **X/Y/Z Interaction Objects:** Randomly spawn in arena bounds, visible for 5s, then hidden for 5s.
+  - `X (Damage Trap)`: Deals -20 HP and -10 Armor.
+  - `Y (EMP Field)`: Slows player to 50% for 3s and breaks active Shield.
+  - `Z (Supply Boost)`: Grants +10 Coins and boosts movement speed to 150% for 4s.
+- **Audio & Alerts:** Independent SFX and BGM toggle buttons. Enemies entering the 3-unit restricted zone trigger a deterministic 4-beep warning sequence via a FIFO queue.
 
-This checkpoint is intended to run as a demo inside the Unity Editor; no standalone player build is required. The Canvas uses 1280×720 Scale With Screen Size and supports 1920×1080.
+## Architecture
 
-## Verification
+- **`GameSession`**: Central coordinator for match lifecycle (Ready, Playing, Paused, Won, Lost), timing, and centralized clean reset.
+- **`PlayerMotor`**: 2D physics movement with bound clamping, analog input normalization, and speed modifiers from `StatusEffects`.
+- **`WeaponController` & `DefenseController`**: Modular combat and defensive abilities with cooldown tracking and event triggers.
+- **`InteractionCycleController`**: Deterministic lifecycle and placement generator for dynamic arena items.
+- **`AudioService` & `ForbiddenZone`**: Dedicated audio source management and FIFO queue alert sequencer.
+- **`HudPresenter` & `DemoDirector`**: Non-intrusive sci-fi HUD layout (1280×720 & 1920×1080 responsive) and director debug tools.
+- **`DemoSceneBuilder`**: Completely idempotent builder ensuring consistent scene configuration without manual linking.
 
-Run the `CoreGuard.Tests` EditMode and PlayMode suites from Unity's Test Runner. They exercise real components, two-second physics travel, damage contracts, spawn cadence, final-tick ordering, reset values, input commands, HUD buttons and scene-builder idempotence.
+## Verification & Testing
 
-Batch example (adjust the Editor executable path to your installation):
+The project is backed by comprehensive automated test suites covering all contracts, physics travel, input gating, UI flows, and idempotence.
 
-```powershell
-rtk proxy "C:\Program Files\Unity\Hub\Editor\6000.3.23f1\Editor\Unity.exe" -batchmode -nographics -projectPath "D:\Game-T5" -runTests -testPlatform EditMode -testFilter "CoreGuard.Tests" -testResults "D:\Game-T5\Logs\editmode.xml" -logFile "D:\Game-T5\Logs\editmode.log"
+- **EditMode Suite:** **59/59 passed** (`Logs/editmode.xml`)
+- **PlayMode Suite:** **13/13 passed** (`Logs/playmode.xml`)
+- **Total:** **72/72 tests passed 100%** on Unity `6000.3.23f1`.
+- **Idempotence:** `BuildDemo.ConfigureProject` verified twice with 0 diff on re-run.
+
+Batch command example:
+```bash
+/home/tuananh/Unity/Hub/Editor/6000.3.23f1/Editor/Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults Logs/editmode.xml -logFile Logs/editmode.log
+/home/tuananh/Unity/Hub/Editor/6000.3.23f1/Editor/Unity -batchmode -nographics -projectPath . -runTests -testPlatform PlayMode -testResults Logs/playmode.xml -logFile Logs/playmode.log
 ```
 
-Use `-testPlatform PlayMode` for physics, input and HUD tests. Test logs are local ignored artifacts. See `docs/progress.md` and `docs/acceptance.md` for the current verification status and remaining manual checks.
+## Asset Credits & Licenses
+
+All visual and audio assets are CC0 Public Domain assets created by Kenney ([kenney.nl](https://kenney.nl)):
+- **Tanks:** Top-down Tanks Remastered (CC0)
+- **Particles:** Kenney Particle Pack (CC0)
+- **Icons:** Kenney Game Icons (CC0)
+- **UI & Fonts:** Kenney UI Pack - Space Expansion & Kenney Future Fonts (CC0)
+- **Audio:** Kenney Sci-fi Sounds (CC0)
+
+Detailed mappings and individual license files are preserved in `docs/asset-register.md`.
+
+## Known Limitations
+
+- Physical keyboard and mouse feel, audio speaker levels, and visual inspection of animations require interactive GUI playback in the Unity Editor.
+- Standalone executable export is intentionally omitted per project scope (Editor-only demo).
+
+## Should add later
+
+Không có — mọi asset cần cho bản demo đã có hoặc có placeholder hợp lệ.
+
