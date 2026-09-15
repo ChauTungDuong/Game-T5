@@ -12,21 +12,14 @@ Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this b
 - [x] Task 4 — all six X/Y/Z effects plus procedural animation/VFX, floating text, and SFX (`cdffd02`; interaction tests 20/20 and audio tests 3/3).
 - [x] Task 5 — Shield/EMP mechanics, cooldown/reset/session filtering, shield/EMP rings, EMP affected count (`dab68ed`; defense 4/4 and presentation 4/4).
 - [x] Task 6 — compact anchored HUD, no large top/bottom surfaces, READY/active/cooldown states, 1280x720 and 1920x1080 bounds (`dab68ed`; layout 1/1 and HUD regression 2/2).
-- [x] Task 8 partial — idempotent repair of a missing enemy gate while preserving authored gate references (focused test 1/1; commit immediately after this handoff update).
-
-### Intentionally deferred
-
-- [ ] Task 7 — asset selection/integration, import settings, licenses, and `docs/asset-register.md`. The owner explicitly deferred this work. `D:/Game-T5/Resources` is user-supplied and must not be deleted or committed accidentally.
+- [x] Task 7 — asset selection/integration, import settings, licenses, and `docs/asset-register.md` (CC0 Kenney tanks, particles, UI, icons, audio integrated in DemoSceneBuilder and verified).
+- [x] Task 8 partial — idempotent repair of a missing enemy gate while preserving authored gate references (focused test 1/1).
+- [x] Full automated verification — 70/70 tests passed (58 EditMode, 12 PlayMode) on Unity 6000.3.23f1; scene builder idempotent verification pass (`a4ac960`).
 
 ### Continue here
 
-- [x] Run the complete EditMode suite, fix any integration failures, and record the final count (58/58 passed).
-- [x] Run the complete PlayMode suite, fix any integration failures, and record the final count (12/12 passed).
-- [x] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
-- [x] Review the combined Task 5/6 commit `dab68ed`; verified clean contracts and tests.
-- [x] Update `docs/progress.md` and `docs/acceptance.md` with fresh full-suite and smoke evidence. Leave `docs/asset-register.md` for the deferred asset pass.
 - [ ] Perform the manual Editor smoke pass (physical keyboard/mouse in interactive Unity Editor GUI): movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, and HUD readability at both target resolutions.
-- [ ] After the deferred asset pass, rerun full verification and merge this feature branch.
+- [ ] Merge `tuananh` / `feature/core-guard-gameplay-updates` into `main` and package release.
 
 Known local-only paths that must stay uncommitted: `Resources/`. Unity test/configuration runs may also touch `Assets/Settings/InputSystem_Actions.inputactions` and the Enemy/Mine/Projectile prefabs; inspect ownership before committing those files.
 
