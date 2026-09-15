@@ -2,7 +2,7 @@
 
 > Current scope is Unity Editor demo only. Standalone Windows build checks below are historical T1 evidence and are not required for the current handoff.
 
-T1–T6 register, verified 2026-09-15 with Unity 6000.3.23f1 in headless batchmode. Complete test suite 70/70 passed (58 EditMode, 12 PlayMode).
+T1–T6 register, verified 2026-09-15 with Unity 6000.3.23f1 in headless batchmode. Complete test suite 72/72 passed (59 EditMode, 13 PlayMode).
 
 | Requirement ID | Scenario | Expected | Actual | Status | Evidence |
 |---|---|---|---|---|---|
@@ -13,14 +13,16 @@ T1–T6 register, verified 2026-09-15 with Unity 6000.3.23f1 in headless batchmo
 | R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics travel, clamp, aim retention and action/state gating pass | PASS (automated) | `PhysicsGameplayTests`, `PresentationInputTests` |
 | R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | 3 weapons, cooldown persistence, projectile hit-guard and AoE deduplication pass | PASS (automated) | `CombatContractTests` (12/12) |
 | R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | Shield absorbs 3 shots / 3s, EMP stuns radius, cooldown & reset verified | PASS (automated) | `DefenseContractTests` (7/7), `PresentationInputTests` |
-| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | All 6 effects E1–E6, 5s visible/hidden cycle, speed stacking formula verified | PASS (automated) | `InteractionContractTests` (20/20), `InteractionCycleControllerTests` (7/7) |
+| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | All 6 effects E1–E6, 5s visible/hidden cycle, physical speed formula verified | PASS (automated) | `InteractionContractTests` (20/20), `PhysicsGameplayTests.Motor_SlowAndBoost_ModifyPhysicalDistanceAccurately` |
 | R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | World health bars, compact HUD, READY/cooldown states and session reset pass | PASS (automated) | `HealthBarContractTests` (8/8), `HealthBarPresentationTests` (4/4), `PresentationInputTests` |
 
 | Test Suite / Step | Result | Evidence |
 |---|---|---|
-| Full EditMode suite | PASS (58/58) | `Logs/editmode.xml` exit code 0 |
-| Full PlayMode suite | PASS (12/12) | `Logs/playmode.xml` exit code 0 |
+| Full EditMode suite | PASS (59/59) | `Logs/editmode.xml` exit code 0 |
+| Full PlayMode suite | PASS (13/13) | `Logs/playmode.xml` exit code 0 |
 | Idempotent scene builder (`ConfigureProject`) | PASS | `Logs/configure1.log`, `Logs/configure2.log` |
+| Five successive Retries reset all state without leaks | PASS (automated) | `GameplayContractTests.Retry_FiveSuccessiveRetries_NeverDuplicatesOrLeavesStaleState` |
+| Physical motor travel with slow/boost speed scaling | PASS (automated) | `PhysicsGameplayTests.Motor_SlowAndBoost_ModifyPhysicalDistanceAccurately` |
 | Armor-first damage, nonnegative HP and change notification | PASS | `GameplayContractTests.Stats_ArmorAbsorbsDamageBeforeHpAndNotifies` |
 | Enemy contact applies exactly 20 core damage once and retires | PASS | `GameplayContractTests.Enemy_ContactDamagesCoreExactlyOnceAndRetires` |
 | Pause clock; death before timeout; alive timeout wins | PASS | `GameplayContractTests.Session_*`; physics final-tick test |

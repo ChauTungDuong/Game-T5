@@ -135,5 +135,62 @@ namespace CoreGuard.Tests.Editor
             s.Spawner.Advance(.1f);
             Assert.That(s.Spawner.Living.Count, Is.EqualTo(1));
         }
+
+        [Test]
+        public void Retry_FiveSuccessiveRetries_NeverDuplicatesOrLeavesStaleState()
+        {
+            var s = Session();
+            var weapon = s.Player.gameObject.AddComponent<WeaponController>(); weapon.Session = s; s.Weapon = weapon;
+            var defense = s.Player.gameObject.AddComponent<DefenseController>(); defense.Session = s; defense.Player = s.Player; s.Defense = defense;
+            var effects = s.Player.gameObject.AddComponent<StatusEffects>(); effects.Session = s; s.Effects = effects;
+            var audio = s.gameObject.AddComponent<AudioService>(); audio.Session = s; audio.Weapon = weapon; audio.Defense = defense; s.Audio = audio;
+            var zone = Make<ForbiddenZone>("Zone"); zone.Session = s; zone.Audio = audio;
+            s.StartMatch();
+
+            for (var cycle = 1; cycle <= 5; cycle++)
+            {
+                s.Player.ApplyDamage(60f);
+                s.Player.AddCoins(5 * cycle);
+                s.Core.ApplyDamage(40f);
+                effects.ApplySlow(0.5f, 3f);
+                effects.ApplyBoost(1.5f, 4f);
+                defense.TryActivateShield();
+                audio.RequestAlert();
+                s.Spawner.Advance(5f);
+
+                Assert.That(s.Player.HP, Is.EqualTo(90f));
+                Assert.That(s.Player.Armor, Is.Zero);
+                Assert.That(s.Player.Coins, Is.GreaterThan(0));
+                Assert.That(effects.IsSlowed, Is.True);
+                Assert.That(defense.ShieldActive, Is.True);
+                Assert.That(audio.PendingAlertJobs, Is.GreaterThanOrEqualTo(1));
+
+                s.Core.ApplyDamage(60f);
+                s.Advance(.02f);
+                Assert.That(s.State, Is.EqualTo(MatchState.Lost));
+
+                s.Retry();
+
+                Assert.That(s.State, Is.EqualTo(MatchState.Playing));
+                Assert.That(s.Player.HP, Is.EqualTo(100));
+                Assert.That(s.Player.Armor, Is.EqualTo(50));
+                Assert.That(s.Player.Coins, Is.Zero);
+                Assert.That(s.Core.HP, Is.EqualTo(100));
+                Assert.That(s.Remaining, Is.EqualTo(90));
+                Assert.That((Vector2)s.Motor.transform.position, Is.EqualTo(new Vector2(-3, 0)));
+                Assert.That(s.Spawner.Living.Count, Is.Zero);
+                Assert.That(s.Spawner.NextGate, Is.Zero);
+                Assert.That(effects.IsSlowed, Is.False);
+                Assert.That(effects.IsBoosted, Is.False);
+                Assert.That(effects.CurrentSpeed, Is.EqualTo(4f));
+                Assert.That(defense.ShieldActive, Is.False);
+                Assert.That(defense.ShieldCooldownRemaining, Is.Zero);
+                Assert.That(defense.EmpCooldownRemaining, Is.Zero);
+                Assert.That(audio.PendingAlertJobs, Is.Zero);
+                Assert.That(zone.OccupantCount, Is.Zero);
+                Assert.That(s.GetComponentsInChildren<Projectile>(true).Length, Is.Zero);
+                Assert.That(s.GetComponentsInChildren<Mine>(true).Length, Is.Zero);
+            }
+        }
     }
 }

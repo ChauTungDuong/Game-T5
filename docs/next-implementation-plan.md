@@ -14,7 +14,7 @@ Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this b
 - [x] Task 6 — compact anchored HUD, no large top/bottom surfaces, READY/active/cooldown states, 1280x720 and 1920x1080 bounds (`dab68ed`; layout 1/1 and HUD regression 2/2).
 - [x] Task 7 — asset selection/integration, import settings, licenses, and `docs/asset-register.md` (CC0 Kenney tanks, particles, UI, icons, audio integrated in DemoSceneBuilder and verified).
 - [x] Task 8 partial — idempotent repair of a missing enemy gate while preserving authored gate references (focused test 1/1).
-- [x] Full automated verification — 70/70 tests passed (58 EditMode, 12 PlayMode) on Unity 6000.3.23f1; scene builder idempotent verification pass (`a4ac960`).
+- [x] Full automated verification — 72/72 tests passed (59 EditMode, 13 PlayMode) on Unity 6000.3.23f1; scene builder idempotent verification pass.
 
 ### Continue here
 

@@ -85,5 +85,42 @@ namespace CoreGuard.Tests.PlayMode
             Assert.That(s.State, Is.EqualTo(MatchState.Lost));
             Assert.That(enemy.IsAlive, Is.False);
         }
+
+        [Test]
+        public void Motor_SlowAndBoost_ModifyPhysicalDistanceAccurately()
+        {
+            var s = Session();
+            var effects = s.Player.gameObject.AddComponent<StatusEffects>();
+            effects.Session = s;
+            s.Motor.Effects = effects;
+            var body = s.Motor.GetComponent<Rigidbody2D>();
+            s.Motor.MinBounds = new Vector2(-50, -50);
+            s.Motor.MaxBounds = new Vector2(50, 50);
+            s.Motor.SpawnPosition = Vector2.zero;
+
+            // 1. Baseline: 4.0 units/sec -> 50 steps of 0.02s = 1 sec -> 4 units
+            s.Motor.ResetPosition();
+            for (var i = 0; i < 50; i++) { s.Motor.Step(Vector2.right, Vector2.right, .02f); Physics2D.Simulate(.02f); }
+            Assert.That(body.position.x, Is.EqualTo(4f).Within(.02f));
+
+            // 2. Slowed: 0.5x -> 2.0 units/sec -> 50 steps of 0.02s = 1 sec -> 2 units
+            effects.ApplySlow(0.5f, 5f);
+            s.Motor.ResetPosition();
+            for (var i = 0; i < 50; i++) { s.Motor.Step(Vector2.right, Vector2.right, .02f); Physics2D.Simulate(.02f); }
+            Assert.That(body.position.x, Is.EqualTo(2f).Within(.02f));
+
+            // 3. Boosted: 1.5x -> 6.0 units/sec -> 50 steps of 0.02s = 1 sec -> 6 units
+            effects.ResetRun();
+            effects.ApplyBoost(1.5f, 5f);
+            s.Motor.ResetPosition();
+            for (var i = 0; i < 50; i++) { s.Motor.Step(Vector2.right, Vector2.right, .02f); Physics2D.Simulate(.02f); }
+            Assert.That(body.position.x, Is.EqualTo(6f).Within(.02f));
+
+            // 4. Combined Slow + Boost: 4 * 0.5 * 1.5 = 3.0 units/sec -> 50 steps of 0.02s = 1 sec -> 3 units
+            effects.ApplySlow(0.5f, 5f);
+            s.Motor.ResetPosition();
+            for (var i = 0; i < 50; i++) { s.Motor.Step(Vector2.right, Vector2.right, .02f); Physics2D.Simulate(.02f); }
+            Assert.That(body.position.x, Is.EqualTo(3f).Within(.02f));
+        }
     }
 }
