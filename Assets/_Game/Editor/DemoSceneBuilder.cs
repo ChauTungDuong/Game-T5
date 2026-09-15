@@ -20,6 +20,7 @@ public static class DemoSceneBuilder
     private const string PlayerBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_blue_outline.png";
     private const string PlayerBarrelPath = "Assets/_Game/Art/Kenney/Tanks/tankBlue_barrel1_outline.png";
     private const string EnemyBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_red_outline.png";
+    private const string EnemyBarrelPath = "Assets/_Game/Art/Kenney/Tanks/tankRed_barrel1_outline.png";
     private const string GroundTilePath = "Assets/_Game/Art/Kenney/Tanks/tileSand1.png";
     private const string CoreBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_darkLarge_outline.png";
     private const string ProjectileSpritePath = "Assets/_Game/Art/Kenney/Tanks/bulletBlue1_outline.png";
@@ -44,6 +45,29 @@ public static class DemoSceneBuilder
     private const string ShieldAudioPath = "Assets/_Game/Audio/Kenney/forceField_000.ogg";
     private const string EmpAudioPath = "Assets/_Game/Audio/Kenney/impactMetal_000.ogg";
     private const string MusicAudioPath = "Assets/_Game/Audio/Kenney/spaceEngineLow_000.ogg";
+    private const string UiClickAudioPath = "Assets/_Game/Audio/Provided/click.ogg";
+    private const string ExplosionAudioPath = "Assets/_Game/Audio/Provided/explosion.wav";
+    private const string VictoryAudioPath = "Assets/_Game/Audio/Provided/congratulation.wav";
+    private const string DefeatAudioPath = "Assets/_Game/Audio/Provided/gameover.wav";
+    private const string WinSpritePath = "Assets/_Game/Art/Provided/Results/YOU WIN.png";
+    private const string LoseSpritePath = "Assets/_Game/Art/Provided/Results/YOU LOSE.png";
+    private const string StartSpritePath = "Assets/_Game/Art/Provided/Results/start1.png";
+    private const string CountdownZeroPath = "Assets/_Game/Art/Provided/Countdown/zero.png";
+    private const string CountdownOnePath = "Assets/_Game/Art/Provided/Countdown/one.png";
+    private const string CountdownTwoPath = "Assets/_Game/Art/Provided/Countdown/two.png";
+    private const string CountdownThreePath = "Assets/_Game/Art/Provided/Countdown/three.png";
+    private static readonly string[] ExplosionFramePaths =
+    {
+        "Assets/_Game/Art/Provided/Explosion/explosion_01.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_02.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_03.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_04.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_05.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_06.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_07.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_08.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_09.png",
+    };
     private static readonly Color Cyan = new Color(.25f, .9f, .85f);
     private static readonly Color Ink = new Color(.055f, .085f, .12f, .97f);
 
@@ -138,6 +162,7 @@ public static class DemoSceneBuilder
         vfx.MineFlash = ImportedSprite(MineFlashPath, null);
         vfx.ShieldFlash = ImportedSprite(ShieldFlashPath, null);
         vfx.EmpFlash = ImportedSprite(EmpFlashPath, null);
+        vfx.ExplosionFrames = ExplosionFramePaths.Select(path => ImportedSprite(path, null)).ToArray();
         if (!effects.Session) effects.Session = session;
         if (!audio.Session) audio.Session = session;
         if (!audio.Weapon) audio.Weapon = weapon;
@@ -150,6 +175,10 @@ public static class DemoSceneBuilder
         audio.ShieldActivate = PreferImportedClip(ShieldAudioPath, audio.ShieldActivate);
         audio.EmpActivate = PreferImportedClip(EmpAudioPath, audio.EmpActivate);
         audio.MusicLoop = PreferImportedClip(MusicAudioPath, audio.MusicLoop);
+        audio.UiClick = PreferImportedClip(UiClickAudioPath, audio.UiClick);
+        audio.Explosion = PreferImportedClip(ExplosionAudioPath, audio.Explosion);
+        audio.Victory = PreferImportedClip(VictoryAudioPath, audio.Victory);
+        audio.Defeat = PreferImportedClip(DefeatAudioPath, audio.Defeat);
         audio.EnsureSourcesForScene();
         if (!weapon.Muzzle) weapon.Muzzle = muzzle.transform;
         if (!weapon.ProjectilePrefab) weapon.ProjectilePrefab = projectilePrefab;
@@ -272,6 +301,15 @@ public static class DemoSceneBuilder
         Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -86), new Vector2(220, 24));
         stateText.alignment = TextAnchor.UpperRight;
         if (!hud.StateText) hud.StateText = stateText;
+        hud.WinSprite = ImportedSprite(WinSpritePath, hud.WinSprite);
+        hud.LoseSprite = ImportedSprite(LoseSpritePath, hud.LoseSprite);
+        hud.CountdownZero = ImportedSprite(CountdownZeroPath, hud.CountdownZero);
+        hud.CountdownOne = ImportedSprite(CountdownOnePath, hud.CountdownOne);
+        hud.CountdownTwo = ImportedSprite(CountdownTwoPath, hud.CountdownTwo);
+        hud.CountdownThree = ImportedSprite(CountdownThreePath, hud.CountdownThree);
+        var countdownImage = SpriteImage(root.transform, "Start countdown", hud.CountdownThree, Vector2.zero, new Vector2(128, 128));
+        if (!hud.CountdownImage) hud.CountdownImage = countdownImage;
+        hud.CountdownImage.gameObject.SetActive(false);
         Label(root.transform, "Objective", "OBJECTIVE  Protect the blue core from red invaders", new Vector2(0, 235), new Vector2(680, 30), 17, Color.white);
         Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LEFT MOUSE BUTTON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
         Label(root.transform, "Actions", "WEAPONS  1 Bullet  •  2 Rocket  •  3 Mine     DEFENSE  Q Shield  •  E EMP     R RETRY  •  F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
@@ -281,8 +319,13 @@ public static class DemoSceneBuilder
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "Cooldowns  —", new Vector2(390, -245), new Vector2(280, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
-        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 50));
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 70));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
+        var feedbackText = Label(root.transform, "Feedback", string.Empty, new Vector2(0, -245), new Vector2(380, 28), 15, new Color(1f, .65f, .25f));
+        feedbackText.alignment = TextAnchor.MiddleCenter;
+        feedbackText.raycastTarget = false;
+        if (!hud.FeedbackText) hud.FeedbackText = feedbackText;
+        hud.FeedbackText.gameObject.SetActive(false);
         var bulletButton = ActionButton(root.transform, "Bullet button", "1  BULLET", new Vector2(-315, -271));
         var rocketButton = ActionButton(root.transform, "Rocket button", "2  ROCKET", new Vector2(-185, -271));
         var mineButton = ActionButton(root.transform, "Mine button", "3  MINE", new Vector2(-55, -271));
@@ -300,6 +343,7 @@ public static class DemoSceneBuilder
         Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
         Label(hud.StartPanel.transform, "Brief", "The blue core is your base. Stop red invaders before they reach it.\n\nMove WASD   Aim Mouse   Fire Hold LMB\nSwitch 1/2/3   Shield Q   EMP E", new Vector2(0, 0), new Vector2(490, 135), 17, Color.white);
         if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
+        ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
         if (!hud.PausePanel)
         {
             hud.PausePanel = Panel(root.transform, "Pause panel", false);
@@ -313,6 +357,9 @@ public static class DemoSceneBuilder
             Label(hud.ResultPanel.transform, "Hint", "Press R or click TRY AGAIN to defend the core again.", new Vector2(0, -5), new Vector2(490, 50), 18, Color.white);
         }
         if (!hud.ResultText) hud.ResultText = Label(hud.ResultPanel.transform, "Heading", "CORE OFFLINE — LOST", new Vector2(0, 55), new Vector2(510, 55), 30, Cyan);
+        var resultImage = SpriteImage(hud.ResultPanel.transform, "Result artwork", hud.LoseSprite, new Vector2(0, 116), new Vector2(390, 74));
+        if (!hud.ResultImage) hud.ResultImage = resultImage;
+        hud.ResultImage.sprite = hud.LoseSprite;
         if (!hud.RetryButton) hud.RetryButton = Button(hud.ResultPanel.transform, "Retry button", "TRY AGAIN", new Vector2(0, -103));
         BuildDemoPanel(root.transform, session.Demo);
     }
@@ -415,6 +462,7 @@ public static class DemoSceneBuilder
         ring.startColor = new Color(1, .18f, .22f, .72f);
         ring.endColor = ring.startColor;
         ring.sortingOrder = -1;
+        zone.WarningRing = ring;
         for (var i = 0; i < ring.positionCount; i++)
         {
             var angle = i * Mathf.PI * 2f / ring.positionCount;
@@ -477,6 +525,32 @@ public static class DemoSceneBuilder
         text.text = value; text.fontSize = fontSize; text.color = color;
         text.alignment = TextAnchor.MiddleCenter; text.raycastTarget = false;
         return text;
+    }
+    private static Image SpriteImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
+    {
+        var existing = parent.Find(name);
+        var go = existing ? existing.gameObject : Child(parent, name, typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)go.transform, position, size);
+        var image = GetOrAdd<Image>(go);
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        return image;
+    }
+    private static void ApplyButtonArtwork(Button button, Sprite sprite)
+    {
+        if (!button || !sprite) return;
+        var image = button.GetComponent<Image>();
+        if (image)
+        {
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+        }
+        var labelObject = button.transform.Find("Label");
+        var label = labelObject ? labelObject.GetComponent<Text>() : null;
+        if (label) label.enabled = false;
     }
     private static Button Button(Transform parent, string name, string title, Vector2 position)
     {
@@ -656,15 +730,61 @@ public static class DemoSceneBuilder
     {
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyPath);
         var enemySprite = ImportedSprite(EnemyBodyPath, sprite);
-        if (existing) return UpdatePrefabVisual<EnemyController>(EnemyPath, "Enemy body", enemySprite, Vector2.one, new Color(1, .36f, .3f), .45f);
+        var enemyBarrel = ImportedSprite(EnemyBarrelPath, null);
+        if (existing) return UpdateEnemyPrefab(EnemyPath, enemySprite, enemyBarrel);
         var go = new GameObject("Enemy", typeof(EnemyController)); SceneManager.MoveGameObjectToScene(go, scene);
         go.layer = LayerMask.NameToLayer("Enemy");
         var body = go.GetComponent<Rigidbody2D>(); body.gravityScale = 0; body.bodyType = RigidbodyType2D.Kinematic; body.constraints = RigidbodyConstraints2D.FreezeRotation;
-        var collider = go.GetComponent<CircleCollider2D>(); collider.radius = .45f; collider.isTrigger = true;
-        Visual(go.transform, "Enemy body", enemySprite, Vector2.zero, new Vector2(1.0f, 1.0f), new Color(1, .36f, .3f), 3);
+        var collider = go.GetComponent<CircleCollider2D>(); collider.radius = EnemyController.TankColliderRadius; collider.isTrigger = true;
+        Visual(go.transform, "Enemy body", enemySprite, Vector2.zero, Vector2.one * EnemyController.TankVisualScale, new Color(1, .36f, .3f), 3);
+        EnsureEnemyCannon(go.transform, enemyBarrel);
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, EnemyPath);
         Object.DestroyImmediate(go);
         return prefab.GetComponent<EnemyController>();
+    }
+
+    private static EnemyController UpdateEnemyPrefab(string path, Sprite bodySprite, Sprite barrelSprite)
+    {
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            ApplySprite(root.transform, "Enemy body", bodySprite);
+            var body = root.transform.Find("Enemy body");
+            if (body)
+            {
+                body.localScale = Vector3.one * EnemyController.TankVisualScale;
+                var renderer = body.GetComponent<SpriteRenderer>();
+                if (renderer) renderer.color = new Color(1, .36f, .3f);
+            }
+            var collider = root.GetComponent<CircleCollider2D>();
+            if (collider)
+            {
+                collider.radius = EnemyController.TankColliderRadius;
+                collider.isTrigger = true;
+            }
+            EnsureEnemyCannon(root.transform, barrelSprite);
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        return prefab ? prefab.GetComponent<EnemyController>() : null;
+    }
+
+    private static void EnsureEnemyCannon(Transform enemy, Sprite barrelSprite)
+    {
+        var turret = Child(enemy, "Turret");
+        var barrel = Visual(turret.transform, "Barrel", barrelSprite, new Vector2(.68f, 0), new Vector2(1.3f, 1.9f), new Color(1, .32f, .28f), 4);
+        ApplySprite(turret.transform, "Barrel", barrelSprite);
+        barrel.transform.localRotation = Quaternion.Euler(0, 0, -90f);
+        var muzzle = Child(turret.transform, "Muzzle");
+        muzzle.transform.localPosition = new Vector3(.98f, 0, 0);
+        muzzle.transform.localRotation = Quaternion.identity;
+        var controller = enemy.GetComponent<EnemyController>();
+        if (controller)
+        {
+            controller.Turret = turret.transform;
+            controller.Muzzle = muzzle.transform;
+        }
     }
 
     private static Projectile EnsureProjectilePrefab(Scene scene, Sprite sprite)

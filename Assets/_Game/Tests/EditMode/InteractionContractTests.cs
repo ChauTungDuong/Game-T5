@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ namespace CoreGuard.Tests.Editor
             var session = Make<GameSession>("Session");
             session.enabled = false;
             session.Player = Make<PlayerStats>("Player");
+            session.Player.gameObject.AddComponent<CircleCollider2D>();
             session.Core = Make<CoreHealth>("Core");
             session.Motor = session.Player.gameObject.AddComponent<PlayerMotor>();
             session.Motor.Session = session;
@@ -117,7 +119,7 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void Y_SlowsPlayerAndBreaksShieldAndConsumesAfterActivation()
+        public void Y_SlowsPlayerAndBreaksShieldAndTriggersOnceUntilPlayerLeaves()
         {
             var session = MakeSession(out var defense, out var effects);
             var interaction = MakeInteraction(session, InteractionKind.Y);
@@ -126,10 +128,13 @@ namespace CoreGuard.Tests.Editor
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(2).Within(.001));
             Assert.That(defense.ShieldActive, Is.False);
-            Assert.That(interaction.IsConsumed, Is.True);
+            Assert.That(interaction.IsConsumed, Is.False);
             effects.ApplyBoost(1.5f, 4f);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(3).Within(.001));
             Assert.That(interaction.ApplyTo(session.Player), Is.False);
+            typeof(InteractionObject).GetMethod("OnTriggerExit2D", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(interaction, new object[] { session.Player.GetComponent<CircleCollider2D>() });
+            Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(effects.SlowRemaining, Is.EqualTo(3).Within(.001));
             effects.Advance(3f);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(6).Within(.001));

@@ -14,6 +14,7 @@ namespace CoreGuard.Tests.PlayMode
     public sealed class PresentationInputTests : InputTestFixture
     {
         private readonly List<GameObject> objects = new List<GameObject>();
+        private readonly List<UnityEngine.Object> assets = new List<UnityEngine.Object>();
         private InputActionAsset actions;
         private Keyboard keyboard;
         private T Make<T>(string name) where T : Component
@@ -21,6 +22,16 @@ namespace CoreGuard.Tests.PlayMode
             var go = new GameObject(name); objects.Add(go);
             var existing = go.GetComponent<T>();
             return existing ? existing : go.AddComponent<T>();
+        }
+        private Sprite CreateTestSprite(string name)
+        {
+            var texture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            texture.name = name + " texture";
+            assets.Add(texture);
+            var sprite = Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(.5f, .5f), 1f);
+            sprite.name = name;
+            assets.Add(sprite);
+            return sprite;
         }
         private GameSession Session()
         {
@@ -34,6 +45,9 @@ namespace CoreGuard.Tests.PlayMode
         {
             foreach (var go in objects) if (go) Object.DestroyImmediate(go);
             objects.Clear();
+            for (var index = assets.Count - 1; index >= 0; index--)
+                if (assets[index]) Object.DestroyImmediate(assets[index]);
+            assets.Clear();
             if (keyboard != null) InputSystem.RemoveDevice(keyboard);
             if (actions) Object.DestroyImmediate(actions);
         }
@@ -134,8 +148,29 @@ namespace CoreGuard.Tests.PlayMode
             Assert.That(s.Player.transform.Find("Shield Indicator"), Is.Null);
         }
 
+        [UnityTest] public IEnumerator PlayerAndEnemyDeaths_SpawnExplosionFeedback()
+        {
+            var s = Session();
+            var presenter = s.Player.gameObject.AddComponent<CombatVfxPresenter>();
+            var frame = CreateTestSprite("Death explosion");
+            presenter.ExplosionFrames = new[] { frame };
+            s.StartMatch();
+
+            var enemy = Make<EnemyController>("Exploding enemy");
+            enemy.Initialize(s, s.Core);
+            enemy.ApplyDamage(EnemyController.MaxHP);
+            yield return null;
+            Assert.That(GameObject.Find("Explosion VFX"), Is.Not.Null);
+
+            yield return new WaitForSeconds(.05f);
+            s.Player.ApplyDamage(150f);
+            yield return null;
+            Assert.That(GameObject.Find("Explosion VFX"), Is.Not.Null);
+            yield return new WaitForSeconds(.1f);
+        }
+
         // Missing subscriptions or button listeners would leave stale numbers/panels.
-        [Test] public void Hud_ShowsLiveValuesAndButtonsDriveSingleSceneFlow()
+        [UnityTest] public IEnumerator Hud_ShowsLiveValuesAndButtonsDriveSingleSceneFlow()
         {
             var s = Session();
             s.Weapon = s.Player.gameObject.AddComponent<WeaponController>(); s.Weapon.Session = s;
@@ -148,6 +183,13 @@ namespace CoreGuard.Tests.PlayMode
             hud.StartPanel = Make<Transform>("Start").gameObject;
             hud.PausePanel = Make<Transform>("Pause").gameObject;
             hud.ResultPanel = Make<Transform>("Result panel").gameObject;
+            hud.CountdownImage = Make<Image>("Countdown image");
+            hud.ResultImage = Make<Image>("Result image");
+            var countdownSprite = CreateTestSprite("Countdown");
+            hud.CountdownZero = countdownSprite; hud.CountdownOne = countdownSprite;
+            hud.CountdownTwo = countdownSprite; hud.CountdownThree = countdownSprite;
+            hud.WinSprite = countdownSprite; hud.LoseSprite = countdownSprite;
+            hud.CountdownDuration = .05f;
             hud.StartButton = Make<Button>("Start button"); hud.ResumeButton = Make<Button>("Resume"); hud.RetryButton = Make<Button>("Retry");
             hud.BulletButton = Make<Button>("Bullet"); hud.RocketButton = Make<Button>("Rocket"); hud.MineButton = Make<Button>("Mine");
             hud.ShieldButton = Make<Button>("Shield"); hud.EmpButton = Make<Button>("EMP");
@@ -156,16 +198,26 @@ namespace CoreGuard.Tests.PlayMode
             Assert.That(hud.CoreText.text, Is.EqualTo("CORE 100/100"));
             Assert.That(hud.TimerText.text, Is.EqualTo("TIME 90.0"));
             Assert.That(hud.WeaponText.text, Is.EqualTo("WEAPON: BULLET"));
+            Assert.That(hud.CooldownsText.text, Does.Contain("SPEED: 4.0"));
             Assert.That(hud.CooldownsText.text, Does.Contain("SHIELD: READY"));
             Assert.That(hud.CooldownsText.text, Does.Contain("EMP: READY"));
             Assert.That(hud.StartPanel.activeSelf, Is.True);
             Assert.That(hud.PausePanel.activeSelf, Is.False);
-            hud.StartButton.onClick.Invoke(); s.Player.ApplyDamage(60); s.Player.AddCoins(7); s.Core.ApplyDamage(20); s.Advance(.5f);
+            hud.StartButton.onClick.Invoke();
+            Assert.That(s.State, Is.EqualTo(MatchState.Ready));
+            Assert.That(hud.CountdownImage.gameObject.activeSelf, Is.True);
+            yield return new WaitForSecondsRealtime(.15f);
+            Assert.That(s.State, Is.EqualTo(MatchState.Playing));
+            Assert.That(hud.CountdownImage.gameObject.activeSelf, Is.False);
+            s.Weapon.Select(WeaponKind.Rocket);
+            Assert.That(hud.WeaponText.text, Is.EqualTo("WEAPON: ROCKET"));
+            s.Weapon.Select(WeaponKind.Bullet);
+            s.Player.ApplyDamage(60); s.Player.AddCoins(7); s.Core.ApplyDamage(20); s.Advance(.5f);
             Assert.That(hud.StatsText.text, Does.Contain("PLAYER HP 90/100"));
             Assert.That(hud.StatsText.text, Does.Contain("ARMOR 0/50"));
             Assert.That(hud.StatsText.text, Does.Contain("COINS 7"));
             Assert.That(hud.CoreText.text, Does.Contain("80"));
-            Assert.That(hud.TimerText.text, Does.Contain("89.5"));
+            Assert.That(hud.TimerText.text, Does.Contain("89."));
             Assert.That(hud.StartPanel.activeSelf, Is.False);
             Assert.That(s.Defense.TryActivateShield(), Is.True);
             Assert.That(hud.CooldownsText.text, Does.Contain("SHIELD: 3/3"));

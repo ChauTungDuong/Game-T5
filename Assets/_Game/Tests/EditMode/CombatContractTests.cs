@@ -138,6 +138,25 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
+        public void Mine_LimitReportsFeedbackWithoutCreatingAnotherMineOrCooldown()
+        {
+            var session = MakeSession();
+            var weapon = MakeWeapon(session, out _, out _);
+            weapon.Select(WeaponKind.Mine);
+            weapon.MaxMines = 1;
+            string rejection = null;
+            weapon.ActionRejected += message => rejection = message;
+
+            Assert.That(weapon.TryFire(Vector2.zero), Is.True);
+            weapon.Advance(weapon.MineCooldown);
+
+            Assert.That(weapon.TryFire(Vector2.zero), Is.False);
+            Assert.That(rejection, Is.EqualTo("MINE LIMIT 1/1"));
+            Assert.That(weapon.LivingMineCount, Is.EqualTo(1));
+            Assert.That(weapon.CooldownRemaining, Is.EqualTo(0).Within(.001));
+        }
+
+        [Test]
         public void Enemy_FiresProjectileThatUsesArmorFirstDamage()
         {
             var session = MakeSession();

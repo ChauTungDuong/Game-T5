@@ -21,6 +21,10 @@ namespace CoreGuard
             Unbind();
             boundAudio = Audio;
             boundAudio.Changed += Refresh;
+            if (SoundOff) SoundOff.onClick.AddListener(boundAudio.PlayUiClick);
+            if (SoundOn) SoundOn.onClick.AddListener(boundAudio.PlayUiClick);
+            if (MusicOn) MusicOn.onClick.AddListener(boundAudio.PlayUiClick);
+            if (MusicOff) MusicOff.onClick.AddListener(boundAudio.PlayUiClick);
             if (SoundOff) SoundOff.onClick.AddListener(DisableSfx);
             if (SoundOn) SoundOn.onClick.AddListener(EnableSfx);
             if (MusicOn) MusicOn.onClick.AddListener(EnableMusic);
@@ -51,6 +55,10 @@ namespace CoreGuard
         {
             if (!boundAudio) return;
             boundAudio.Changed -= Refresh;
+            if (SoundOff) SoundOff.onClick.RemoveListener(boundAudio.PlayUiClick);
+            if (SoundOn) SoundOn.onClick.RemoveListener(boundAudio.PlayUiClick);
+            if (MusicOn) MusicOn.onClick.RemoveListener(boundAudio.PlayUiClick);
+            if (MusicOff) MusicOff.onClick.RemoveListener(boundAudio.PlayUiClick);
             if (SoundOff) SoundOff.onClick.RemoveListener(DisableSfx);
             if (SoundOn) SoundOn.onClick.RemoveListener(EnableSfx);
             if (MusicOn) MusicOn.onClick.RemoveListener(EnableMusic);

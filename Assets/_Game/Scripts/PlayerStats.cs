@@ -11,10 +11,12 @@ namespace CoreGuard
         public int Coins { get; private set; }
         public WorldHealthBar HealthBar;
         public event Action Changed;
+        private bool deathFeedbackPlayed;
         private void Awake() => RefreshHealthBar();
         public void ResetStats()
         {
             HP = MaxHP; Armor = MaxArmor; Coins = 0;
+            deathFeedbackPlayed = false;
             NotifyChanged();
         }
         public void ApplyDamage(float amount)
@@ -46,6 +48,12 @@ namespace CoreGuard
         private void NotifyChanged()
         {
             RefreshHealthBar();
+            if (HP <= 0 && !deathFeedbackPlayed)
+            {
+                deathFeedbackPlayed = true;
+                var presenter = GetComponent<CombatVfxPresenter>();
+                if (presenter) presenter.SpawnExplosion(transform.position, .3f);
+            }
             Changed?.Invoke();
         }
     }

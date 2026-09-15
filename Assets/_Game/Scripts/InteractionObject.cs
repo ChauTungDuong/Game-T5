@@ -20,6 +20,7 @@ namespace CoreGuard
         public event Action<InteractionObject> Activated;
 
         private CircleCollider2D trigger;
+        private bool yTriggeredUntilExit;
 
         private void Awake()
         {
@@ -31,12 +32,20 @@ namespace CoreGuard
         private void OnTriggerEnter2D(Collider2D other)
         {
             var player = other ? other.GetComponentInParent<PlayerStats>() : null;
-            if (player) ApplyTo(player);
+            if (player && !(Kind == InteractionKind.Y && yTriggeredUntilExit)) ApplyTo(player);
+        }
+
+        private void OnTriggerExit2D(Collider2D other)
+        {
+            if (Kind != InteractionKind.Y) return;
+            var player = other ? other.GetComponentInParent<PlayerStats>() : null;
+            if (player && (!Player || player == Player)) yTriggeredUntilExit = false;
         }
 
         public bool ApplyTo(PlayerStats target)
         {
-            if (!target || IsConsumed || (Player && target != Player)) return false;
+            if (!target || IsConsumed || (Player && target != Player) ||
+                (Kind == InteractionKind.Y && yTriggeredUntilExit)) return false;
             Player = target;
             var applied = false;
             switch (Kind)
@@ -69,7 +78,8 @@ namespace CoreGuard
                 InteractionFeedbackCue.Spawn(Kind, transform.position);
                 if (Session && Session.Audio)
                     Session.Audio.PlaySfx(Session.Audio.GetInteractionClip(Kind));
-                Consume();
+                if (Kind == InteractionKind.Y) yTriggeredUntilExit = true;
+                else Consume();
             }
             return applied;
         }
@@ -77,6 +87,7 @@ namespace CoreGuard
         public void ResetObject()
         {
             IsConsumed = false;
+            yTriggeredUntilExit = false;
             gameObject.SetActive(true);
         }
 

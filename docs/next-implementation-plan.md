@@ -4,7 +4,7 @@
 
 Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this branch and continue from the first unchecked item below.
 
-### Completed and committed
+### Completed in the current checkout
 
 - [x] Task 1 — shared Player/Core world health bars and live current/max HUD values (`2453294`, `bade440`).
 - [x] Task 2 — enemy projectile damage plus visible firing flash/audio feedback (`3829191`, `90f44f8`).
@@ -12,23 +12,24 @@ Branch: `feature/core-guard-gameplay-updates` (Unity `6000.3.23f1`). Pull this b
 - [x] Task 4 — all six X/Y/Z effects plus procedural animation/VFX, floating text, and SFX (`cdffd02`; interaction tests 20/20 and audio tests 3/3).
 - [x] Task 5 — Shield/EMP mechanics, cooldown/reset/session filtering, shield/EMP rings, EMP affected count (`dab68ed`; defense 4/4 and presentation 4/4).
 - [x] Task 6 — compact anchored HUD, no large top/bottom surfaces, READY/active/cooldown states, 1280x720 and 1920x1080 bounds (`dab68ed`; layout 1/1 and HUD regression 2/2).
-- [x] Task 8 partial — idempotent repair of a missing enemy gate while preserving authored gate references (focused test 1/1; commit immediately after this handoff update).
+- [x] Task 8 editor scope — idempotent scene repair and handoff documentation. Standalone player packaging remains outside the current scope override.
 
-### Intentionally deferred
+### Asset pass completed
 
-- [ ] Task 7 — asset selection/integration, import settings, licenses, and `docs/asset-register.md`. The owner explicitly deferred this work. `D:/Game-T5/Resources` is user-supplied and must not be deleted or committed accidentally.
+- [x] Task 7 asset selection/integration — selected Kenney sprites, UI, font and audio plus the supplied result/countdown/explosion assets and feedback clips are in the project, import/licence details are recorded in `docs/asset-register.md`, and `DemoSceneBuilder` assigns them. The original `Resources-20260906T110750Z-1-001/` bundle remains local-only and untouched.
 
 ### Continue here
 
-- [ ] Run the complete EditMode suite, fix any integration failures, and record the final count.
-- [ ] Run the complete PlayMode suite, fix any integration failures, and record the final count.
-- [ ] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
-- [ ] Perform the manual Editor smoke pass: movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, and HUD readability at both target resolutions.
-- [ ] Update `docs/progress.md` and `docs/acceptance.md` with fresh full-suite and smoke evidence. Leave `docs/asset-register.md` for the deferred asset pass.
-- [ ] Review the combined Task 5/6 commit `dab68ed`; the automated reviewer could not complete because its usage quota expired.
-- [ ] After the deferred asset pass, rerun full verification and merge this feature branch.
+- [x] Run the complete EditMode suite: 59/59 passed (`Logs/coreguard-editmode-provided.xml`).
+- [x] Run the complete PlayMode suite before the latest death-feedback patch: 12/12 passed (`Logs/coreguard-playmode-provided.xml`).
+- [ ] Rerun PlayMode after the tank-size/death-explosion patch; the current Unity Editor lock must be released first.
+- [x] Run `Core Guard → Configure Project` twice and confirm the builder remains idempotent in the real Main scene.
+- [ ] Perform the manual Editor smoke pass: movement/aim/fire, enemy shots, X/Y/Z cycles and feedback, Shield/EMP, pause/retry, win/loss, audio listening, and HUD readability at both target resolutions. This is the owner's remaining Unity step.
+- [x] Update `docs/progress.md` and `docs/acceptance.md` with fresh verification evidence.
+- [x] Review the Task 5/6 implementation in `dab68ed`; the final scene and full suites validate its integrated wiring.
+- [x] Complete the Editor-demo handoff. Standalone build/ZIP/video remain intentionally out of scope.
 
-Known local-only paths that must stay uncommitted: `Resources/`. Unity test/configuration runs may also touch `Assets/Settings/InputSystem_Actions.inputactions` and the Enemy/Mine/Projectile prefabs; inspect ownership before committing those files.
+Known local-only paths that must stay uncommitted: `Resources-20260906T110750Z-1-001/`. Unity test/configuration runs may also touch `Assets/Settings/InputSystem_Actions.inputactions` and the Enemy/Mine/Projectile prefabs; inspect ownership before committing those files.
 
 ## 1. Mục tiêu
 

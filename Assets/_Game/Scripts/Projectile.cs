@@ -172,8 +172,18 @@ namespace CoreGuard
         {
             if (resolved) return;
             resolved = true;
+            PlayExplosionFeedback();
             Explosion.ApplyAt(transform.position, explosionRadius, damage, Session);
             Retire();
+        }
+
+        private void PlayExplosionFeedback()
+        {
+            if (Session && Session.Audio) Session.Audio.PlaySfx(Session.Audio.Explosion);
+            var presenter = Session && Session.Player
+                ? Session.Player.GetComponent<CombatVfxPresenter>()
+                : null;
+            if (presenter) presenter.SpawnExplosion(transform.position, IsEnemyProjectile ? .16f : .23f);
         }
 
         private void Retire()

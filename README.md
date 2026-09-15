@@ -6,9 +6,9 @@ After checkout, let Unity finish importing `Assets/_Game/Art/Kenney` and `Assets
 
 The player starts with 100 HP, 50 Armor and 0 Coins; the core has 100 HP. Enemies spawn every five seconds, rotate through four gates, and stop at six living enemies. Each enemy reaching the core deals 20 damage once. The timer lasts 90 seconds; player/core death takes priority over timeout. Movement, aiming, spawning and time stop outside Playing.
 
-This checkpoint contains the T1 arena/session flow plus source implementations for T2–T5: three weapons, enemy projectiles, Shield/EMP, X/Y/Z interactions, audio toggles, four-beep alerts and the restricted zone. T6 now adds weapon/cooldown HUD fields and an F1 Demo Mode with repeatable scenarios. Unity scene import, full test execution and build verification after these changes are still pending, so the feature set is not yet acceptance-complete.
+This checkpoint contains the playable Unity Editor demo: three weapons, equal-sized player/enemy tanks, enemy projectiles, Shield/EMP, deterministic X/Y/Z cycles, audio toggles, four-beep alerts, the restricted zone, compact HUD, a 3–2–1 start countdown, result artwork/audio, animated explosions on tank death and detonation, and repeatable F1 Demo Mode. Configure the project once from `Core Guard → Configure Project`, then open `Assets/_Game/Scenes/Main.unity` and press Play. Standalone player export remains outside the current scope.
 
-The visual/audio pass uses Kenney tank sprites for the player and enemies, Kenney particle sprites for core/mine/combat feedback, Kenney Game Icons for state markers and audio toggles, Kenney sci-fi UI panels/buttons and font, and Kenney Sci-fi Sounds for weapon, defense, alert and ambient-loop audio. See `docs/asset-register.md` for the exact local paths and licenses.
+The visual/audio pass uses Kenney tank sprites for the player and enemies, Kenney particle sprites for core/mine/combat feedback, Kenney Game Icons for state markers and audio toggles, Kenney sci-fi UI panels/buttons and font, and Kenney Sci-fi Sounds for weapon, defense, alert and ambient-loop audio. Selected user-provided result/countdown/explosion artwork and feedback clips live under `Assets/_Game/Art/Provided/` and `Assets/_Game/Audio/Provided/`. See `docs/asset-register.md` for exact local paths, provenance and license notes.
 
 ## Rebuild the scene and player
 

@@ -21,6 +21,10 @@ namespace CoreGuard
         public AudioClip InteractionDamage;
         public AudioClip InteractionEmp;
         public AudioClip InteractionBoost;
+        public AudioClip UiClick;
+        public AudioClip Explosion;
+        public AudioClip Victory;
+        public AudioClip Defeat;
         public AudioClip MusicLoop;
         public bool SfxEnabled { get; private set; } = true;
         public bool MusicEnabled { get; private set; }
@@ -32,6 +36,8 @@ namespace CoreGuard
         private readonly Queue<AlertJob> alertJobs = new Queue<AlertJob>();
         private float timeUntilAlertEvent;
         private bool sessionWasPaused;
+        private MatchState observedState;
+        private bool hasObservedState;
         private GameSession boundSession;
         private WeaponController boundWeapon;
         private DefenseController boundDefense;
@@ -62,6 +68,8 @@ namespace CoreGuard
             boundSession = Session;
             boundWeapon = Weapon ? Weapon : (Session ? Session.Weapon : null);
             boundDefense = Defense ? Defense : (Session ? Session.Defense : null);
+            hasObservedState = boundSession;
+            if (hasObservedState) observedState = boundSession.State;
             if (boundSession) boundSession.Changed += HandleSessionChanged;
             if (boundWeapon) boundWeapon.AttackAccepted += HandleAttackAccepted;
             if (boundDefense)
@@ -80,6 +88,8 @@ namespace CoreGuard
             SfxSource.PlayOneShot(clip);
             SfxPlayed?.Invoke(clip);
         }
+
+        public void PlayUiClick() => PlaySfx(UiClick);
 
         public AudioClip GetInteractionClip(InteractionKind kind)
         {
@@ -189,6 +199,9 @@ namespace CoreGuard
         private void HandleSessionChanged()
         {
             if (!Session) return;
+            var stateChanged = !hasObservedState || observedState != Session.State;
+            observedState = Session.State;
+            hasObservedState = true;
             if (Session.State == MatchState.Paused && !sessionWasPaused)
             {
                 sessionWasPaused = true;
@@ -203,10 +216,11 @@ namespace CoreGuard
                 if (SfxEnabled && AlertSource) AlertSource.UnPause();
                 if (MusicEnabled && MusicSource) MusicSource.UnPause();
             }
-            else if (Session.State == MatchState.Won || Session.State == MatchState.Lost)
+            else if ((Session.State == MatchState.Won || Session.State == MatchState.Lost) && stateChanged)
             {
-                CancelAlerts();
+                StopAlerts();
                 if (SfxSource) SfxSource.Stop();
+                PlaySfx(Session.State == MatchState.Won ? Victory : Defeat);
             }
             Changed?.Invoke();
         }
@@ -232,7 +246,19 @@ namespace CoreGuard
             InteractionDamage = InteractionDamage ? InteractionDamage : Tone("Interaction damage", 120, .24f);
             InteractionEmp = InteractionEmp ? InteractionEmp : Tone("Interaction EMP", 190, .28f);
             InteractionBoost = InteractionBoost ? InteractionBoost : Tone("Interaction boost", 760, .24f);
+            UiClick = UiClick ? UiClick : Tone("UI click", 580, .05f);
+            Explosion = Explosion ? Explosion : Tone("Explosion", 120, .24f);
+            Victory = Victory ? Victory : Tone("Victory", 840, .5f);
+            Defeat = Defeat ? Defeat : Tone("Defeat", 150, .55f);
             MusicLoop = MusicLoop ? MusicLoop : Tone("Arena loop", 110, 2f);
+        }
+
+        private void StopAlerts()
+        {
+            alertJobs.Clear();
+            timeUntilAlertEvent = 0;
+            if (AlertSource) AlertSource.Stop();
+            AlertBeepsPlayed = 0;
         }
 
         private static AudioClip Tone(string name, float frequency, float seconds)
@@ -262,6 +288,7 @@ namespace CoreGuard
             boundSession = null;
             boundWeapon = null;
             boundDefense = null;
+            hasObservedState = false;
         }
     }
 }

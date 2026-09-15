@@ -39,6 +39,8 @@ namespace CoreGuard
         public float CooldownRemaining => cooldowns[(int)SelectedWeapon];
 
         public event Action<WeaponKind, Vector2, Vector2> AttackAccepted;
+        public event Action<WeaponKind> WeaponSelected;
+        public event Action<string> ActionRejected;
 
         private readonly List<Mine> mines = new List<Mine>();
         private readonly float[] cooldowns = new float[3];
@@ -46,7 +48,9 @@ namespace CoreGuard
         public bool Select(WeaponKind weapon)
         {
             if (Session && Session.State != MatchState.Playing) return false;
+            if (SelectedWeapon == weapon) return true;
             SelectedWeapon = weapon;
+            WeaponSelected?.Invoke(weapon);
             return true;
         }
 
@@ -61,7 +65,11 @@ namespace CoreGuard
         {
             if (!Session || Session.State != MatchState.Playing || CooldownRemaining > 0) return false;
             RemoveDeadMines();
-            if (SelectedWeapon == WeaponKind.Mine && mines.Count >= MaxMines) return false;
+            if (SelectedWeapon == WeaponKind.Mine && mines.Count >= MaxMines)
+            {
+                ActionRejected?.Invoke($"MINE LIMIT {mines.Count}/{MaxMines}");
+                return false;
+            }
 
             var origin = Muzzle ? (Vector2)Muzzle.position : (Vector2)transform.position;
             var direction = aimWorld - origin;

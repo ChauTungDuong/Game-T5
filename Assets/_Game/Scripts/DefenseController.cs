@@ -21,6 +21,7 @@ namespace CoreGuard
         public int LastEmpAffectedCount { get; private set; }
         public event Action Changed;
         public event Action ShieldActivated;
+        public event Action ShieldBlocked;
         public event Action EmpActivated;
         public event Action<int> EmpResolved;
 
@@ -49,6 +50,7 @@ namespace CoreGuard
         {
             if (!CanUse() || !ShieldActive) return false;
             shieldHitsRemaining--;
+            ShieldBlocked?.Invoke();
             if (shieldHitsRemaining <= 0) BreakShield();
             else Changed?.Invoke();
             return true;

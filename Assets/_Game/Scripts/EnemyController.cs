@@ -11,10 +11,14 @@ namespace CoreGuard
         public CoreHealth Core;
         public PlayerStats Player;
         public Projectile EnemyProjectilePrefab;
+        public Transform Turret;
+        public Transform Muzzle;
         public float AttackRange = 7f;
         public float AttackInterval = 1.5f;
         public float EnemyShotDamage = 10f;
         public float EnemyShotSpeed = 7f;
+        public const float TankVisualScale = 1.6f;
+        public const float TankColliderRadius = .6f;
         public float HP { get; private set; }
         public const float MaxHP = 60f;
         public bool IsAlive => HP > 0 && !retired;
@@ -40,7 +44,12 @@ namespace CoreGuard
             body.gravityScale = 0;
             body.bodyType = RigidbodyType2D.Kinematic;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
-            GetComponent<CircleCollider2D>().isTrigger = true;
+            var collider = GetComponent<CircleCollider2D>();
+            collider.isTrigger = true;
+            collider.radius = TankColliderRadius;
+            var visual = transform.Find("Enemy body");
+            if (visual) visual.localScale = Vector3.one * TankVisualScale;
+            CacheCannon();
             CacheBodyRenderer();
             CreateHealthBar();
         }
@@ -49,6 +58,7 @@ namespace CoreGuard
             Active.Add(this);
             Session = session; Core = core; Player = session ? session.Player : null;
             EnemyProjectilePrefab = session ? session.EnemyProjectilePrefab : null;
+            CacheCannon();
             HP = MaxHP; retired = false; shootRemaining = .6f; stunRemaining = 0;
             hitFlashRemaining = 0; fireFlashRemaining = 0;
             RefreshHealthBar();
@@ -74,6 +84,7 @@ namespace CoreGuard
                 return;
             }
 
+            if (Player) AimCannon((Vector2)Player.transform.position - body.position);
             TryShoot(delta);
             body.MovePosition(Vector2.MoveTowards(body.position, target, travel));
         }
@@ -109,9 +120,11 @@ namespace CoreGuard
             shootRemaining -= delta;
             if (shootRemaining > 0) return;
 
-            var direction = (Vector2)Player.transform.position - body.position;
+            var muzzlePosition = Muzzle ? (Vector2)Muzzle.position : body.position;
+            var direction = (Vector2)Player.transform.position - muzzlePosition;
             if (direction.sqrMagnitude <= .000001f) return;
-            var projectile = Instantiate(EnemyProjectilePrefab, body.position, Quaternion.identity, Session.transform);
+            AimCannon(direction);
+            var projectile = Instantiate(EnemyProjectilePrefab, muzzlePosition, Quaternion.identity, Session.transform);
             projectile.InitializeEnemyShot(Session, direction, EnemyShotDamage, EnemyShotSpeed, 4);
             shootRemaining = AttackInterval;
             FlashWhenFiring();
@@ -147,6 +160,18 @@ namespace CoreGuard
             if (bodyRenderer) bodyRenderer.color = FireFlashColor;
         }
 
+        private void CacheCannon()
+        {
+            if (!Turret) Turret = transform.Find("Turret");
+            if (!Muzzle && Turret) Muzzle = Turret.Find("Muzzle");
+        }
+
+        private void AimCannon(Vector2 direction)
+        {
+            if (!Turret || direction.sqrMagnitude <= .000001f) return;
+            Turret.right = direction.normalized;
+        }
+
         private void CacheBodyRenderer()
         {
             if (!bodyRenderer) bodyRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -161,7 +186,7 @@ namespace CoreGuard
         {
             var barObject = new GameObject(name);
             barObject.transform.SetParent(transform, false);
-            barObject.transform.localPosition = new Vector3(0, .72f, 0);
+            barObject.transform.localPosition = new Vector3(0, .95f, 0);
             var bar = barObject.AddComponent<LineRenderer>();
             bar.useWorldSpace = false;
             bar.positionCount = 2;
@@ -169,8 +194,8 @@ namespace CoreGuard
             bar.startColor = color;
             bar.endColor = color;
             bar.sortingOrder = 6;
-            bar.SetPosition(0, new Vector3(-.55f, 0, 0));
-            bar.SetPosition(1, new Vector3(.55f, 0, 0));
+            bar.SetPosition(0, new Vector3(-.625f, 0, 0));
+            bar.SetPosition(1, new Vector3(.625f, 0, 0));
             return bar;
         }
 
@@ -178,12 +203,17 @@ namespace CoreGuard
         {
             if (!healthFill) return;
             var ratio = Mathf.Clamp01(HP / MaxHP);
-            healthFill.SetPosition(1, new Vector3(-.55f + 1.1f * ratio, 0, 0));
+            healthFill.SetPosition(1, new Vector3(-.625f + 1.25f * ratio, 0, 0));
             healthBack.enabled = IsAlive;
             healthFill.enabled = IsAlive;
         }
         private void Retire()
         {
+            if (retired) return;
+            var presenter = Session && Session.Player
+                ? Session.Player.GetComponent<CombatVfxPresenter>()
+                : null;
+            if (presenter) presenter.SpawnExplosion(transform.position, .3f);
             retired = true;
             gameObject.SetActive(false);
             // Destruction is deferred during play, but immediately excluded from simulation.
