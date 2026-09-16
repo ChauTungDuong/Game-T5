@@ -39,6 +39,10 @@ public static class DemoSceneBuilder
     private const string ZIconPath = "Assets/_Game/Art/Kenney/Icons/plus.png";
     private const string UiPanelPath = "Assets/_Game/Art/Kenney/UI/panel_glass.png";
     private const string UiButtonPath = "Assets/_Game/Art/Kenney/UI/button_rectangle_depth.png";
+    private const string UiSquareButtonPath = "Assets/_Game/Art/Kenney/UI/button_square_depth.png";
+    private const string UiCircleButtonPath = "Assets/_Game/Art/UI/button_circle.png";
+    private const string HomeBackgroundPath = "Assets/_Game/Art/background-gamet5.png";
+    private const string HomeLogoPath = "Assets/_Game/Art/logo.png";
     private const string UiFontPath = "Assets/_Game/Art/Kenney/UI/Kenney Future.ttf";
     private const string BulletAudioPath = "Assets/_Game/Audio/Kenney/laserSmall_000.ogg";
     private const string RocketAudioPath = "Assets/_Game/Audio/Kenney/laserLarge_000.ogg";
@@ -348,7 +352,7 @@ public static class DemoSceneBuilder
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "SH READY  •  EMP READY", new Vector2(390, -245), new Vector2(300, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
-        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26));
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
 
         var feedbackText = Label(root.transform, "Feedback", string.Empty, new Vector2(0, -245), new Vector2(380, 28), 15, new Color(1f, .65f, .25f));
@@ -366,16 +370,88 @@ public static class DemoSceneBuilder
         var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
         if (!hud.ShieldButton) hud.ShieldButton = shieldButton;
         if (!hud.EmpButton) hud.EmpButton = empButton;
-        if (!hud.StartPanel)
+        var homeBg = ImportedSprite(HomeBackgroundPath, null);
+        var homeLogo = ImportedSprite(HomeLogoPath, null);
+        hud.HomeBackground = homeBg;
+        hud.HomeLogo = homeLogo;
+
+        var startPanelGo = hud.StartPanel;
+        if (!startPanelGo)
         {
-            hud.StartPanel = Panel(root.transform, "Start panel", true);
+            var existing = root.transform.Find("Start panel");
+            startPanelGo = existing ? existing.gameObject : Child(root.transform, "Start panel", typeof(RectTransform), typeof(Image));
+            hud.StartPanel = startPanelGo;
         }
-        Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n[R] Cycle Weapon (Bullet/Rocket/Laser)\nQ shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
-        if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
+
+        var startRt = (RectTransform)startPanelGo.transform;
+        startRt.anchorMin = Vector2.zero;
+        startRt.anchorMax = Vector2.one;
+        startRt.offsetMin = Vector2.zero;
+        startRt.offsetMax = Vector2.zero;
+
+        var startBgImg = startPanelGo.GetComponent<Image>() ?? startPanelGo.AddComponent<Image>();
+        if (homeBg)
+        {
+            startBgImg.sprite = homeBg;
+            startBgImg.type = Image.Type.Simple;
+            startBgImg.preserveAspect = false;
+            startBgImg.color = Color.white;
+        }
+        else
+        {
+            startBgImg.color = Ink;
+        }
+        startBgImg.raycastTarget = true;
+        startPanelGo.SetActive(true);
+
+        // Logo Image
+        var logoGo = Child(startPanelGo.transform, "Logo", typeof(RectTransform), typeof(Image));
+        var logoRt = (RectTransform)logoGo.transform;
+        logoRt.anchorMin = new Vector2(.5f, .5f);
+        logoRt.anchorMax = new Vector2(.5f, .5f);
+        logoRt.pivot = new Vector2(.5f, .5f);
+        logoRt.anchoredPosition = new Vector2(0, 75);
+        logoRt.sizeDelta = new Vector2(460, 153);
+        var logoImg = logoGo.GetComponent<Image>();
+        if (homeLogo)
+        {
+            logoImg.sprite = homeLogo;
+            logoImg.preserveAspect = true;
+            logoImg.color = Color.white;
+        }
+        logoImg.raycastTarget = false;
+
+        var oldHeading = startPanelGo.transform.Find("Heading");
+        if (oldHeading) oldHeading.gameObject.SetActive(false);
+        var oldBrief = startPanelGo.transform.Find("Brief");
+        if (oldBrief) oldBrief.gameObject.SetActive(false);
+
+        if (!hud.StartButton) hud.StartButton = Button(startPanelGo.transform, "Start button", "START DEFENSE", new Vector2(0, -65));
+        var startBtnRt = (RectTransform)hud.StartButton.transform;
+        startBtnRt.anchorMin = new Vector2(.5f, .5f);
+        startBtnRt.anchorMax = new Vector2(.5f, .5f);
+        startBtnRt.pivot = new Vector2(.5f, .5f);
+        startBtnRt.anchoredPosition = new Vector2(0, -65);
+        startBtnRt.sizeDelta = new Vector2(230, 68);
         ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
-        var settingsButton = AudioButton(hud.StartPanel.transform, "Settings", "SETTINGS", new Vector2(196, -103));
+
+        var settingsButton = AudioButton(startPanelGo.transform, "Settings", "SETTINGS", Vector2.zero);
+        var settingsRt = (RectTransform)settingsButton.transform;
+        settingsRt.anchorMin = Vector2.one;
+        settingsRt.anchorMax = Vector2.one;
+        settingsRt.pivot = Vector2.one;
+        settingsRt.anchoredPosition = new Vector2(-28, -28);
+        settingsRt.sizeDelta = new Vector2(56, 56);
         hud.SettingsButton = settingsButton;
+
+        var briefText = Label(startPanelGo.transform, "Brief", "WASD / D-Pad move  •  Touch / Mouse aim & fire\nQ Shield  •  E EMP  •  [R] Cycle Weapon", new Vector2(0, -135), new Vector2(560, 36), 13, new Color(.85f, .92f, .95f, .9f));
+        var briefRt = (RectTransform)briefText.transform;
+        briefRt.anchorMin = new Vector2(.5f, .5f);
+        briefRt.anchorMax = new Vector2(.5f, .5f);
+        briefRt.pivot = new Vector2(.5f, .5f);
+        briefRt.anchoredPosition = new Vector2(0, -135);
+        briefRt.sizeDelta = new Vector2(560, 36);
+
         var closeSettingsButton = Button(settingsPanel.transform, "Close settings button", "BACK", new Vector2(0, -92));
         hud.CloseSettingsButton = closeSettingsButton;
         if (!hud.PausePanel)
@@ -416,6 +492,7 @@ public static class DemoSceneBuilder
         progressImage.raycastTarget = false;
         hud.LoadingPanel = loadingPanel;
         hud.LoadingProgress = progressImage;
+        EnsureMobileControls(root.transform, session);
         BuildDemoPanel(root.transform, session.Demo);
     }
 
@@ -639,6 +716,183 @@ public static class DemoSceneBuilder
         var label = Label(go.transform, "Label", title, Vector2.zero, new Vector2(106, 38), 13, Color.white);
         Layout((RectTransform)label.transform, Vector2.zero, new Vector2(106, 38));
         return go.GetComponent<Button>();
+    }
+
+    private static void EnsureMobileControls(Transform parent, GameSession session)
+    {
+        var mobileRoot = parent.Find("Mobile controls");
+        GameObject go;
+        if (!mobileRoot)
+        {
+            go = new GameObject("Mobile controls", typeof(RectTransform), typeof(MobileControlsPresenter));
+            go.transform.SetParent(parent, false);
+        }
+        else
+        {
+            go = mobileRoot.gameObject;
+        }
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        var presenter = go.GetComponent<MobileControlsPresenter>() ?? go.AddComponent<MobileControlsPresenter>();
+        presenter.Session = session;
+
+        var squareSprite = ImportedSprite(UiSquareButtonPath, null);
+        var rectSprite = ImportedSprite(UiButtonPath, null);
+
+        // --- D-Pad Container at Bottom-Left ---
+        var dpadTransform = go.transform.Find("Dpad");
+        GameObject dpadObj;
+        if (!dpadTransform)
+        {
+            dpadObj = new GameObject("Dpad", typeof(RectTransform));
+            dpadObj.transform.SetParent(go.transform, false);
+        }
+        else
+        {
+            dpadObj = dpadTransform.gameObject;
+        }
+        var dpadRt = (RectTransform)dpadObj.transform;
+        dpadRt.anchorMin = Vector2.zero;
+        dpadRt.anchorMax = Vector2.zero;
+        dpadRt.pivot = Vector2.zero;
+        dpadRt.anchoredPosition = new Vector2(24, 24);
+        dpadRt.sizeDelta = new Vector2(170, 170);
+
+        presenter.UpButton = CreateDirectionalButton(dpadObj.transform, "Dpad Up", "▲", new Vector2(85, 140), new Vector2(50, 48), Vector2.up, squareSprite, presenter);
+        presenter.DownButton = CreateDirectionalButton(dpadObj.transform, "Dpad Down", "▼", new Vector2(85, 30), new Vector2(50, 48), Vector2.down, squareSprite, presenter);
+        presenter.LeftButton = CreateDirectionalButton(dpadObj.transform, "Dpad Left", "◄", new Vector2(30, 85), new Vector2(48, 50), Vector2.left, squareSprite, presenter);
+        presenter.RightButton = CreateDirectionalButton(dpadObj.transform, "Dpad Right", "►", new Vector2(140, 85), new Vector2(48, 50), Vector2.right, squareSprite, presenter);
+
+        // --- Clean up obsolete rectangular button if present ---
+        var oldWeapon = go.transform.Find("Mobile Weapon Switch");
+        if (oldWeapon) UnityEngine.Object.DestroyImmediate(oldWeapon.gameObject);
+
+        // --- 3 Round Action Buttons at Bottom-Right: Q (Shield), E (EMP), R (Weapon) ---
+        var circleSprite = ImportedSprite(UiCircleButtonPath, null);
+
+        presenter.ShieldButton = CreateCircularActionButton(go.transform, "Mobile Shield Button", "Q\nSHIELD", new Vector2(-135, 120), new Vector2(62, 62), new Color(.12f, .48f, .68f, .55f), circleSprite, out presenter.ShieldLabel);
+        presenter.EmpButton = CreateCircularActionButton(go.transform, "Mobile Emp Button", "E\nEMP", new Vector2(-55, 120), new Vector2(62, 62), new Color(.48f, .20f, .65f, .55f), circleSprite, out presenter.EmpLabel);
+        presenter.WeaponCycleButton = CreateCircularActionButton(go.transform, "Mobile Weapon Button", "R\n[BULLET]", new Vector2(-95, 48), new Vector2(68, 68), new Color(.13f, .45f, .48f, .55f), circleSprite, out presenter.WeaponCycleLabel);
+
+        presenter.Bind();
+    }
+
+    private static Button CreateCircularActionButton(
+        Transform parent,
+        string name,
+        string title,
+        Vector2 position,
+        Vector2 size,
+        Color tintColor,
+        Sprite sprite,
+        out Text label)
+    {
+        var existing = parent.Find(name);
+        GameObject go;
+        if (!existing)
+        {
+            go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+        }
+        else
+        {
+            go = existing.gameObject;
+        }
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = new Vector2(1, 0);
+        rt.anchorMax = new Vector2(1, 0);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = position;
+        rt.sizeDelta = size;
+
+        var img = go.GetComponent<Image>() ?? go.AddComponent<Image>();
+        if (sprite) img.sprite = sprite;
+        img.color = tintColor;
+        img.type = Image.Type.Simple;
+
+        var btn = go.GetComponent<Button>() ?? go.AddComponent<Button>();
+        StyleButton(btn, tintColor);
+
+        var labelTransform = go.transform.Find("Label");
+        if (!labelTransform)
+        {
+            label = Label(go.transform, "Label", title, Vector2.zero, size, 11, Color.white);
+        }
+        else
+        {
+            label = labelTransform.GetComponent<Text>();
+            label.text = title;
+            label.fontSize = 11;
+        }
+        label.alignment = TextAnchor.MiddleCenter;
+        label.lineSpacing = 0.9f;
+        Layout((RectTransform)label.transform, Vector2.zero, size);
+
+        return btn;
+    }
+
+    private static VirtualDirectionalButton CreateDirectionalButton(
+        Transform parent,
+        string name,
+        string arrow,
+        Vector2 position,
+        Vector2 size,
+        Vector2 direction,
+        Sprite sprite,
+        MobileControlsPresenter presenter)
+    {
+        var existing = parent.Find(name);
+        GameObject go;
+        if (!existing)
+        {
+            go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(VirtualDirectionalButton));
+            go.transform.SetParent(parent, false);
+        }
+        else
+        {
+            go = existing.gameObject;
+        }
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = new Vector2(.5f, .5f);
+        rt.anchorMax = new Vector2(.5f, .5f);
+        rt.pivot = new Vector2(.5f, .5f);
+        rt.anchoredPosition = position - new Vector2(85, 85);
+        rt.sizeDelta = size;
+
+        var img = go.GetComponent<Image>();
+        if (sprite) img.sprite = sprite;
+        img.color = new Color(.12f, .38f, .44f, .4f);
+
+        var btn = go.GetComponent<VirtualDirectionalButton>() ?? go.AddComponent<VirtualDirectionalButton>();
+        btn.Direction = direction;
+        btn.Presenter = presenter;
+        btn.NormalAlpha = .4f;
+        btn.PressedAlpha = .85f;
+
+        var labelTransform = go.transform.Find("Label");
+        Text label;
+        if (!labelTransform)
+        {
+            label = Label(go.transform, "Label", arrow, Vector2.zero, size, 22, Color.white);
+        }
+        else
+        {
+            label = labelTransform.GetComponent<Text>();
+            label.text = arrow;
+        }
+        label.alignment = TextAnchor.MiddleCenter;
+        Layout((RectTransform)label.transform, Vector2.zero, size);
+        btn.LabelText = label;
+        btn.BackgroundImage = img;
+
+        return btn;
     }
 
     private static GameObject CreateHudBar(
@@ -986,11 +1240,12 @@ public static class DemoSceneBuilder
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.alphaIsTransparency = true;
-            importer.filterMode = FilterMode.Point;
+            importer.filterMode = path.Contains("Kenney") ? FilterMode.Point : FilterMode.Bilinear;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }
         var imported = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (!imported) imported = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
         return imported ? imported : fallback;
     }
     private static AudioClip PreferImportedClip(string path, AudioClip fallback)

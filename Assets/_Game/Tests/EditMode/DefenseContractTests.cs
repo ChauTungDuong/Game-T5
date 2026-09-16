@@ -79,12 +79,12 @@ namespace CoreGuard.Tests.Editor
             Assert.That(defense.ShieldActive, Is.False);
             Assert.That(defense.ShieldRemaining, Is.Zero);
             Assert.That(session.Player.HP, Is.EqualTo(100));
-            Assert.That(session.Player.Armor, Is.EqualTo(50));
+            Assert.That(session.Player.Armor, Is.EqualTo(80), "Shield activation consumed 20 energy.");
 
             var fourth = MakeEnemyShot(session, session.Player.transform.position);
             fourth.ResolveAgainst(playerCollider);
-            Assert.That(session.Player.HP, Is.EqualTo(100));
-            Assert.That(session.Player.Armor, Is.EqualTo(40));
+            Assert.That(session.Player.HP, Is.EqualTo(90), "Fourth shot damages HP directly.");
+            Assert.That(session.Player.Armor, Is.EqualTo(80), "Enemy projectile hit must not reduce energy.");
         }
 
         [Test]

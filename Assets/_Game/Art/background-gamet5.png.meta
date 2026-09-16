@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: ad9cd20bd314e41a2bade696eef53942
+guid: 73d3bce1e99c9aac8be068b32b360f7a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8501669293144594016
-    second: button_square_depth_0
+      213: 5029791289498416885
+    second: background-gamet5_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: button_square_depth_0
+      name: background-gamet5_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 64
-        height: 64
+        width: 1672
+        height: 941
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 066dab7ad2ffbf570800000000000000
-      internalID: 8501669293144594016
+      spriteID: 5f638e067886dc540800000000000000
+      internalID: 5029791289498416885
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      button_square_depth_0: 8501669293144594016
+      background-gamet5_0: 5029791289498416885
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

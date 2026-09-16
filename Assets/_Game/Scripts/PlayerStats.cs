@@ -5,9 +5,13 @@ namespace CoreGuard
     public sealed class PlayerStats : MonoBehaviour, IDamageable
     {
         public const float MaxHP = 100f;
-        public const float MaxArmor = 50f;
+        public const float MaxArmor = 100f;
+        public const float MaxEnergy = 100f;
+        public const float EnergyRegenPerSecond = 5f;
+        public const float SkillEnergyCost = 20f;
         public float HP { get; private set; }
-        public float Armor { get; private set; }
+        public float Energy { get; private set; }
+        public float Armor => Energy;
         public int Coins { get; private set; }
         public WorldHealthBar HealthBar;
         public event Action Changed;
@@ -15,24 +19,46 @@ namespace CoreGuard
         private void Awake() => RefreshHealthBar();
         public void ResetStats()
         {
-            HP = MaxHP; Armor = MaxArmor; Coins = 0;
+            HP = MaxHP; Energy = MaxEnergy; Coins = 0;
             deathFeedbackPlayed = false;
             NotifyChanged();
         }
         public void ApplyDamage(float amount)
         {
             if (amount <= 0 || float.IsNaN(amount) || HP <= 0) return;
-            var absorbed = Mathf.Min(Armor, amount);
-            Armor -= absorbed;
-            HP = Mathf.Max(0, HP - (amount - absorbed));
+            // Being hit subtracts HP directly, not energy
+            HP = Mathf.Max(0, HP - amount);
             NotifyChanged();
         }
         public void ApplyEnvironmentHit(float hpLoss, float armorLoss)
         {
             if ((hpLoss <= 0 || float.IsNaN(hpLoss)) && (armorLoss <= 0 || float.IsNaN(armorLoss))) return;
             HP = Mathf.Max(0, HP - Mathf.Max(0, hpLoss));
-            Armor = Mathf.Max(0, Armor - Mathf.Max(0, armorLoss));
+            Energy = Mathf.Max(0, Energy - Mathf.Max(0, armorLoss));
             NotifyChanged();
+        }
+        public bool CanUseSkill(float cost = SkillEnergyCost) => Energy >= cost;
+        public bool TryConsumeEnergy(float amount = SkillEnergyCost)
+        {
+            if (Energy < amount) return false;
+            Energy = Mathf.Max(0, Energy - amount);
+            NotifyChanged();
+            return true;
+        }
+        public void RegenerateEnergy(float amount)
+        {
+            if (amount <= 0 || Energy >= MaxEnergy) return;
+            Energy = Mathf.Min(MaxEnergy, Energy + amount);
+            NotifyChanged();
+        }
+        public void Advance(float delta)
+        {
+            if (delta <= 0) return;
+            if (Energy < MaxEnergy)
+            {
+                Energy = Mathf.Min(MaxEnergy, Energy + EnergyRegenPerSecond * delta);
+                NotifyChanged();
+            }
         }
         public void AddCoins(int amount)
         {

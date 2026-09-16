@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,7 @@ namespace CoreGuard
         public Image ResultImage, CountdownImage;
         public Image LoadingProgress;
         public Sprite WinSprite, LoseSprite, CountdownZero, CountdownOne, CountdownTwo, CountdownThree;
+        public Sprite HomeBackground, HomeLogo;
         public float CountdownDuration = 3f;
         public float LoadingDuration = .75f;
         public GameObject StartPanel, PausePanel, ResultPanel;
@@ -72,6 +74,9 @@ namespace CoreGuard
             if (EmpButton) EmpButton.onClick.AddListener(ActivateEmp);
             if (EmpButton) EmpButton.onClick.AddListener(PlayUiClick);
             ApplyCompactPresentation();
+            EnsureHomeScreen();
+            EnsureSettingsPanel();
+            EnsureMobileControls();
             Refresh();
         }
 
@@ -150,7 +155,9 @@ namespace CoreGuard
 
         private void OpenSettings()
         {
-            if (!Session || Session.State != MatchState.Ready || loadingActive || countdownActive || !SettingsPanel) return;
+            if (!Session || Session.State != MatchState.Ready || loadingActive || countdownActive) return;
+            EnsureSettingsPanel();
+            if (!SettingsPanel) return;
             settingsOpen = true;
             SettingsPanel.transform.SetAsLastSibling();
             Refresh();
@@ -188,7 +195,7 @@ namespace CoreGuard
             SetTextRect(CoreText, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(190, 28), TextAnchor.UpperRight);
             SetTextRect(TimerText, Vector2.one, Vector2.one, new Vector2(-24, -52), new Vector2(120, 26), TextAnchor.UpperRight);
             SetTextRect(WeaponText, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(160, 26), TextAnchor.LowerLeft);
-            SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26), TextAnchor.LowerRight);
+            SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26), TextAnchor.LowerRight);
         }
 
         private void HideVerboseLabel(string childName)
@@ -206,6 +213,187 @@ namespace CoreGuard
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
             text.alignment = alignment;
+        }
+
+        private static Sprite LoadSpriteFromFile(string path)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(path)) return null;
+                var bytes = System.IO.File.ReadAllBytes(path);
+                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (ImageConversion.LoadImage(tex, bytes))
+                {
+                    tex.filterMode = FilterMode.Bilinear;
+                    return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                }
+            }
+            catch (System.Exception) {}
+            return null;
+        }
+
+        private void EnsureHomeScreen()
+        {
+            if (!StartPanel) return;
+            var rt = StartPanel.transform as RectTransform;
+            if (rt)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+            }
+
+            var bgImg = StartPanel.GetComponent<Image>();
+            if (bgImg)
+            {
+                var spriteToUse = HomeBackground;
+                if (!spriteToUse && (!bgImg.sprite || bgImg.sprite.name.Contains("panel_glass")))
+                {
+                    spriteToUse = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("background-gamet5"));
+                    if (!spriteToUse)
+                        spriteToUse = LoadSpriteFromFile("Assets/_Game/Art/background-gamet5.png");
+                }
+                if (spriteToUse)
+                {
+                    bgImg.sprite = spriteToUse;
+                    bgImg.color = Color.white;
+                    bgImg.type = Image.Type.Simple;
+                    bgImg.preserveAspect = false;
+                }
+            }
+
+            var logoT = StartPanel.transform.Find("Logo");
+            if (!logoT)
+            {
+                var logoGo = new GameObject("Logo", typeof(RectTransform), typeof(Image));
+                logoGo.transform.SetParent(StartPanel.transform, false);
+                logoT = logoGo.transform;
+            }
+            var logoRt = (RectTransform)logoT;
+            logoRt.anchorMin = new Vector2(.5f, .5f);
+            logoRt.anchorMax = new Vector2(.5f, .5f);
+            logoRt.pivot = new Vector2(.5f, .5f);
+            logoRt.anchoredPosition = new Vector2(0, 75);
+            logoRt.sizeDelta = new Vector2(460, 153);
+            var logoImg = logoT.GetComponent<Image>();
+            if (logoImg)
+            {
+                var spriteToUse = HomeLogo;
+                if (!spriteToUse && !logoImg.sprite)
+                {
+                    spriteToUse = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("logo"));
+                    if (!spriteToUse)
+                        spriteToUse = LoadSpriteFromFile("Assets/_Game/Art/logo.png");
+                }
+                if (spriteToUse)
+                {
+                    logoImg.sprite = spriteToUse;
+                    logoImg.preserveAspect = true;
+                    logoImg.color = Color.white;
+                }
+            }
+
+            if (StartButton)
+            {
+                var startBtnRt = StartButton.transform as RectTransform;
+                if (startBtnRt)
+                {
+                    startBtnRt.anchorMin = new Vector2(.5f, .5f);
+                    startBtnRt.anchorMax = new Vector2(.5f, .5f);
+                    startBtnRt.pivot = new Vector2(.5f, .5f);
+                    startBtnRt.anchoredPosition = new Vector2(0, -65);
+                    startBtnRt.sizeDelta = new Vector2(230, 68);
+                }
+                var startBtnImg = StartButton.GetComponent<Image>();
+                if (startBtnImg && (!startBtnImg.sprite || startBtnImg.sprite.name.Contains("button_rectangle")))
+                {
+                    var startSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("start1"));
+                    if (!startSprite)
+                        startSprite = LoadSpriteFromFile("Assets/_Game/Art/Provided/Results/start1.png");
+                    if (startSprite)
+                    {
+                        startBtnImg.sprite = startSprite;
+                        startBtnImg.type = Image.Type.Simple;
+                        startBtnImg.preserveAspect = true;
+                        startBtnImg.color = Color.white;
+                        var lbl = StartButton.transform.Find("Label")?.GetComponent<Text>();
+                        if (lbl) lbl.enabled = false;
+                    }
+                }
+            }
+
+            if (SettingsButton)
+            {
+                var sRt = SettingsButton.transform as RectTransform;
+                if (sRt)
+                {
+                    sRt.anchorMin = Vector2.one;
+                    sRt.anchorMax = Vector2.one;
+                    sRt.pivot = Vector2.one;
+                    sRt.anchoredPosition = new Vector2(-28, -28);
+                    sRt.sizeDelta = new Vector2(56, 56);
+                }
+            }
+
+            var oldHeading = StartPanel.transform.Find("Heading");
+            if (oldHeading) oldHeading.gameObject.SetActive(false);
+            var oldBrief = StartPanel.transform.Find("Brief");
+            if (oldBrief) oldBrief.gameObject.SetActive(false);
+        }
+
+        private void EnsureSettingsPanel()
+        {
+            if (!SettingsPanel)
+            {
+                var existing = transform.Find("Settings panel");
+                if (existing) SettingsPanel = existing.gameObject;
+            }
+            if (!SettingsPanel) return;
+
+            var rt = SettingsPanel.transform as RectTransform;
+            if (rt)
+            {
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = new Vector2(420, 270);
+            }
+
+            var img = SettingsPanel.GetComponent<Image>();
+            if (img)
+            {
+                img.color = new Color(.055f, .085f, .12f, .97f);
+            }
+
+            if (!CloseSettingsButton)
+            {
+                var closeBtn = SettingsPanel.transform.Find("Close settings button")?.GetComponent<Button>();
+                if (closeBtn)
+                {
+                    CloseSettingsButton = closeBtn;
+                    CloseSettingsButton.onClick.AddListener(CloseSettings);
+                    CloseSettingsButton.onClick.AddListener(PlayUiClick);
+                }
+            }
+        }
+
+        private void EnsureMobileControls()
+        {
+            var mobileRoot = transform.Find("Mobile controls");
+            if (!mobileRoot)
+            {
+                var go = new GameObject("Mobile controls", typeof(RectTransform), typeof(MobileControlsPresenter));
+                go.transform.SetParent(transform, false);
+                mobileRoot = go.transform;
+            }
+            var presenter = mobileRoot.GetComponent<MobileControlsPresenter>();
+            if (presenter)
+            {
+                presenter.Session = Session;
+                presenter.Bind();
+            }
         }
 
         private void HandleSessionReset()
@@ -332,15 +520,46 @@ namespace CoreGuard
                     ? $"SH {shield}  •  EMP {emp}"
                     : $"SPEED: {speed:0.0}\nSHIELD: {shield}\nEMP: {emp}";
             }
-            if (StartPanel) StartPanel.SetActive(Session.State == MatchState.Ready && !countdownActive && !loadingActive && !settingsOpen);
+            var isPlaying = Session && Session.State == MatchState.Playing;
+            var isReady = Session && Session.State == MatchState.Ready && !countdownActive && !loadingActive;
+            if (StartPanel)
+            {
+                StartPanel.SetActive(isReady);
+                if (isReady && !settingsOpen) StartPanel.transform.SetAsLastSibling();
+
+                var logo = StartPanel.transform.Find("Logo");
+                if (logo) logo.gameObject.SetActive(!settingsOpen);
+                if (StartButton) StartButton.gameObject.SetActive(!settingsOpen);
+                if (SettingsButton) SettingsButton.gameObject.SetActive(!settingsOpen);
+            }
             if (PausePanel) PausePanel.SetActive(Session.State == MatchState.Paused);
             if (ResultPanel) ResultPanel.SetActive(Session.State == MatchState.Won || Session.State == MatchState.Lost);
-            if (SettingsPanel) SettingsPanel.SetActive(settingsOpen && Session.State == MatchState.Ready && !loadingActive && !countdownActive);
+            if (SettingsPanel)
+            {
+                var showSettings = settingsOpen && isReady;
+                SettingsPanel.SetActive(showSettings);
+                if (showSettings) SettingsPanel.transform.SetAsLastSibling();
+            }
             if (LoadingPanel) LoadingPanel.SetActive(loadingActive);
-            if (SettingsButton) SettingsButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+            if (SettingsButton) SettingsButton.interactable = isReady && !settingsOpen;
             if (CloseSettingsButton) CloseSettingsButton.interactable = settingsOpen;
-            if (StartButton) StartButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive && !settingsOpen;
-            var gameplayActionsEnabled = Session.State == MatchState.Playing;
+            if (StartButton) StartButton.interactable = isReady && !settingsOpen;
+
+            if (StatsText) StatsText.gameObject.SetActive(isPlaying);
+            if (CoreText) CoreText.gameObject.SetActive(isPlaying);
+            if (TimerText) TimerText.gameObject.SetActive(isPlaying);
+            if (WeaponText) WeaponText.gameObject.SetActive(isPlaying);
+            if (CooldownsText) CooldownsText.gameObject.SetActive(isPlaying);
+            if (PlayerHpFill && PlayerHpFill.transform.parent && PlayerHpFill.transform.parent.parent)
+                PlayerHpFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            if (PlayerArmorFill && PlayerArmorFill.transform.parent && PlayerArmorFill.transform.parent.parent)
+                PlayerArmorFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            if (CoreHpFill && CoreHpFill.transform.parent && CoreHpFill.transform.parent.parent)
+                CoreHpFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            var title = transform.Find("Title");
+            if (title) title.gameObject.SetActive(isPlaying);
+
+            var gameplayActionsEnabled = isPlaying;
             if (WeaponCycleButton)
             {
                 WeaponCycleButton.interactable = gameplayActionsEnabled;
@@ -352,9 +571,11 @@ namespace CoreGuard
             if (RocketButton) RocketButton.interactable = gameplayActionsEnabled;
             if (MineButton) MineButton.interactable = gameplayActionsEnabled;
             if (ShieldButton) ShieldButton.interactable = gameplayActionsEnabled && Session.Defense
-                && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f;
+                && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f
+                && (!Session.Player || Session.Player.CanUseSkill());
             if (EmpButton) EmpButton.interactable = gameplayActionsEnabled && Session.Defense
-                && Session.Defense.EmpCooldownRemaining <= 0f;
+                && Session.Defense.EmpCooldownRemaining <= 0f
+                && (!Session.Player || Session.Player.CanUseSkill());
         }
     }
 }
