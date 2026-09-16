@@ -91,6 +91,18 @@ namespace CoreGuard.Tests.Editor
             Assert.That(stats.TryConsumeEnergy(20), Is.True);
             Assert.That(stats.Energy, Is.Zero);
         }
+        [Test]
+        public void ArenaBackground_FitsFullScreen()
+        {
+            var arena = Make<ArenaBackgroundFitter>("Arena");
+            var floor = Make<SpriteRenderer>("Floor");
+            floor.transform.SetParent(arena.transform);
+            arena.Floor = floor.transform;
+            arena.Fit();
+
+            Assert.That(floor.transform.localScale.x, Is.GreaterThanOrEqualTo(ArenaBackgroundFitter.DefaultWidth));
+            Assert.That(floor.transform.localScale.y, Is.GreaterThanOrEqualTo(ArenaBackgroundFitter.DefaultHeight));
+        }
         [Test] public void Enemy_ContactDamagesCoreExactlyOnceAndRetires()
         {
             var s = Session(); s.StartMatch();

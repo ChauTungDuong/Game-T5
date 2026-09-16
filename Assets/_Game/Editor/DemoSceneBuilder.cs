@@ -94,7 +94,8 @@ public static class DemoSceneBuilder
         PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
 
         var world = Root(scene, "Arena");
-        Visual(world.transform, "Floor", sprite, Vector2.zero, new Vector2(16, 8.4f), new Color(.045f, .08f, .12f), -10);
+        GetOrAdd<ArenaBackgroundFitter>(world);
+        Visual(world.transform, "Floor", sprite, Vector2.zero, new Vector2(48f, 28f), new Color(.045f, .08f, .12f), -10);
         BuildGroundTiles(world.transform, ImportedSprite(GroundTilePath, null));
         Border(world.transform, "North wall", sprite, new Vector2(0, 4.1f), new Vector2(16, .2f));
         Border(world.transform, "South wall", sprite, new Vector2(0, -4.1f), new Vector2(16, .2f));
@@ -1056,8 +1057,8 @@ public static class DemoSceneBuilder
     {
         if (!tileSprite) return;
         const float tileSize = 1.28f;
-        const int columns = 13;
-        const int rows = 7;
+        const int columns = 29;
+        const int rows = 17;
         for (var x = 0; x < columns; x++)
         for (var y = 0; y < rows; y++)
         {

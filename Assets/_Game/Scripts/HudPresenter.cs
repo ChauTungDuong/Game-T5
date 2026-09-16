@@ -77,6 +77,7 @@ namespace CoreGuard
             EnsureHomeScreen();
             EnsureSettingsPanel();
             EnsureMobileControls();
+            EnsureArenaBackground();
             Refresh();
         }
 
@@ -230,6 +231,15 @@ namespace CoreGuard
             }
             catch (System.Exception) {}
             return null;
+        }
+
+        private void EnsureArenaBackground()
+        {
+            var arena = GameObject.Find("Arena");
+            if (!arena) return;
+            var fitter = arena.GetComponent<ArenaBackgroundFitter>();
+            if (!fitter) fitter = arena.AddComponent<ArenaBackgroundFitter>();
+            fitter.Fit();
         }
 
         private void EnsureHomeScreen()
