@@ -613,6 +613,59 @@ namespace CoreGuard
                 && (!Session.Player || Session.Player.CanUseSkill());
 
             HideBottomButtons();
+            UpdateAudioToggleLayout(isPlaying, settingsOpen && isReady);
+        }
+
+        private void UpdateAudioToggleLayout(bool isPlaying, bool showSettings)
+        {
+            var audioView = GetComponent<AudioToggleView>();
+            if (!audioView) return;
+
+            if (showSettings && SettingsPanel)
+            {
+                AttachAudioButtons(SettingsPanel.transform, audioView,
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                    new Vector2(-72, 8), new Vector2(72, 8));
+                audioView.Refresh();
+            }
+            else if (isPlaying || (Session && Session.State == MatchState.Paused))
+            {
+                AttachAudioButtons(transform, audioView,
+                    new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                    new Vector2(-36, -68), new Vector2(36, -68));
+                audioView.Refresh();
+            }
+            else
+            {
+                if (audioView.SoundOff) audioView.SoundOff.gameObject.SetActive(false);
+                if (audioView.SoundOn) audioView.SoundOn.gameObject.SetActive(false);
+                if (audioView.MusicOn) audioView.MusicOn.gameObject.SetActive(false);
+                if (audioView.MusicOff) audioView.MusicOff.gameObject.SetActive(false);
+            }
+        }
+
+        private void AttachAudioButtons(Transform parent, AudioToggleView audioView, Vector2 anchorMin, Vector2 anchorMax, Vector2 soundPos, Vector2 musicPos)
+        {
+            SetButtonLayout(audioView.SoundOff, parent, anchorMin, anchorMax, soundPos);
+            SetButtonLayout(audioView.SoundOn, parent, anchorMin, anchorMax, soundPos);
+            SetButtonLayout(audioView.MusicOn, parent, anchorMin, anchorMax, musicPos);
+            SetButtonLayout(audioView.MusicOff, parent, anchorMin, anchorMax, musicPos);
+        }
+
+        private void SetButtonLayout(Button button, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 position)
+        {
+            if (!button) return;
+            if (button.transform.parent != parent)
+            {
+                button.transform.SetParent(parent, false);
+                button.transform.SetAsLastSibling();
+            }
+            var rt = (RectTransform)button.transform;
+            rt.anchorMin = anchorMin;
+            rt.anchorMax = anchorMax;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = position;
+            rt.sizeDelta = new Vector2(56, 56);
         }
     }
 }

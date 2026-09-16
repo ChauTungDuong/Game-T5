@@ -437,5 +437,71 @@ namespace CoreGuard.Tests.Editor
             Assert.That(shieldBtn.gameObject.activeSelf, Is.False, "Shield button must be hidden");
             Assert.That(empBtn.gameObject.activeSelf, Is.False, "Emp button must be hidden");
         }
+
+        [Test]
+        public void AudioToggles_VisibleOnGameplayScreenWithIdenticalPairLayouts()
+        {
+            var session = MakeSession();
+            var audio = Make<AudioService>("Audio");
+            audio.Session = session;
+            session.Audio = audio;
+
+            var canvas = Make<Canvas>("Canvas");
+            var hud = Make<HudPresenter>("HUD");
+            hud.transform.SetParent(canvas.transform, false);
+            hud.Session = session;
+
+            var audioView = hud.gameObject.AddComponent<AudioToggleView>();
+            audioView.Audio = audio;
+            audioView.SoundOff = Make<Button>("SoundOff");
+            audioView.SoundOn = Make<Button>("SoundOn");
+            audioView.MusicOn = Make<Button>("MusicOn");
+            audioView.MusicOff = Make<Button>("MusicOff");
+
+            var settingsPanel = Make<Image>("Settings panel");
+            settingsPanel.transform.SetParent(hud.transform, false);
+            hud.SettingsPanel = settingsPanel.gameObject;
+
+            hud.Bind();
+            audioView.Bind();
+
+            Assert.That(audioView.SoundOff.transform.parent, Is.EqualTo(hud.transform));
+            Assert.That(audioView.MusicOn.transform.parent, Is.EqualTo(hud.transform));
+
+            var soundOffRt = (RectTransform)audioView.SoundOff.transform;
+            var soundOnRt = (RectTransform)audioView.SoundOn.transform;
+            var musicOnRt = (RectTransform)audioView.MusicOn.transform;
+            var musicOffRt = (RectTransform)audioView.MusicOff.transform;
+
+            Assert.That(soundOffRt.anchoredPosition, Is.EqualTo(soundOnRt.anchoredPosition));
+            Assert.That(soundOffRt.sizeDelta, Is.EqualTo(soundOnRt.sizeDelta));
+            Assert.That(musicOnRt.anchoredPosition, Is.EqualTo(musicOffRt.anchoredPosition));
+            Assert.That(musicOnRt.sizeDelta, Is.EqualTo(musicOffRt.sizeDelta));
+
+            Assert.That(audioView.SoundOff.gameObject.activeSelf, Is.True);
+            Assert.That(audioView.SoundOn.gameObject.activeSelf, Is.False);
+            Assert.That(audioView.MusicOn.gameObject.activeSelf, Is.True);
+            Assert.That(audioView.MusicOff.gameObject.activeSelf, Is.False);
+
+            audioView.SoundOff.onClick.Invoke();
+            Assert.That(audio.SfxEnabled, Is.False);
+            Assert.That(audioView.SoundOff.gameObject.activeSelf, Is.False);
+            Assert.That(audioView.SoundOn.gameObject.activeSelf, Is.True);
+
+            audioView.SoundOn.onClick.Invoke();
+            Assert.That(audio.SfxEnabled, Is.True);
+            Assert.That(audioView.SoundOff.gameObject.activeSelf, Is.True);
+            Assert.That(audioView.SoundOn.gameObject.activeSelf, Is.False);
+
+            audioView.MusicOn.onClick.Invoke();
+            Assert.That(audio.MusicEnabled, Is.True);
+            Assert.That(audioView.MusicOn.gameObject.activeSelf, Is.False);
+            Assert.That(audioView.MusicOff.gameObject.activeSelf, Is.True);
+
+            audioView.MusicOff.onClick.Invoke();
+            Assert.That(audio.MusicEnabled, Is.False);
+            Assert.That(audioView.MusicOn.gameObject.activeSelf, Is.True);
+            Assert.That(audioView.MusicOff.gameObject.activeSelf, Is.False);
+        }
     }
 }

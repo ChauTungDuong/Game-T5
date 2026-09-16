@@ -37,9 +37,28 @@ namespace CoreGuard
         private void EnableMusic() => boundAudio.SetMusicEnabled(true);
         private void DisableMusic() => boundAudio.SetMusicEnabled(false);
 
-        private void Refresh()
+        public void Refresh()
         {
-            if (!boundAudio) return;
+            if (!boundAudio)
+            {
+                if (Audio) boundAudio = Audio;
+                else return;
+            }
+            var hud = GetComponentInParent<HudPresenter>();
+            if (hud)
+            {
+                var isPlaying = boundAudio.Session && boundAudio.Session.State == MatchState.Playing;
+                var isPaused = boundAudio.Session && boundAudio.Session.State == MatchState.Paused;
+                var showSettings = hud.SettingsPanel && hud.SettingsPanel.activeSelf;
+                if (!isPlaying && !isPaused && !showSettings)
+                {
+                    if (SoundOff) SoundOff.gameObject.SetActive(false);
+                    if (SoundOn) SoundOn.gameObject.SetActive(false);
+                    if (MusicOn) MusicOn.gameObject.SetActive(false);
+                    if (MusicOff) MusicOff.gameObject.SetActive(false);
+                    return;
+                }
+            }
             var paused = boundAudio.Session && boundAudio.Session.State == MatchState.Paused;
             if (SoundOff) SoundOff.gameObject.SetActive(boundAudio.SfxEnabled);
             if (SoundOn) SoundOn.gameObject.SetActive(!boundAudio.SfxEnabled);
