@@ -64,7 +64,7 @@ namespace CoreGuard.Tests.Editor
             stats.ApplyDamage(200);
             Assert.That(stats.HP, Is.Zero);
         }
-        [Test] public void Stats_SkillsConsume20Energy_AndRegenerate5PerSecond()
+        [Test] public void Stats_SkillsConsume20Energy_AndRegenerate2PerSecond()
         {
             var stats = Make<PlayerStats>("Stats");
             stats.ResetStats();
@@ -74,18 +74,18 @@ namespace CoreGuard.Tests.Editor
             Assert.That(stats.TryConsumeEnergy(20), Is.True);
             Assert.That(stats.Energy, Is.EqualTo(80));
 
-            // Regenerates 5 per second
+            // Regenerates 2 per second
             stats.Advance(1f);
-            Assert.That(stats.Energy, Is.EqualTo(85));
+            Assert.That(stats.Energy, Is.EqualTo(82));
 
             // Consume rest of energy
-            stats.TryConsumeEnergy(85);
+            stats.TryConsumeEnergy(82);
             Assert.That(stats.Energy, Is.Zero);
             Assert.That(stats.CanUseSkill(), Is.False);
             Assert.That(stats.TryConsumeEnergy(20), Is.False, "Cannot use skill without at least 20 energy.");
 
-            // Regenerate for 4 seconds -> 20 energy
-            stats.Advance(4f);
+            // Regenerate for 10 seconds -> 20 energy
+            stats.Advance(10f);
             Assert.That(stats.Energy, Is.EqualTo(20));
             Assert.That(stats.CanUseSkill(), Is.True);
             Assert.That(stats.TryConsumeEnergy(20), Is.True);

@@ -7,7 +7,7 @@ namespace CoreGuard
         public const float MaxHP = 100f;
         public const float MaxArmor = 100f;
         public const float MaxEnergy = 100f;
-        public const float EnergyRegenPerSecond = 5f;
+        public const float EnergyRegenPerSecond = 2f;
         public const float SkillEnergyCost = 20f;
         public float HP { get; private set; }
         public float Energy { get; private set; }
