@@ -6,6 +6,8 @@
 
 **Goal:** tạo game 2D một màn chơi offline, thể hiện rõ toàn bộ yêu cầu âm thanh, điều khiển, 3 tấn công, 2 phòng thủ, 3 đối tượng tương tác/6 hiệu ứng và HUD.
 
+**Current scope override:** bản bàn giao hiện tại chỉ cần chạy demo trong Unity Editor. Standalone Windows build/export, ZIP và kiểm tra `.exe` không còn là điều kiện bắt buộc; các ghi chú build Windows bên dưới được giữ lại như lịch sử của checkpoint T1.
+
 **Architecture:** một scene gameplay, các component C# chia theo Player, Combat, Enemy, World, Audio, UI. Player input phát lệnh; combat tạo projectile/effect; collision thay đổi state; HUD và âm thanh phản ứng với sự kiện. Không cần backend, database, networking hoặc AI sinh nội dung trong lúc chơi.
 
 **Tech stack:** Unity `6000.3.23f1` + C#, 2D Physics, Input System, uGUI/TextMeshPro, AudioSource; build Windows x86_64.
@@ -212,7 +214,7 @@ Các đường dẫn dưới đây dành cho project mới. Nếu mở repo có 
 | `Scripts/UI/DemoDirector.cs` | Các tình huống trình diễn tái lập |
 | `Scripts/VFX/FeedbackPresenter.cs` | Flash, popup, particle và lifetime |
 | `Editor/DemoSceneBuilder.cs` | Menu build scene/prefab bằng Unity API, chỉ vùng `_Game` |
-| `Editor/BuildDemo.cs` | Build Windows, báo lỗi rõ |
+| `Editor/BuildDemo.cs` | Configure scene demo trong Unity Editor |
 | `Tests/EditMode/CoreRulesTests.cs` | Damage, speed, cooldown, state mapping |
 | `Tests/PlayMode/DemoAcceptanceTests.cs` | Physics, alert, scene binding, reset |
 | `Art/`, `Audio/`, `Prefabs/`, `Settings/` | Asset đã chọn, prefab và cấu hình |
@@ -266,13 +268,13 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Produces:** movement, HP/Armor/Coins state, enemy spawn/move, game session; `IDamageable.ApplyDamage(float)` cho T2.
 
-- [ ] Đọc checkpoint T0; kiểm tra project compile, scene build và git sạch. Nếu T0 chưa đạt, quay lại T0 thay vì sửa gameplay trên project lỗi.
-- [ ] Tạo Input System actions Move/Aim/Fire/Weapon1–3/Shield/EMP/Pause/Retry; nối cùng Input System UI module, không trộn legacy input.
-- [ ] Dựng map bằng hình cơ bản, A, lõi, biên map, một B; nối reference bằng editor script hoặc inspector có checklist rõ. Builder chạy lại không tạo hai camera/Canvas.
-- [ ] Làm movement + normalized input, UI ba chỉ số, timer và điều kiện kết thúc; B chạm lõi mất 20 HP và bị hủy.
-- [ ] Kiểm tra: di chuyển chéo/ngang 2 s có khoảng cách tương đương trong sai số physics; không vượt biên; pause ngừng timer; Retry khôi phục 100/50/0 và lõi 100.
-- [ ] Build Windows sơ bộ ngay để phát hiện thiếu module/license/scene từ ngày đầu. Chưa có combat không đánh dấu các yêu cầu combat hoàn tất.
-- [ ] Commit `feat: add playable arena and session flow`; ghi remaining checks.
+- [x] Đọc checkpoint T0; kiểm tra project compile, scene build và git sạch. Nếu T0 chưa đạt, quay lại T0 thay vì sửa gameplay trên project lỗi.
+- [x] Tạo Input System actions Move/Aim/Fire/Weapon1–3/Shield/EMP/Pause/Retry; nối cùng Input System UI module, không trộn legacy input.
+- [x] Dựng map bằng hình cơ bản, A, lõi, biên map, một B; nối reference bằng editor script hoặc inspector có checklist rõ. Builder chạy lại không tạo hai camera/Canvas.
+- [x] Làm movement + normalized input, UI ba chỉ số, timer và điều kiện kết thúc; B chạm lõi mất 20 HP và bị hủy.
+- [x] Kiểm tra: di chuyển chéo/ngang 2 s có khoảng cách tương đương trong sai số physics; không vượt biên; pause ngừng timer; Retry khôi phục 100/50/0 và lõi 100.
+- [x] Build Windows sơ bộ ngay để phát hiện thiếu module/license/scene từ ngày đầu. Chưa có combat không đánh dấu các yêu cầu combat hoàn tất.
+- [x] Commit `feat: add playable arena and session flow`; ghi remaining checks.
 
 ### Task 2 (T2) — Ba tấn công và enemy projectile (3 giờ)
 
@@ -280,14 +282,14 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Consumes:** movement, state/session từ T1. **Produces:** damage, hit events và SFX request hooks cho T5.
 
-- [ ] Viết case kiểm tra damage Armor-first, một explosion chỉ damage một enemy root một lần; xác nhận thất bại trước khi hoàn thiện logic tương ứng.
-- [ ] Làm Bullet trước: sinh ở muzzle, aim chuột, TTL, cooldown; bắn hạ B có HP thật.
-- [ ] Thêm Rocket AoE; dùng hit guard để direct collision không cộng thêm damage lần hai.
-- [ ] Thêm Mine arm/trigger/TTL/limit, địch kích hoạt được, A đi qua an toàn; sinh tại A khi click.
-- [ ] Thêm B bắn đạn theo thông số mục 4; damage thường ưu tiên Armor.
-- [ ] Nối các hook âm thanh khi action accepted; chưa có AudioService thì hook chưa phát, không tự thêm nhiều AudioSource vào projectile.
-- [ ] Kiểm tra: bullet 10 damage; rocket trúng hai B gần nhau mỗi B mất 35; mine chưa arm không nổ, sau arm gây 50; một enemy có hai collider không nhận gấp đôi.
-- [ ] Kiểm tra đổi vũ khí liên tục không bypass cooldown; click HUD không bắn; đầy mine không mất cooldown.
+- [~] Viết case kiểm tra damage Armor-first, một explosion chỉ damage một enemy root một lần; xác nhận thất bại trước khi hoàn thiện logic tương ứng.
+- [~] Làm Bullet trước: sinh ở muzzle, aim chuột, TTL, cooldown; bắn hạ B có HP thật.
+- [~] Thêm Rocket AoE; dùng hit guard để direct collision không cộng thêm damage lần hai.
+- [~] Thêm Mine arm/trigger/TTL/limit, địch kích hoạt được, A đi qua an toàn; sinh tại A khi click.
+- [~] Thêm B bắn đạn theo thông số mục 4; damage thường ưu tiên Armor.
+- [~] Nối các hook âm thanh khi action accepted; chưa có AudioService thì hook chưa phát, không tự thêm nhiều AudioSource vào projectile.
+- [~] Kiểm tra: bullet 10 damage; rocket trúng hai B gần nhau mỗi B mất 35; mine chưa arm không nổ, sau arm gây 50; một enemy có hai collider không nhận gấp đôi.
+- [~] Kiểm tra đổi vũ khí liên tục không bypass cooldown; click HUD không bắn; đầy mine không mất cooldown.
 - [ ] Commit `feat: add three distinct attacks and enemy fire`.
 
 ### Task 3 (T3) — Shield và EMP (2 giờ)
@@ -296,12 +298,12 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Consumes:** projectile damage route T2. **Produces:** defense contracts, shield state/cooldown cho HUD và Y.
 
-- [ ] Test shield hấp thụ 3 hit, hit thứ 4 gây damage; chuẩn bị enemy stun test.
-- [ ] Tạo shield theo A; resolve defense một lần trước khi gọi damage; timer/hit count hết thì vỡ.
-- [ ] Tạo EMP overlap radius 3, dedupe enemy, gọi Stun(2); không ảnh hưởng địch ngoài radius.
-- [ ] Stun dừng movement và shoot, resume không bắn dồn; đạn đã bay không bị xóa.
+- [~] Test shield hấp thụ 3 hit, hit thứ 4 gây damage; chuẩn bị enemy stun test.
+- [~] Tạo shield theo A; resolve defense một lần trước khi gọi damage; timer/hit count hết thì vỡ.
+- [~] Tạo EMP overlap radius 3, dedupe enemy, gọi Stun(2); không ảnh hưởng địch ngoài radius.
+- [~] Stun dừng movement và shoot, resume không bắn dồn; đạn đã bay không bị xóa.
 - [ ] Kiểm tra thực tế Q trước đạn: HP/Armor không đổi; E khi 2 B gần và 1 B xa: chỉ 2 B dừng.
-- [ ] Kiểm tra cooldown, pause, Retry; commit `feat: add shield and EMP defense`.
+- [~] Kiểm tra cooldown, pause, Retry; commit `feat: add shield and EMP defense`.
 
 ### Task 4 (T4) — X/Y/Z với sáu hiệu ứng (2 giờ)
 
@@ -309,13 +311,13 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Consumes:** stats và defense T1/T3. **Produces:** E1–E6, event feedback/HUD.
 
-- [ ] Test state X từ HP100/Armor50 thành HP80/Armor40; slow+boost cùng lúc speed3, hết slow còn speed6, hết cả trở lại4.
-- [ ] Tạo X một lần: giảm độc lập HP/Armor, nổ rồi biến mất; không có trigger double hit.
-- [ ] Tạo Y on-enter: slow3s và BreakShield; khiên mất nhưng cooldown không reset.
-- [ ] Tạo Z một lần: coins+10, boost4s rồi biến mất; lần nhặt thứ hai refresh timer, không stack vô hạn.
-- [ ] Tạo visual và text phân biệt cả 6 effect; X/Y/Z có nhãn để báo cáo.
+- [~] Test state X từ HP100/Armor50 thành HP80/Armor40; slow+boost cùng lúc speed3, hết slow còn speed6, hết cả trở lại4.
+- [~] Tạo X một lần: giảm độc lập HP/Armor, nổ rồi biến mất; không có trigger double hit.
+- [~] Tạo Y on-enter: slow3s và BreakShield; khiên mất nhưng cooldown không reset.
+- [~] Tạo Z một lần: coins+10, boost4s rồi biến mất; lần nhặt thứ hai refresh timer, không stack vô hạn.
+- [~] Tạo visual và text phân biệt cả 6 effect; X/Y/Z có nhãn để báo cáo.
 - [ ] Đi vào Y với shield đang bật để chứng minh E4; đứng trong Y không bị kéo dài vô hạn; thử ra/vào lại.
-- [ ] Commit `feat: add six collision effects across X Y Z`.
+- [~] Commit `feat: add six collision effects across X Y Z`.
 
 ### Task 5 (T5) — Âm thanh đúng đề và vùng cấm (3 giờ)
 
@@ -323,15 +325,15 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 **Consumes:** accepted-action hooks T2, enemy root/lifecycle, session pause/reset. **Produces:** R01–R04 hoàn chỉnh.
 
-- [ ] Kiểm tra asset theo thứ tự đã khóa: Unity/template, rồi nguồn miễn phí có license mà tool tải được. Chỉ import clip thực sự dùng và ghi ngay path/tác giả/URL/license vào asset register.
-- [ ] Nếu không tải hoặc tạo được clip phù hợp, dùng các WAV placeholder ngắn, khác nhau và hợp lệ để R01–R04 vẫn kiểm thử được; ghi nhu cầu thay thế chất lượng sản xuất vào danh sách nháp, chưa thêm **Should add later** vào README trước T8.
-- [ ] Tạo 3 AudioSource đã mô tả, gán clip thật hoặc placeholder đã đăng ký; audio 2D.
-- [ ] Phát SFX ngắn tại fire/drop; thêm hit/explosion/defense feedback vừa đủ.
-- [ ] Tạo 4 button đúng tên và bảng trạng thái mục 6; controller nằm ở parent luôn active, không nằm trên nút sẽ bị disable.
-- [ ] Làm occupancy + alert queue 4 beep; clock sử dụng gameplay time để pause đúng.
-- [ ] Test một B vào → 4 yêu cầu phát ở các mốc; đứng trong vùng không thêm; 2 collider không nhân đôi; ra rồi vào tạo job mới; 2 B vào gần nhau tạo 2 job tuần tự.
-- [ ] Test SFX mute giữa chuỗi: clip đang phát dừng, phần còn lại/hàng đợi bị xóa, bật lại không replay; BGM vẫn chạy. Test tắt BGM vẫn nghe bắn.
-- [ ] Test nhanh 10 lần bật/tắt mỗi nhóm, luôn đúng một object trong cặp active, đúng cùng rect.
+- [~] Kiểm tra asset theo thứ tự đã khóa: Unity/template, rồi nguồn miễn phí có license mà tool tải được. Chỉ import clip thực sự dùng và ghi ngay path/tác giả/URL/license vào asset register.
+- [~] Nếu không tải hoặc tạo được clip phù hợp, dùng các WAV placeholder ngắn, khác nhau và hợp lệ để R01–R04 vẫn kiểm thử được; ghi nhu cầu thay thế chất lượng sản xuất vào danh sách nháp, chưa thêm **Should add later** vào README trước T8.
+- [~] Tạo 3 AudioSource đã mô tả, gán clip thật hoặc placeholder đã đăng ký; audio 2D.
+- [~] Phát SFX ngắn tại fire/drop; hit/explosion/defense feedback phụ vẫn để sau khi acceptance core chạy ổn.
+- [~] Tạo 4 button đúng tên và bảng trạng thái mục 6; controller nằm ở parent luôn active, không nằm trên nút sẽ bị disable.
+- [~] Làm occupancy + alert queue 4 beep; clock sử dụng gameplay time để pause đúng.
+- [~] Test một B vào → 4 yêu cầu phát ở các mốc; đứng trong vùng không thêm; 2 collider không nhân đôi; ra rồi vào tạo job mới; 2 B vào gần nhau tạo 2 job tuần tự.
+- [~] Test SFX mute giữa chuỗi: clip đang phát dừng, phần còn lại/hàng đợi bị xóa, bật lại không replay; BGM vẫn chạy. Test tắt BGM vẫn nghe bắn.
+- [~] Test nhanh 10 lần bật/tắt mỗi nhóm, luôn đúng một object trong cặp active, đúng cùng rect.
 - [ ] Nghe thật trên Editor và bản build để xác nhận 4 tiếng rõ; automated scheduling test không chứng minh loa đã phát.
 - [ ] Commit `feat: implement audio controls and four-beep zone alert`.
 
@@ -343,12 +345,12 @@ Không chạy batchmode khi Unity Editor đang mở cùng project. Exit code 0 n
 
 - [ ] Kiểm kê asset Unity/template đang dùng; sau đó mới tải bộ miễn phí có license rõ ràng nếu tool cho phép. Nếu vẫn thiếu, giữ hình cơ bản/particle/label dễ phân biệt; không chặn task chỉ vì chưa có sprite trang trí.
 - [ ] Thay hình cơ bản bằng một bộ sprite nhất quán khi có, chỉnh tỷ lệ/collider/pivot; không đổi gameplay trong bước này.
-- [ ] HUD đủ HP/Armor/Coins, thêm core/time, selected weapon, cooldown Q/E và weapon hiện tại; có trạng thái READY/giây còn lại.
-- [ ] Thêm F1 panel `DEMO MODE`: khi mở tắt auto-spawn; nút Reset Scenario xóa đạn/địch/XZ, reset stats/timer/cooldown nhưng giữ sound choice.
-- [ ] Thêm các nút tạo tình huống: Spawn Zone Enemy (ngoài vòng), Spawn Shooter (bắn A), Spawn Enemy Cluster (3 B gần nhau), Restore X/Y/Z. Không thêm nút “giả phát đủ 4 tiếng” thay cho B vào vùng.
-- [ ] Mọi kịch bản dùng cùng combat/physics/audio gameplay; debug panel không cập nhật trực tiếp HUD để giả thành tích.
+- [~] HUD đủ HP/Armor/Coins, thêm core/time, selected weapon, cooldown Q/E và weapon hiện tại; có trạng thái READY/giây còn lại.
+- [~] Thêm F1 panel `DEMO MODE`: khi mở tắt auto-spawn; nút Reset Scenario xóa đạn/địch/XZ, reset stats/timer/cooldown nhưng giữ sound choice.
+- [~] Thêm các nút tạo tình huống: Spawn Zone Enemy (ngoài vòng), Spawn Shooter (bắn A), Spawn Enemy Cluster (3 B gần nhau), Restore X/Y/Z. Không thêm nút “giả phát đủ 4 tiếng” thay cho B vào vùng.
+- [~] Mọi kịch bản dùng cùng combat/physics/audio gameplay; debug panel không cập nhật trực tiếp HUD để giả thành tích.
 - [ ] Kiểm tra 1280×720 và 1920×1080: UI không che sân, button click không xuyên xuống fire, label tiếng Việt không lỗi glyph nếu dùng.
-- [ ] Chốt asset register: tên file thực tế, tác giả, nguồn, license, vai trò, chỉnh sửa.
+- [~] Chốt asset register: tên file thực tế, tác giả, nguồn, license, vai trò, chỉnh sửa.
 - [ ] Commit `feat: polish HUD assets and repeatable demo scenarios`.
 
 ### Task 7 (T7) — Nghiệm thu và đóng băng tính năng (2–3 giờ + dự phòng sửa lỗi)

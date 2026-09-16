@@ -1,47 +1,42 @@
 # Core Guard Acceptance
 
-T1 register, verified 2026-09-13 with Unity 6000.3.23f1. Source checkpoint is the T1 commit based on `b565fb1`. Later-task combat/audio requirements remain open.
+> Current scope is the Unity Editor demo. Standalone Windows build/export is not required for this handoff.
 
-| Requirement ID | Scenario | Expected | Actual | Status | Evidence |
-|---|---|---|---|---|---|
-| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | Weapons/audio outside T1 | NOT RUN | — |
-| R02 | B enters restricted zone | One four-beep warning sequence | Zone/audio outside T1 | NOT RUN | — |
-| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | Outside T1 | NOT RUN | — |
-| R04 | Toggle music | MusicOn/MusicOff control only music | Outside T1 | NOT RUN | — |
-| R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics travel, clamp, aim retention and action/state gating pass; rendered player/turret observed; controlled physical key pass still open | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
-| R06 | Bullet, Rocket, Mine | Three damaging attacks/cooldowns | Outside T1 | NOT RUN | — |
-| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | Actions reserved only; behavior outside T1 | NOT RUN | — |
-| R08 | X/Y/Z interactions | E1–E6 observable numeric changes | Outside T1 | NOT RUN | — |
-| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | HP/Armor/Coins/core/time/state and panel buttons pass; weapons/cooldowns outside T1 | PARTIAL | `Logs/t1-playmode-full.xml`; player screenshots |
+Verification date: 2026-09-15. Unity: `6000.3.23f1`. Automated results are from the complete suites after the final gameplay patch.
 
-| T1 check | Result | Evidence |
+| Requirement ID | Scenario | Expected | Current evidence | Status |
+|---|---|---|---|---|
+| R01 | A attacks with each weapon | Distinct short SFX for accepted attacks | Weapon/audio hooks are wired and imported clips are assigned by `DemoSceneBuilder`; listening check remains for the owner | PARTIAL — manual listening |
+| R02 | B enters restricted zone | One four-beep warning sequence | Alert contract passes; occupancy dedupe and FIFO four-beep scheduling are covered by PlayMode tests; listening check remains | PARTIAL — manual listening |
+| R03 | Toggle SFX | SoundOff/SoundOn alternate consistently | Toggle pair contract passes in PlayMode; physical click/audio check remains | PARTIAL — manual UI/audio |
+| R04 | Toggle music | MusicOn/MusicOff controls only music | Toggle pair contract passes in PlayMode; physical click/audio check remains | PARTIAL — manual UI/audio |
+| R05 | Move and aim A | Normalized movement, mouse aim, bounds | Physics and Input System tests pass; owner should confirm physical keyboard/mouse feel | PARTIAL — manual input |
+| R06 | Bullet, Rocket, Mine | Three damaging attacks and cooldowns | Combat contracts pass, including projectile hit-once behavior, rocket AoE, mine arming and mine-limit feedback | PASS automated |
+| R07 | Shield and EMP | Shield blocks projectiles; EMP disables enemies | Defense and presentation tests pass, including shield ring and EMP affected count | PASS automated |
+| R08 | X/Y/Z interactions | Six observable numeric/effect changes | Interaction contracts pass; Y is persistent per-entry, with leave/re-enter reset implemented | PASS automated |
+| R09 | A state changes | Live HP, Armor, Coins, weapon/cooldown HUD | HUD test passes; live speed and keyboard weapon-selection refresh are also covered by the final code | PASS automated |
+| R10 | Start/result feedback | Show 3–2–1 before Playing; show the correct win/loss artwork and play the matching clip | `DemoSceneBuilder` imports and serializes all countdown/result references; PlayMode HUD flow passes; owner visual/audio smoke check remains | PASS automated / PARTIAL manual |
+| R11 | Detonation feedback | Rocket/mine detonation plays supplied explosion audio and a nine-frame animation | `CombatVfxPresenter.ExplosionFrames` is configured and verified at length 9; owner visual/audio smoke check remains | PASS automated / PARTIAL manual |
+| R12 | Tank scale/death feedback | Enemy tank is visually the same size as the player tank; both tanks show a one-shot explosion on death | Enemy prefab and builder use 1.6 visual scale / 0.6 collider; PlayMode death-feedback regression covers player and enemy paths | PASS code / pending final runtime smoke |
+| R13 | Game entry flow | Start screen exposes Start and Settings; Settings toggles SFX/BGM; starting shows a short loading panel before 3–2–1 | `HudPresenter` gates duplicate clicks, presents loading progress and wires the settings controls; EditMode/PlayMode coverage added, final Unity smoke check remains | PASS code / pending final runtime smoke |
+
+| Verification | Result | Evidence |
 |---|---|---|
-| Armor-first damage, nonnegative HP and change notification | PASS | `GameplayContractTests.Stats_ArmorAbsorbsDamageBeforeHpAndNotifies` |
-| Enemy contact applies exactly 20 core damage once and retires | PASS | `GameplayContractTests.Enemy_ContactDamagesCoreExactlyOnceAndRetires` |
-| Pause clock; death before timeout; alive timeout wins | PASS | `GameplayContractTests.Session_*`; physics final-tick test |
-| Five-second cadence, gate rotation, six-enemy cap without backlog | PASS | `GameplayContractTests.Spawner_CapConsumesMissedIntervalsAndRotatesGates` |
-| Central Retry resets 100/50/0, core 100, timer 90, position and spawn state | PASS (automated) | `GameplayContractTests.Retry_CentralResetRestoresStatsCoreClockPositionAndSpawns` |
-| Two seconds axial/diagonal Rigidbody travel equals eight units within tolerance | PASS | `PhysicsGameplayTests.Motor_TwoSecondsAxialAndDiagonalTravelBothEightUnits` |
-| Player bounds, paused movement/aim, zero-distance aim retention | PASS | `PhysicsGameplayTests.Motor_ClampsBoundsPausesAndRetainsAimAtCenter` |
-| Enemy speed 1.2; final-tick contact loses before timeout | PASS | `PhysicsGameplayTests.Enemy_MovesAtOnePointTwoAndFinalTickContactLosesBeforeTimeout` |
-| Real Input System keyboard move, pause and result-only Retry | PASS (automated) | `PresentationInputTests.Input_KeyboardMovementPauseAndResultRetryUseActions` |
-| Real mouse fire intent suppressed over raycastable UI and outside Playing | PASS | `PresentationInputTests.Input_FireIsSuppressedOverUiAndOutsidePlaying` |
-| Live HUD and Start/Resume/Retry Button listeners | PASS (automated) | `PresentationInputTests.Hud_ShowsLiveValuesAndButtonsDriveSingleSceneFlow` |
-| Idempotent builder preserves Main/unrelated entries and additive-scene ownership | PASS | `Logs/t1-scene-focused-green.xml` (3/3) |
-| Complete gameplay suites | PASS | `Logs/t1-editmode-full.xml` 10/10; `Logs/t1-playmode-full.xml` 6/6, both exit 0 |
-| Windows build | PASS | `t1-build.log`: Build Successful, 102,436,248 bytes |
-| Visible scene/HUD at 1280×720 and 1920×1080 | PASS | `Logs/t1-ready1280.png` and `Logs/t1-ready1920.png` (filenames retained; final captures show Playing) |
-| Live core damage, timer and Lost panel in Windows player | PASS | 1280 capture: core 40 / 69.2 s; later `Logs/t1-playing1280.png`: core 0 / 59.7 s / LOST |
-| Clean player closure / runtime error scan | PASS | `CloseMainWindow=True HasExited=True`; neither player log matched exception/error/crash |
-| Controlled physical keyboard/button pass in Windows player | NOT RUN | Win32 input injection was unreliable amid active desktop interaction; use steps below |
+| Complete EditMode suite | PASS — 59/59 | `Logs/coreguard-editmode-provided.xml` |
+| Complete PlayMode suite | PASS — 12/12 | `Logs/coreguard-playmode-provided.xml` |
+| Configure Project on real Main scene | PASS — repeated configuration is idempotent | `BuildDemoConfigurationTests`; final configured `Assets/_Game/Scenes/Main.unity` |
+| Scene wiring | PASS | Session owns player/core/motor/weapon/defense/effects/audio/demo/spawner/input/interaction cycle; HUD owns feedback label; zone owns warning ring |
+| Static hygiene | PASS | `git diff --check` |
 
-## Remaining physical input checklist
+## Owner smoke pass in Unity
 
-1. Launch `Builds/Windows/CoreGuard/CoreGuard.exe` and click Start. Confirm the Start panel hides, state is Playing, and the timer decreases from 90.
-2. Hold each WASD and arrow-key direction, including diagonals. Compare two-second horizontal and diagonal travel; move into every edge and confirm the body stays inside the arena.
-3. Move the pointer around A and onto A's center. Confirm the turret follows the pointer and keeps its last direction at the center.
-4. Press Esc, wait at least two seconds, and hold movement keys. Confirm player, enemies and timer stay fixed. Press Esc or Resume to continue.
-5. Let enemies deplete the core. Confirm LOST appears. Press R and separately test the Retry button after another loss. Confirm player HP/Armor/Coins 100/50/0, core 100, timer 90, restored player position, no prior enemies, and a fresh five-second spawn schedule.
-6. Repeat the panel/button checks at 1920×1080. Layout readability at both resolutions has already been visually verified; this remaining check is specifically physical input.
+1. Run `Core Guard → Configure Project`, open `Assets/_Game/Scenes/Main.unity`, press Play; confirm the entry screen, open Settings to toggle SFX/BGM independently, then click Start and confirm loading followed by the centered 3–2–1 image countdown.
+2. Move with WASD/arrows and aim with the mouse. Press 1/2/3 and confirm the HUD weapon label changes; hold left mouse for Bullet and click for Rocket/Mine.
+3. Place three mines, wait for the mine cooldown, try a fourth and confirm `MINE LIMIT 3/3` appears without creating another mine.
+4. Press Q before an enemy shot and confirm Shield absorbs up to three hits. Press E near enemies and confirm only nearby enemies stun for about two seconds.
+5. Use Demo Mode with F1: test Spawn Zone Enemy for the blinking zone ring and four alert beeps, Spawn Shooter, Spawn Enemy Cluster, and Restore X/Y/Z.
+6. Walk into Y with Shield active, confirm the shield breaks and speed drops; remain inside to confirm it does not retrigger continuously, then leave and enter again.
+7. Toggle SFX and BGM independently. Confirm the visual zone warning still blinks when SFX is off.
+8. Test Esc pause/resume, R/button Retry, win/loss banners/audio, explosion animation/audio on both tank deaths, and readability at 1280×720 and 1920×1080.
 
-The T1 prototype has no weapons yet, so unattended runs lose before 90 seconds. The alive-timeout win path is covered by automated component tests; no demo-only controls were added to force it in the player.
+These are the remaining manual checks because batchmode tests cannot prove physical device feel or that a speaker emits the intended distinct clips.

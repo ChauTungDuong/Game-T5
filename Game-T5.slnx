@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="CoreGuard.Editor.Tests.csproj" />
+  <Project Path="CoreGuard.Runtime.csproj" />
+  <Project Path="CoreGuard.PlayMode.Tests.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+</Solution>
