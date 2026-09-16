@@ -216,20 +216,28 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void Laser_RangedAttackDefeatsEnemyInSingleShot()
+        public void Laser_RangedAttackPiercesMultipleEnemiesDealingDamageToEach()
         {
             var session = MakeSession();
-            var enemy = MakeEnemy(session, "Enemy", new Vector2(3, 0));
+            var first = MakeEnemy(session, "Enemy A", new Vector2(3, 0));
+            var second = MakeEnemy(session, "Enemy B", new Vector2(5, 0));
             var weapon = MakeWeapon(session, out _, out _);
             weapon.Select(WeaponKind.Laser);
 
             Assert.That(weapon.TryFire(Vector2.right), Is.True);
             var laser = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             Assert.That(laser.Kind, Is.EqualTo(ProjectileKind.Laser));
-            laser.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
 
-            Assert.That(enemy.HP, Is.Zero, "Laser dealing 60 damage instantly defeats a 60 HP enemy.");
-            Assert.That(laser.IsLive, Is.False);
+            Assert.That(laser.ResolveAgainst(first.GetComponent<CircleCollider2D>()), Is.False);
+            Assert.That(first.HP, Is.Zero, "Laser dealing 60 damage instantly defeats first 60 HP enemy.");
+            Assert.That(laser.IsLive, Is.True, "Laser pierces through first enemy without retiring.");
+
+            laser.ResolveAgainst(first.GetComponent<CircleCollider2D>());
+            Assert.That(first.HP, Is.Zero, "Laser does not double-damage an already-pierced enemy.");
+
+            Assert.That(laser.ResolveAgainst(second.GetComponent<CircleCollider2D>()), Is.False);
+            Assert.That(second.HP, Is.Zero, "Laser pierces through and damages second enemy in line.");
+            Assert.That(laser.IsLive, Is.True, "Laser remains live to continue traveling.");
         }
 
         [Test]

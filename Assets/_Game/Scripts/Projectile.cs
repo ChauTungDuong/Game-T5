@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace CoreGuard
@@ -32,6 +33,7 @@ namespace CoreGuard
         private float ttl;
         private float explosionRadius;
         private bool resolved;
+        private readonly HashSet<EnemyController> piercedEnemies = new HashSet<EnemyController>();
 
         private void Awake()
         {
@@ -86,6 +88,7 @@ namespace CoreGuard
             ttl = lifetime;
             explosionRadius = radius;
             resolved = false;
+            piercedEnemies.Clear();
             gameObject.SetActive(true);
             if (!body || !hitCollider) Awake();
             body.position = transform.position;
@@ -159,7 +162,8 @@ namespace CoreGuard
             ttl -= delta;
             if (ttl <= 0)
             {
-                Retire();
+                if (Kind == ProjectileKind.Rocket) Detonate();
+                else Retire();
                 return;
             }
 
@@ -210,12 +214,22 @@ namespace CoreGuard
             var enemy = other.GetComponentInParent<EnemyController>();
             if (enemy && (!Session || enemy.Session == Session))
             {
-                if (Kind == ProjectileKind.Rocket) Detonate();
-                else
+                if (Kind == ProjectileKind.Rocket)
                 {
-                    enemy.ApplyDamage(damage);
-                    Retire();
+                    Detonate();
+                    return true;
                 }
+                if (Kind == ProjectileKind.Laser)
+                {
+                    if (piercedEnemies.Add(enemy))
+                    {
+                        enemy.ApplyDamage(damage);
+                    }
+                    return false;
+                }
+
+                enemy.ApplyDamage(damage);
+                Retire();
                 return true;
             }
 
@@ -244,7 +258,11 @@ namespace CoreGuard
             var presenter = Session && Session.Player
                 ? Session.Player.GetComponent<CombatVfxPresenter>()
                 : null;
-            if (presenter) presenter.SpawnExplosion(transform.position, IsEnemyProjectile ? .16f : .23f);
+            if (presenter)
+            {
+                var scale = IsEnemyProjectile ? .16f : Mathf.Max(.23f, explosionRadius * .35f);
+                presenter.SpawnExplosion(transform.position, scale);
+            }
         }
 
         private void Retire()
