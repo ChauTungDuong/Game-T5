@@ -305,6 +305,7 @@ public static class DemoSceneBuilder
         hud.SettingsPanel = settingsPanel;
         var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
         Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
+        title.gameObject.SetActive(false);
         var barBg = ImportedSprite("Assets/_Game/Art/UI/bar_container_bg.png", null);
         var hpFillSprite = ImportedSprite("Assets/_Game/Art/UI/bar_fill_green.png", null);
         var armorFillSprite = ImportedSprite("Assets/_Game/Art/UI/bar_fill_yellow_segmented.png", null);
@@ -314,20 +315,29 @@ public static class DemoSceneBuilder
         var coreBadge = ImportedSprite("Assets/_Game/Art/UI/badge_heart_cyan.png", null);
 
         CreateHudBar(root.transform, "Player HP bar", new Vector2(24, -18), new Vector2(230, 26), barBg, hpFillSprite, heartBadge, false, out hud.PlayerHpFill, out hud.PlayerHpLabel);
+        if (hud.PlayerHpFill && hud.PlayerHpFill.transform.parent && hud.PlayerHpFill.transform.parent.parent)
+            hud.PlayerHpFill.transform.parent.parent.gameObject.SetActive(false);
         CreateHudBar(root.transform, "Player Armor bar", new Vector2(24, -48), new Vector2(230, 26), barBg, armorFillSprite, lightningBadge, false, out hud.PlayerArmorFill, out hud.PlayerArmorLabel);
+        if (hud.PlayerArmorFill && hud.PlayerArmorFill.transform.parent && hud.PlayerArmorFill.transform.parent.parent)
+            hud.PlayerArmorFill.transform.parent.parent.gameObject.SetActive(false);
         CreateHudBar(root.transform, "Core HP bar", new Vector2(-24, -18), new Vector2(230, 26), barBg, coreFillSprite, coreBadge, true, out hud.CoreHpFill, out _);
+        if (hud.CoreHpFill && hud.CoreHpFill.transform.parent && hud.CoreHpFill.transform.parent.parent)
+            hud.CoreHpFill.transform.parent.parent.gameObject.SetActive(false);
 
         var statsText = Label(root.transform, "Stats", "HP 100/100  •  ARM 50/50  •  C 0", Vector2.zero, new Vector2(390, 22), 14, new Color(.78f, .9f, .94f));
         Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -78), new Vector2(390, 22));
         statsText.alignment = TextAnchor.UpperLeft;
+        statsText.gameObject.SetActive(false);
         if (!hud.StatsText) hud.StatsText = statsText;
         var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(190, 22), 16, Cyan);
         Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -48), new Vector2(190, 22));
         coreText.alignment = TextAnchor.UpperRight;
+        coreText.gameObject.SetActive(false);
         if (!hud.CoreText) hud.CoreText = coreText;
         var timerText = Label(root.transform, "Timer", "90.0s", Vector2.zero, new Vector2(120, 24), 18, Color.white);
         Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -72), new Vector2(120, 24));
         timerText.alignment = TextAnchor.UpperRight;
+        timerText.gameObject.SetActive(false);
         if (!hud.TimerText) hud.TimerText = timerText;
         var stateText = Label(root.transform, "State", string.Empty, Vector2.zero, new Vector2(1, 1), 1, Color.clear);
         Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -80), new Vector2(1, 1));
@@ -350,8 +360,10 @@ public static class DemoSceneBuilder
         var weaponText = Label(root.transform, "Weapon", "BULLET  [R]", Vector2.zero, new Vector2(180, 26), 15, Color.white);
         Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(180, 26));
         weaponText.alignment = TextAnchor.LowerLeft;
+        weaponText.gameObject.SetActive(false);
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "SH READY  •  EMP READY", new Vector2(390, -245), new Vector2(300, 26), 14, new Color(.67f, .8f, .84f));
+        cooldownsText.gameObject.SetActive(false);
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
         Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
