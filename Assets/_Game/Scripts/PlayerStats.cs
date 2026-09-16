@@ -27,6 +27,16 @@ namespace CoreGuard
             HP = Mathf.Max(0, HP - (amount - absorbed));
             NotifyChanged();
         }
+
+        // Enemy projectiles represent a visible injury: the red HP bar moves on
+        // every unblocked hit while Armor is also reduced as a secondary stat.
+        public void ApplyCombatDamage(float amount)
+        {
+            if (amount <= 0 || float.IsNaN(amount) || HP <= 0) return;
+            Armor = Mathf.Max(0, Armor - amount);
+            HP = Mathf.Max(0, HP - amount);
+            NotifyChanged();
+        }
         public void ApplyEnvironmentHit(float hpLoss, float armorLoss)
         {
             if ((hpLoss <= 0 || float.IsNaN(hpLoss)) && (armorLoss <= 0 || float.IsNaN(armorLoss))) return;

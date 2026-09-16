@@ -23,14 +23,14 @@ namespace CoreGuard
         public const float MaxHP = 60f;
         public bool IsAlive => HP > 0 && !retired;
         public bool IsStunned => stunRemaining > 0;
+        public WorldHealthBar HealthBar => healthBar;
         private static readonly Color FireFlashColor = new Color(1f, .55f, .15f);
         private bool retired;
         private Rigidbody2D body;
         private SpriteRenderer bodyRenderer;
         private Color bodyColor;
         private bool bodyColorCaptured;
-        private LineRenderer healthBack;
-        private LineRenderer healthFill;
+        private WorldHealthBar healthBar;
         private float hitFlashRemaining;
         private float fireFlashRemaining;
         private float shootRemaining;
@@ -61,6 +61,7 @@ namespace CoreGuard
             CacheCannon();
             HP = MaxHP; retired = false; shootRemaining = .6f; stunRemaining = 0;
             hitFlashRemaining = 0; fireFlashRemaining = 0;
+            CopyHealthBarArtFromPlayer();
             RefreshHealthBar();
         }
         public void Step(float delta)
@@ -149,8 +150,18 @@ namespace CoreGuard
         private void CreateHealthBar()
         {
             if (!Application.isPlaying) return;
-            healthBack = CreateBar("Enemy health background", new Color(.04f, .06f, .08f, .9f), .1f);
-            healthFill = CreateBar("Enemy health", new Color(.2f, .95f, .35f, 1f), .12f);
+            healthBar = GetComponentInChildren<WorldHealthBar>();
+            if (!healthBar)
+            {
+                var barObject = new GameObject("Enemy health bar");
+                barObject.transform.SetParent(transform, false);
+                healthBar = barObject.AddComponent<WorldHealthBar>();
+            }
+            healthBar.transform.localPosition = new Vector3(0f, .95f, 0f);
+            healthBar.Width = 1.25f;
+            healthBar.BarHeight = .12f;
+            healthBar.FullColor = Color.red;
+            healthBar.BackgroundColor = new Color(.025f, .045f, .07f, .95f);
         }
 
         private void FlashWhenFiring()
@@ -182,30 +193,24 @@ namespace CoreGuard
             }
         }
 
-        private LineRenderer CreateBar(string name, Color color, float width)
+        private void CopyHealthBarArtFromPlayer()
         {
-            var barObject = new GameObject(name);
-            barObject.transform.SetParent(transform, false);
-            barObject.transform.localPosition = new Vector3(0, .95f, 0);
-            var bar = barObject.AddComponent<LineRenderer>();
-            bar.useWorldSpace = false;
-            bar.positionCount = 2;
-            bar.widthMultiplier = width;
-            bar.startColor = color;
-            bar.endColor = color;
-            bar.sortingOrder = 6;
-            bar.SetPosition(0, new Vector3(-.625f, 0, 0));
-            bar.SetPosition(1, new Vector3(.625f, 0, 0));
-            return bar;
+            if (!healthBar) return;
+            var source = Player && Player.HealthBar ? Player.HealthBar : null;
+            if (!source && Player) source = Player.GetComponentInChildren<WorldHealthBar>();
+            if (!source && Core) source = Core.HealthBar;
+            if (!source && Core) source = Core.GetComponentInChildren<WorldHealthBar>();
+            if (!source) return;
+            healthBar.BarSprite = source.BarSprite;
+            healthBar.FillSprite = source.FillSprite;
+            healthBar.IconSprite = source.IconSprite;
+            healthBar.FullColor = Color.red;
         }
 
         private void RefreshHealthBar()
         {
-            if (!healthFill) return;
-            var ratio = Mathf.Clamp01(HP / MaxHP);
-            healthFill.SetPosition(1, new Vector3(-.625f + 1.25f * ratio, 0, 0));
-            healthBack.enabled = IsAlive;
-            healthFill.enabled = IsAlive;
+            if (!healthBar) return;
+            healthBar.SetHealth(HP, MaxHP);
         }
         private void Retire()
         {

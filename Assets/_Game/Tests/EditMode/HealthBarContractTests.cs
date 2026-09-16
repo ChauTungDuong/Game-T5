@@ -23,20 +23,20 @@ namespace CoreGuard.Tests.Editor
             objects.Clear();
         }
 
-        // Break caught: a shared bar that does not show its value, threshold color, or empty state.
+        // Break caught: a shared bar that does not show its value, red fill, or empty state.
         [Test]
-        public void WorldHealthBar_ReflectsValueThresholdsAndZeroHealth()
+        public void WorldHealthBar_UsesRedFillAndReflectsZeroHealth()
         {
             var bar = Make<WorldHealthBar>("Health bar");
-            bar.FullColor = Color.green;
+            bar.FullColor = Color.red;
 
             bar.SetHealth(100f, 100f);
             Assert.That(bar.ValueText.text, Is.EqualTo("100/100"));
             Assert.That(bar.FillRatio, Is.EqualTo(1f));
-            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.green));
+            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.red));
 
             bar.SetHealth(49f, 100f);
-            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.yellow));
+            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.red));
             bar.SetHealth(24f, 100f);
             Assert.That(bar.Fill.startColor, Is.EqualTo(Color.red));
 
@@ -51,7 +51,7 @@ namespace CoreGuard.Tests.Editor
         {
             var stats = Make<PlayerStats>("Player");
             var bar = stats.gameObject.AddComponent<WorldHealthBar>();
-            bar.FullColor = Color.green;
+            bar.FullColor = Color.red;
 
             stats.ResetStats();
             Assert.That(bar.ValueText.text, Is.EqualTo("100/100"));
@@ -64,6 +64,7 @@ namespace CoreGuard.Tests.Editor
             stats.ResetStats();
             Assert.That(bar.FillRatio, Is.EqualTo(1f));
             Assert.That(bar.Fill.enabled, Is.True);
+            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.red));
         }
 
         // Break caught: CoreHealth retains its private implementation or does not update its shared bar immediately.
@@ -81,7 +82,7 @@ namespace CoreGuard.Tests.Editor
 
             core.ApplyDamage(51f);
             Assert.That(bar.FillRatio, Is.EqualTo(.49f));
-            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.yellow));
+            Assert.That(bar.Fill.startColor, Is.EqualTo(Color.cyan));
 
             core.ResetHealth();
             Assert.That(bar.FillRatio, Is.EqualTo(1f));

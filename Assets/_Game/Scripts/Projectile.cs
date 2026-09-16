@@ -89,13 +89,17 @@ namespace CoreGuard
 
         private void ApplyVisualStyle()
         {
-            var visual = transform.Find("Projectile body");
+            var bulletVisual = transform.Find("Projectile body");
+            var rocketVisual = transform.Find("Rocket body");
+            var rocketShot = !IsEnemyProjectile && Kind == ProjectileKind.Rocket;
+            if (bulletVisual) bulletVisual.gameObject.SetActive(!rocketShot);
+            if (rocketVisual) rocketVisual.gameObject.SetActive(rocketShot);
+            var visual = rocketShot && rocketVisual ? rocketVisual : bulletVisual;
             if (!visual) return;
             var renderer = visual.GetComponent<SpriteRenderer>();
             if (!renderer) return;
-            visual.localScale = Vector3.one * (IsEnemyProjectile ? .82f : Kind == ProjectileKind.Rocket ? 1.25f : 1.0f);
-            renderer.color = IsEnemyProjectile ? new Color(1f, .12f, .08f) :
-                Kind == ProjectileKind.Rocket ? new Color(1f, .6f, .2f) : new Color(.55f, .95f, 1f);
+            visual.localScale = Vector3.one * (IsEnemyProjectile ? .82f : rocketShot ? .2f : 1.0f);
+            renderer.color = IsEnemyProjectile ? new Color(1f, .12f, .08f) : Color.white;
         }
 
         private void FixedUpdate()
@@ -135,7 +139,7 @@ namespace CoreGuard
                         Retire();
                         return true;
                     }
-                    player.ApplyDamage(damage);
+                    player.ApplyCombatDamage(damage);
                     Retire();
                     return true;
                 }

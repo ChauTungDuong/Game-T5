@@ -24,6 +24,7 @@ public static class DemoSceneBuilder
     private const string GroundTilePath = "Assets/_Game/Art/Kenney/Tanks/tileSand1.png";
     private const string CoreBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_darkLarge_outline.png";
     private const string ProjectileSpritePath = "Assets/_Game/Art/Kenney/Tanks/bulletBlue1_outline.png";
+    private const string RocketSpritePath = "Assets/_Game/Art/Provided/Combat/rocket_flying.png";
     private const string MineSpritePath = "Assets/_Game/Art/Kenney/Particles/scorch_01.png";
     private const string CoreGlowPath = "Assets/_Game/Art/Kenney/Particles/circle_04.png";
     private const string BulletFlashPath = "Assets/_Game/Art/Kenney/Particles/muzzle_02.png";
@@ -52,11 +53,17 @@ public static class DemoSceneBuilder
     private const string WinSpritePath = "Assets/_Game/Art/Provided/Results/YOU WIN.png";
     private const string LoseSpritePath = "Assets/_Game/Art/Provided/Results/YOU LOSE.png";
     private const string StartSpritePath = "Assets/_Game/Art/Provided/Results/start1.png";
+    private const string MenuBackgroundPath = "Assets/_Game/Art/Provided/Menu/background_new.jpg";
+    private const string MenuLogoPath = "Assets/_Game/Art/Provided/Menu/logo_new.png";
     private const string CountdownZeroPath = "Assets/_Game/Art/Provided/Countdown/zero.png";
     private const string CountdownOnePath = "Assets/_Game/Art/Provided/Countdown/one.png";
     private const string CountdownTwoPath = "Assets/_Game/Art/Provided/Countdown/two.png";
     private const string CountdownThreePath = "Assets/_Game/Art/Provided/Countdown/three.png";
     private const string SettingsIconPath = "Assets/_Game/Art/Provided/Settings/setting.png";
+    private const string HealthBarReferencePath = "Assets/_Game/Art/Provided/Combat/health_bar_reference.jpg";
+    private const string HealthBarTrackPath = "Assets/_Game/Art/Provided/Combat/health_bar_track.png";
+    private const string HealthBarFillPath = "Assets/_Game/Art/Provided/Combat/health_bar_fill.png";
+    private const string HealthBarIconPath = "Assets/_Game/Art/Provided/Combat/health_bar_icon.png";
     private static readonly string[] ExplosionFramePaths =
     {
         "Assets/_Game/Art/Provided/Explosion/explosion_01.png",
@@ -72,9 +79,16 @@ public static class DemoSceneBuilder
     private static readonly Color Cyan = new Color(.25f, .9f, .85f);
     private static readonly Color Ink = new Color(.055f, .085f, .12f, .97f);
 
+    [InitializeOnLoadMethod]
+    private static void EnsureProvidedHealthBarArtOnEditorLoad()
+    {
+        EnsureHealthBarArt();
+    }
+
     public static void Configure(Scene scene)
     {
         EnsureLayers();
+        EnsureHealthBarArt();
         var sprite = EnsureSprite();
         var actions = EnsureActions();
         var camera = Find<Camera>(scene);
@@ -107,7 +121,7 @@ public static class DemoSceneBuilder
         Visual(coreObject.transform, "Core body", coreBodySprite, Vector2.zero, new Vector2(1.45f, 1.45f), Cyan, 1);
         ApplySprite(coreObject.transform, "Core body", coreBodySprite);
         Visual(coreObject.transform, "Core center", sprite, Vector2.zero, new Vector2(.55f, .55f), Ink, 2);
-        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, core.HealthBar, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.cyan);
+        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, core.HealthBar, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.red);
         if (!core.HealthBar) core.HealthBar = coreHealthBar;
         core.RefreshHealthBar();
 
@@ -125,7 +139,7 @@ public static class DemoSceneBuilder
         var playerBarrelSprite = ImportedSprite(PlayerBarrelPath, sprite);
         Visual(playerObject.transform, "Player body", playerBodySprite, Vector2.zero, new Vector2(1.6f, 1.6f), new Color(.3f, .65f, 1), 3);
         ApplySprite(playerObject.transform, "Player body", playerBodySprite);
-        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, stats.HealthBar, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.green);
+        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, stats.HealthBar, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.red);
         if (!stats.HealthBar) stats.HealthBar = playerHealthBar;
         stats.RefreshHealthBar();
         var turret = Child(playerObject.transform, "Turret");
@@ -149,8 +163,10 @@ public static class DemoSceneBuilder
         var audio = GetOrAdd<AudioService>(session.gameObject);
         var demo = GetOrAdd<DemoDirector>(session.gameObject);
         if (!weapon.Session) weapon.Session = session;
-        // Enemy HP is 60, so two standard bullets (30 damage each) defeat it.
-        weapon.BulletDamage = 30f;
+        // Keep the first weapon readable: two 25-damage bullets leave a 10 HP
+        // creep alive, while one 55-damage rocket is a heavy but non-lethal hit.
+        weapon.BulletDamage = 25f;
+        weapon.RocketDamage = 55f;
         weapon.RocketSpeed = 11f;
         weapon.RocketCooldown = 1f;
         if (!defense.Session) defense.Session = session;
@@ -180,6 +196,7 @@ public static class DemoSceneBuilder
         audio.Explosion = PreferImportedClip(ExplosionAudioPath, audio.Explosion);
         audio.Victory = PreferImportedClip(VictoryAudioPath, audio.Victory);
         audio.Defeat = PreferImportedClip(DefeatAudioPath, audio.Defeat);
+        audio.StartMuted = true;
         audio.EnsureSourcesForScene();
         if (!weapon.Muzzle) weapon.Muzzle = muzzle.transform;
         if (!weapon.ProjectilePrefab) weapon.ProjectilePrefab = projectilePrefab;
@@ -253,10 +270,10 @@ public static class DemoSceneBuilder
         ui.rightClick = ActionReference("UI/RightClick"); ui.middleClick = ActionReference("UI/MiddleClick");
         ui.scrollWheel = ActionReference("UI/ScrollWheel"); ui.move = ActionReference("UI/Navigate");
         ui.submit = ActionReference("UI/Submit"); ui.cancel = ActionReference("UI/Cancel");
-        BuildHud(canvas.transform, session);
+        BuildHud(canvas.transform, session, world, coreObject, playerObject, spawner.gameObject, aimCursorRoot);
     }
 
-    private static void BuildHud(Transform canvas, GameSession session)
+    private static void BuildHud(Transform canvas, GameSession session, params GameObject[] gameplayRoots)
     {
         var existingRoot = canvas.Find("Core Guard HUD");
         var root = Child(canvas, "Core Guard HUD", typeof(RectTransform));
@@ -267,13 +284,27 @@ public static class DemoSceneBuilder
         }
         var hud = GetOrAdd<HudPresenter>(root); if (!hud.Session) hud.Session = session;
         hud.CompactHud = true;
+        hud.GameplayRoots = gameplayRoots;
         var audioView = GetOrAdd<AudioToggleView>(root);
         if (!audioView.Audio) audioView.Audio = session.Audio;
         // Keep the arena unobstructed. Older scene versions may already contain
         // these large surfaces, so explicitly disable them during reconfigure.
         DisableHudSurface(root.transform, "Top bar");
         DisableHudSurface(root.transform, "Bottom bar");
-        var settingsPanel = Panel(root.transform, "Settings panel", false);
+        var entryScreen = FullScreenImage(root.transform, "Entry screen", ImportedSprite(MenuBackgroundPath, null));
+        entryScreen.transform.SetAsFirstSibling();
+        hud.EntryScreen = entryScreen;
+        SpriteImage(entryScreen.transform, "Menu logo", ImportedSprite(MenuLogoPath, null), new Vector2(0, 210), new Vector2(900, 270));
+        SpriteImage(entryScreen.transform, "Menu player", ImportedSprite(PlayerBodyPath, null), new Vector2(-318, 55), new Vector2(158, 158));
+        var menuPlayerBarrel = SpriteImage(entryScreen.transform, "Menu player barrel", ImportedSprite(PlayerBarrelPath, null), new Vector2(-318, 55), new Vector2(62, 94));
+        menuPlayerBarrel.rectTransform.localRotation = Quaternion.Euler(0, 0, -90f);
+        SpriteImage(entryScreen.transform, "Menu enemy", ImportedSprite(EnemyBodyPath, null), new Vector2(318, 55), new Vector2(158, 158));
+        var menuEnemyBarrel = SpriteImage(entryScreen.transform, "Menu enemy barrel", ImportedSprite(EnemyBarrelPath, null), new Vector2(318, 55), new Vector2(62, 94));
+        menuEnemyBarrel.rectTransform.localRotation = Quaternion.Euler(0, 0, 90f);
+        Label(entryScreen.transform, "Menu subtitle", "CORE GUARD  //  DEFEND THE FRONTIER", new Vector2(0, 90), new Vector2(600, 28), 14, new Color(.72f, .88f, .95f));
+        MoveChild(root.transform, entryScreen.transform, "Settings panel");
+        MoveChild(root.transform, entryScreen.transform, "Start panel");
+        var settingsPanel = Panel(entryScreen.transform, "Settings panel", false);
         settingsPanel.SetActive(false);
         Layout((RectTransform)settingsPanel.transform, Vector2.zero, new Vector2(420, 270));
         Label(settingsPanel.transform, "Heading", "SETTINGS", new Vector2(0, 92), new Vector2(360, 42), 28, Cyan);
@@ -293,10 +324,34 @@ public static class DemoSceneBuilder
         hud.SettingsPanel = settingsPanel;
         var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
         Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
+        title.gameObject.SetActive(false);
         var statsText = Label(root.transform, "Stats", "HP 100/100  •  ARM 50/50  •  C 0", Vector2.zero, new Vector2(390, 30), 15, Color.white);
         Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(390, 30));
         statsText.alignment = TextAnchor.UpperLeft;
         if (!hud.StatsText) hud.StatsText = statsText;
+        var healthPanel = Child(root.transform, "Player health display", typeof(RectTransform));
+        Anchor((RectTransform)healthPanel.transform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -64), new Vector2(285, 50));
+        var healthTrackSprite = ImportedSprite(HealthBarTrackPath, null);
+        var healthTrack = SpriteImage(healthPanel.transform, "Health track", healthTrackSprite, new Vector2(29, 0), new Vector2(212, 40));
+        healthTrack.preserveAspect = false;
+        healthTrack.color = new Color(.24f, .035f, .045f, .95f);
+        healthTrack.raycastTarget = false;
+        var healthFill = SpriteImage(healthPanel.transform, "Health fill",
+            ImportedSprite(HealthBarFillPath, null) ?? healthTrackSprite,
+            new Vector2(29, 0), new Vector2(212, 40));
+        healthFill.preserveAspect = false;
+        healthFill.color = Color.white;
+        healthFill.type = Image.Type.Filled;
+        healthFill.fillMethod = Image.FillMethod.Horizontal;
+        healthFill.fillOrigin = 0;
+        healthFill.fillAmount = 1f;
+        healthFill.raycastTarget = false;
+        SpriteImage(healthPanel.transform, "Health icon", ImportedSprite(HealthBarIconPath, null), new Vector2(-111, 0), new Vector2(50, 50));
+        var healthValue = Label(healthPanel.transform, "Health value", "100/100", new Vector2(29, 0), new Vector2(150, 25), 15, Color.white);
+        healthValue.raycastTarget = false;
+        if (!hud.PlayerHealthPanel) hud.PlayerHealthPanel = healthPanel;
+        if (!hud.PlayerHealthFill) hud.PlayerHealthFill = healthFill;
+        if (!hud.PlayerHealthValue) hud.PlayerHealthValue = healthValue;
         var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(190, 28), 18, Cyan);
         Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(190, 28));
         coreText.alignment = TextAnchor.UpperRight;
@@ -338,7 +393,7 @@ public static class DemoSceneBuilder
         var bulletButton = ActionButton(root.transform, "Bullet button", "1  BULLET", new Vector2(-315, -271));
         var rocketButton = ActionButton(root.transform, "Rocket button", "2  ROCKET", new Vector2(-185, -271));
         var mineButton = ActionButton(root.transform, "Mine button", "3  MINE", new Vector2(-55, -271));
-        var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(105, -271));
+        var shieldButton = ActionButton(root.transform, "Shield button", "0  SHIELD", new Vector2(105, -271));
         var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(235, -271));
         if (!hud.BulletButton) hud.BulletButton = bulletButton;
         if (!hud.RocketButton) hud.RocketButton = rocketButton;
@@ -347,13 +402,20 @@ public static class DemoSceneBuilder
         if (!hud.EmpButton) hud.EmpButton = empButton;
         if (!hud.StartPanel)
         {
-            hud.StartPanel = Panel(root.transform, "Start panel", true);
+            hud.StartPanel = Panel(entryScreen.transform, "Start panel", true);
         }
+        else if (hud.StartPanel.transform.parent != entryScreen.transform)
+        {
+            hud.StartPanel.transform.SetParent(entryScreen.transform, false);
+        }
+        Layout((RectTransform)hud.StartPanel.transform, new Vector2(0, -150), new Vector2(560, 245));
         Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n1–3 weapons  •  Q shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
+        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n1–3 weapons  •  0 shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
         if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
         ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
-        var settingsButton = AudioButton(hud.StartPanel.transform, "Settings", "SETTINGS", new Vector2(196, -103));
+        MoveChild(hud.StartPanel.transform, entryScreen.transform, "Settings");
+        var settingsButton = AudioButton(entryScreen.transform, "Settings", "SETTINGS", Vector2.zero);
+        Anchor((RectTransform)settingsButton.transform, Vector2.one, Vector2.one, new Vector2(-42, -42), new Vector2(72, 72));
         hud.SettingsButton = settingsButton;
         var closeSettingsButton = Button(settingsPanel.transform, "Close settings button", "BACK", new Vector2(0, -92));
         hud.CloseSettingsButton = closeSettingsButton;
@@ -396,6 +458,24 @@ public static class DemoSceneBuilder
         hud.LoadingPanel = loadingPanel;
         hud.LoadingProgress = progressImage;
         BuildDemoPanel(root.transform, session.Demo);
+        HideGameplayHud(hud);
+    }
+
+    private static void HideGameplayHud(HudPresenter hud)
+    {
+        if (!hud) return;
+        if (hud.StatsText) hud.StatsText.gameObject.SetActive(false);
+        if (hud.CoreText) hud.CoreText.gameObject.SetActive(false);
+        if (hud.TimerText) hud.TimerText.gameObject.SetActive(false);
+        if (hud.WeaponText) hud.WeaponText.gameObject.SetActive(false);
+        if (hud.CooldownsText) hud.CooldownsText.gameObject.SetActive(false);
+        if (hud.FeedbackText) hud.FeedbackText.gameObject.SetActive(false);
+        if (hud.PlayerHealthPanel) hud.PlayerHealthPanel.SetActive(false);
+        if (hud.BulletButton) hud.BulletButton.gameObject.SetActive(false);
+        if (hud.RocketButton) hud.RocketButton.gameObject.SetActive(false);
+        if (hud.MineButton) hud.MineButton.gameObject.SetActive(false);
+        if (hud.ShieldButton) hud.ShieldButton.gameObject.SetActive(false);
+        if (hud.EmpButton) hud.EmpButton.gameObject.SetActive(false);
     }
 
     private static void BuildDemoPanel(Transform parent, DemoDirector demo)
@@ -515,6 +595,12 @@ public static class DemoSceneBuilder
         bar.Width = width;
         bar.BarHeight = height;
         bar.FullColor = fullColor;
+        bar.BarSprite = ImportedSprite(HealthBarTrackPath, null);
+        // A first run can happen before Unity finishes importing the derived
+        // fill texture. Falling back to the supplied bar keeps the scene
+        // visible; the next configure pass will use the solid red fill asset.
+        bar.FillSprite = ImportedSprite(HealthBarFillPath, null) ?? bar.BarSprite;
+        bar.IconSprite = ImportedSprite(HealthBarIconPath, null);
         return bar;
     }
     private static GameObject Panel(Transform parent, string name, bool initiallyActive)
@@ -560,6 +646,23 @@ public static class DemoSceneBuilder
         text.alignment = TextAnchor.MiddleCenter; text.raycastTarget = false;
         return text;
     }
+    private static GameObject FullScreenImage(Transform parent, string name, Sprite sprite)
+    {
+        var existing = parent.Find(name);
+        var go = existing ? existing.gameObject : Child(parent, name, typeof(RectTransform), typeof(Image));
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        var image = GetOrAdd<Image>(go);
+        image.sprite = sprite;
+        image.type = Image.Type.Simple;
+        image.preserveAspect = false;
+        image.raycastTarget = true;
+        go.SetActive(true);
+        return go;
+    }
     private static Image SpriteImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
     {
         var existing = parent.Find(name);
@@ -570,6 +673,46 @@ public static class DemoSceneBuilder
         image.preserveAspect = true;
         image.raycastTarget = false;
         return image;
+    }
+    private static void EnsureHealthBarArt()
+    {
+        if (File.Exists(HealthBarTrackPath) && File.Exists(HealthBarFillPath) && File.Exists(HealthBarIconPath)) return;
+        if (!File.Exists(HealthBarReferencePath)) return;
+
+        var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        try
+        {
+            if (!ImageConversion.LoadImage(source, File.ReadAllBytes(HealthBarReferencePath), false)) return;
+            // The supplied 360x360 reference contains an energy row above the
+            // red HP row. Crop the red row and key out its checkerboard matte.
+            CreateMaskedCrop(source, new RectInt(116, 88, 199, 78), HealthBarTrackPath);
+            CreateMaskedCrop(source, new RectInt(116, 88, 199, 78), HealthBarFillPath, new Color(1f, .04f, .09f, 1f));
+            CreateMaskedCrop(source, new RectInt(48, 88, 64, 82), HealthBarIconPath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+        }
+        finally { Object.DestroyImmediate(source); }
+    }
+    private static void CreateMaskedCrop(Texture2D source, RectInt crop, string path, Color? solidColor = null)
+    {
+        var xMin = Mathf.Clamp(crop.xMin, 0, source.width - 1);
+        var yMin = Mathf.Clamp(crop.yMin, 0, source.height - 1);
+        var width = Mathf.Clamp(crop.width, 1, source.width - xMin);
+        var height = Mathf.Clamp(crop.height, 1, source.height - yMin);
+        var output = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        var pixels = new Color[width * height];
+        for (var y = 0; y < height; y++)
+        for (var x = 0; x < width; x++)
+        {
+            var color = source.GetPixel(xMin + x, yMin + y);
+            var neutral = Mathf.Max(Mathf.Abs(color.r - color.g), Mathf.Abs(color.g - color.b), Mathf.Abs(color.r - color.b)) < .08f;
+            color.a = neutral && (color.r + color.g + color.b) / 3f > .68f ? 0f : 1f;
+            if (solidColor.HasValue && color.a > 0f) color = solidColor.Value;
+            pixels[y * width + x] = color;
+        }
+        output.SetPixels(pixels);
+        output.Apply();
+        File.WriteAllBytes(path, output.EncodeToPNG());
+        Object.DestroyImmediate(output);
     }
     private static void ApplyButtonArtwork(Button button, Sprite sprite)
     {
@@ -830,16 +973,50 @@ public static class DemoSceneBuilder
     private static Projectile EnsureProjectilePrefab(Scene scene, Sprite sprite)
     {
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectilePath);
-        if (existing) return UpdatePrefabVisual<Projectile>(ProjectilePath, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.one, Color.white, .14f);
+        var bulletSprite = ImportedSprite(ProjectileSpritePath, sprite);
+        var rocketSprite = ImportedSprite(RocketSpritePath, bulletSprite);
+        if (existing) return UpdateProjectilePrefab(ProjectilePath, bulletSprite, rocketSprite);
 
         var go = new GameObject("Projectile", typeof(Projectile));
         SceneManager.MoveGameObjectToScene(go, scene);
         var collider = go.GetComponent<CircleCollider2D>();
         collider.radius = .14f;
-        Visual(go.transform, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.zero, Vector2.one, Color.white, 5);
+        Visual(go.transform, "Projectile body", bulletSprite, Vector2.zero, Vector2.one, Color.white, 5);
+        var rocketBody = Visual(go.transform, "Rocket body", rocketSprite, Vector2.zero, Vector2.one * .2f, Color.white, 5);
+        rocketBody.SetActive(false);
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, ProjectilePath);
         Object.DestroyImmediate(go);
         return prefab.GetComponent<Projectile>();
+    }
+
+    private static Projectile UpdateProjectilePrefab(string path, Sprite bulletSprite, Sprite rocketSprite)
+    {
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            ApplySprite(root.transform, "Projectile body", bulletSprite);
+            var bullet = root.transform.Find("Projectile body");
+            if (bullet)
+            {
+                bullet.localScale = Vector3.one;
+                var renderer = bullet.GetComponent<SpriteRenderer>();
+                if (renderer) renderer.color = Color.white;
+                bullet.gameObject.SetActive(true);
+            }
+            var rocket = Visual(root.transform, "Rocket body", rocketSprite, Vector2.zero, Vector2.one * .2f, Color.white, 5);
+            ApplySprite(root.transform, "Rocket body", rocketSprite);
+            rocket.SetActive(false);
+            var collider = root.GetComponent<CircleCollider2D>();
+            if (collider)
+            {
+                collider.radius = .14f;
+                collider.isTrigger = true;
+            }
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        return prefab ? prefab.GetComponent<Projectile>() : null;
     }
 
     private static Mine EnsureMinePrefab(Scene scene, Sprite sprite)
@@ -907,7 +1084,7 @@ public static class DemoSceneBuilder
         if (map.FindAction("Weapon1", false) == null) map.AddAction("Weapon1", InputActionType.Button, "<Keyboard>/digit1");
         if (map.FindAction("Weapon2", false) == null) map.AddAction("Weapon2", InputActionType.Button, "<Keyboard>/digit2");
         if (map.FindAction("Weapon3", false) == null) map.AddAction("Weapon3", InputActionType.Button, "<Keyboard>/digit3");
-        if (map.FindAction("Shield", false) == null) map.AddAction("Shield", InputActionType.Button, "<Keyboard>/q");
+        if (map.FindAction("Shield", false) == null) map.AddAction("Shield", InputActionType.Button, "<Keyboard>/digit0");
         if (map.FindAction("EMP", false) == null) map.AddAction("EMP", InputActionType.Button, "<Keyboard>/e");
         if (map.FindAction("DemoMode", false) == null) map.AddAction("DemoMode", InputActionType.Button, "<Keyboard>/f1");
         if (map.FindAction("Pause", false) == null) map.AddAction("Pause", InputActionType.Button, "<Keyboard>/escape");

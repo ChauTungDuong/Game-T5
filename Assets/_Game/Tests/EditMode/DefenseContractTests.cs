@@ -83,7 +83,7 @@ namespace CoreGuard.Tests.Editor
 
             var fourth = MakeEnemyShot(session, session.Player.transform.position);
             fourth.ResolveAgainst(playerCollider);
-            Assert.That(session.Player.HP, Is.EqualTo(100));
+            Assert.That(session.Player.HP, Is.EqualTo(90));
             Assert.That(session.Player.Armor, Is.EqualTo(40));
         }
 

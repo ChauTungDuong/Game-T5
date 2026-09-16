@@ -8,6 +8,9 @@ namespace CoreGuard
         public GameSession Session;
         public Text StatsText, CoreText, TimerText, StateText, ResultText;
         public Text WeaponText, CooldownsText, FeedbackText;
+        public GameObject PlayerHealthPanel;
+        public Image PlayerHealthFill;
+        public Text PlayerHealthValue;
         public bool CompactHud = true;
         public Image ResultImage, CountdownImage;
         public Image LoadingProgress;
@@ -16,6 +19,8 @@ namespace CoreGuard
         public float LoadingDuration = .75f;
         public GameObject StartPanel, PausePanel, ResultPanel;
         public GameObject SettingsPanel, LoadingPanel;
+        public GameObject EntryScreen;
+        public GameObject[] GameplayRoots;
         public Button StartButton, ResumeButton, RetryButton;
         public Button SettingsButton, CloseSettingsButton;
         public Button BulletButton, RocketButton, MineButton, ShieldButton, EmpButton;
@@ -27,7 +32,13 @@ namespace CoreGuard
         private bool loadingActive;
         private bool settingsOpen;
 
-        private void OnEnable() { if (Session) Bind(); }
+        private void OnEnable()
+        {
+            // Gameplay HUD objects are authored in the scene so references are
+            // stable, but they must never leak onto the entry screen.
+            SetGameplayHudVisible(false);
+            if (Session) Bind();
+        }
         private void OnDisable() => Unbind();
 
         public void Bind()
@@ -123,7 +134,8 @@ namespace CoreGuard
                 return;
             }
             loadingActive = true;
-            loadingRemaining = Mathf.Max(.1f, LoadingDuration);
+            loadingRemaining = Mathf.Max(.01f, LoadingDuration);
+            if (CountdownImage) CountdownImage.gameObject.SetActive(false);
             RefreshLoading();
             Refresh();
         }
@@ -196,6 +208,39 @@ namespace CoreGuard
             text.alignment = alignment;
         }
 
+        private void SetGameplayWorldVisible(bool visible)
+        {
+            if (GameplayRoots == null) return;
+            foreach (var root in GameplayRoots)
+                if (root) root.SetActive(visible);
+        }
+
+        private void SetGameplayHudVisible(bool visible)
+        {
+            SetActive(StatsText, visible);
+            SetActive(CoreText, visible);
+            SetActive(TimerText, visible);
+            SetActive(WeaponText, visible);
+            SetActive(CooldownsText, visible);
+            SetActive(FeedbackText, visible);
+            SetActive(PlayerHealthPanel, visible);
+            SetActive(BulletButton, visible);
+            SetActive(RocketButton, visible);
+            SetActive(MineButton, visible);
+            SetActive(ShieldButton, visible);
+            SetActive(EmpButton, visible);
+        }
+
+        private static void SetActive(Component component, bool visible)
+        {
+            if (component) component.gameObject.SetActive(visible);
+        }
+
+        private static void SetActive(GameObject gameObject, bool visible)
+        {
+            if (gameObject) gameObject.SetActive(visible);
+        }
+
         private void HandleSessionReset()
         {
             ClearFeedback();
@@ -250,7 +295,7 @@ namespace CoreGuard
 
         private void RefreshLoading()
         {
-            var duration = Mathf.Max(.1f, LoadingDuration);
+            var duration = Mathf.Max(.01f, LoadingDuration);
             var progress = Mathf.Clamp01(1f - loadingRemaining / duration);
             if (LoadingProgress)
             {
@@ -270,6 +315,15 @@ namespace CoreGuard
                 StatsText.text = CompactHud
                     ? $"HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}  •  ARM {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}  •  C {Session.Player.Coins}"
                     : $"PLAYER HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}\nARMOR {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}\nCOINS {Session.Player.Coins}";
+            if (PlayerHealthFill)
+            {
+                PlayerHealthFill.type = Image.Type.Filled;
+                PlayerHealthFill.fillMethod = Image.FillMethod.Horizontal;
+                PlayerHealthFill.fillOrigin = 0;
+                PlayerHealthFill.fillAmount = Mathf.Clamp01(Session.Player.HP / PlayerStats.MaxHP);
+            }
+            if (PlayerHealthValue)
+                PlayerHealthValue.text = $"{Session.Player.HP:0}/{PlayerStats.MaxHP:0}";
             if (CoreText)
                 CoreText.text = $"CORE {Session.Core.HP:0}/{CoreHealth.MaxHP:0}";
             if (TimerText)
@@ -289,6 +343,13 @@ namespace CoreGuard
                 ResultImage.sprite = Session.State == MatchState.Won ? WinSprite : LoseSprite;
                 ResultImage.enabled = hasResult && ResultImage.sprite != null;
             }
+            // Keep the menu artwork visible during loading. The arena should only
+            // appear when the countdown starts, so loading never looks like a
+            // popup laid over an already-running match.
+            var entryVisible = Session.State == MatchState.Ready && !countdownActive;
+            if (EntryScreen) EntryScreen.SetActive(entryVisible);
+            SetGameplayWorldVisible(!entryVisible);
+            SetGameplayHudVisible(!entryVisible);
             if (CooldownsText)
             {
                 var shield = !Session.Defense || Session.Defense.ShieldCooldownRemaining <= 0f

@@ -26,6 +26,9 @@ namespace CoreGuard
         public AudioClip Victory;
         public AudioClip Defeat;
         public AudioClip MusicLoop;
+        // Temporary project setting: keep the scene silent until the player
+        // explicitly enables SFX/music from Settings.
+        public bool StartMuted;
         public bool SfxEnabled { get; private set; } = true;
         public bool MusicEnabled { get; private set; }
         public int AlertBeepsPlayed { get; private set; }
@@ -51,6 +54,11 @@ namespace CoreGuard
         {
             EnsureSources();
             EnsureClips();
+            if (StartMuted)
+            {
+                SfxEnabled = false;
+                MusicEnabled = false;
+            }
         }
 
         private void OnEnable()

@@ -216,7 +216,7 @@ Mỗi object nên có thêm animation ngắn khi được kích hoạt: scale pu
 
 ## 7. Task 5 — Cơ chế phòng thủ
 
-### Shield — phím Q
+### Shield — phím 0
 
 - Thời gian hoạt động: 3 giây.
 - Chặn tối đa 3 projectile enemy.
@@ -369,7 +369,7 @@ Sau khi chọn asset:
 - Không còn panel lớn ở biên trên/dưới.
 - HUD không che arena.
 - Đọc được ở 1280×720 và 1920×1080.
-- Cooldown và trạng thái Q/E/1/2/3 hiển thị đúng.
+- Cooldown và trạng thái 0/E/1/2/3 hiển thị đúng.
 
 ## 11. Trình tự thực hiện
 

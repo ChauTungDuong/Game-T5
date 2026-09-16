@@ -79,14 +79,14 @@ namespace CoreGuard.Tests.Editor
             bullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
             bullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
 
-            Assert.That(enemy.HP, Is.EqualTo(30));
+            Assert.That(enemy.HP, Is.EqualTo(35));
             Assert.That(bullet.IsLive, Is.False);
             Assert.That(weapon.TryFire(Vector2.right), Is.False, "Bullet cooldown must reject an immediate second shot.");
             weapon.Advance(.2f);
             Assert.That(weapon.TryFire(Vector2.right), Is.True);
             var secondBullet = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             secondBullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
-            Assert.That(enemy.HP, Is.Zero, "Two standard bullets should defeat a 60 HP enemy.");
+            Assert.That(enemy.HP, Is.EqualTo(10), "Two standard bullets should leave a 60 HP enemy alive.");
         }
 
         [TestCase(WeaponKind.Bullet)]
@@ -137,8 +137,8 @@ namespace CoreGuard.Tests.Editor
             var rocket = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             rocket.ResolveAgainst(first.GetComponent<CircleCollider2D>());
 
-            Assert.That(first.HP, Is.EqualTo(25));
-            Assert.That(second.HP, Is.EqualTo(25));
+            Assert.That(first.HP, Is.EqualTo(5));
+            Assert.That(second.HP, Is.EqualTo(5));
             Assert.That(rocket.IsLive, Is.False);
         }
 
@@ -179,7 +179,7 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void Enemy_FiresProjectileThatUsesArmorFirstDamage()
+        public void Enemy_FiresProjectileThatReducesHealthAndArmor()
         {
             var session = MakeSession();
             session.Player.transform.position = Vector2.zero;
@@ -195,7 +195,7 @@ namespace CoreGuard.Tests.Editor
             var shot = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             shot.ResolveAgainst(playerCollider);
 
-            Assert.That(session.Player.HP, Is.EqualTo(100));
+            Assert.That(session.Player.HP, Is.EqualTo(90));
             Assert.That(session.Player.Armor, Is.EqualTo(40));
         }
 

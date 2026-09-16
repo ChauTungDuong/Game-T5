@@ -18,10 +18,10 @@ namespace CoreGuard
         public Projectile ProjectilePrefab;
         public Mine MinePrefab;
         public WeaponKind SelectedWeapon { get; private set; } = WeaponKind.Bullet;
-        public float BulletDamage = 30;
+        public float BulletDamage = 25;
         public float BulletSpeed = 14;
         public float BulletCooldown = .2f;
-        public float RocketDamage = 35;
+        public float RocketDamage = 55;
         public float RocketSpeed = 11;
         public float RocketCooldown = 1f;
         public float RocketRadius = 1.5f;

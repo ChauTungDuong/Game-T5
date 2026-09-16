@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -157,6 +158,7 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.Audio.Explosion.name, Is.EqualTo("explosion"));
             Assert.That(session.Audio.Victory.name, Is.EqualTo("congratulation"));
             Assert.That(session.Audio.Defeat.name, Is.EqualTo("gameover"));
+            Assert.That(session.Audio.StartMuted, Is.True);
             var combatVfx = session.Player.GetComponent<CoreGuard.CombatVfxPresenter>();
             Assert.That(combatVfx, Is.Not.Null);
             Assert.That(combatVfx.ExplosionFrames, Is.Not.Null);
@@ -166,6 +168,9 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.Weapon.Muzzle, Is.Not.Null);
             Assert.That(session.Weapon.ProjectilePrefab, Is.Not.Null);
             Assert.That(session.Weapon.MinePrefab, Is.Not.Null);
+            Assert.That(session.Weapon.BulletDamage, Is.EqualTo(25f));
+            Assert.That(session.Weapon.RocketDamage, Is.EqualTo(55f));
+            Assert.That(session.Weapon.ProjectilePrefab.transform.Find("Rocket body"), Is.Not.Null);
             Assert.That(session.EnemyProjectilePrefab, Is.Not.Null);
             Assert.That(session.Spawner.Prefab, Is.Not.Null);
             var enemyBody = session.Spawner.Prefab.transform.Find("Enemy body");
@@ -210,7 +215,7 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.InteractionCycle, Is.SameAs(authored));
         }
 
-        // Break caught: scene configuration omits shared world bars or gives the Core a player-sized bar that intersects its zone ring.
+        // Break caught: scene configuration omits shared world bars or fails to apply the supplied red heart-bar art to both protected units.
         [Test]
         public void ConfigureProject_ConfiguresDistinctSharedHealthBarsAbovePlayerAndCore()
         {
@@ -230,8 +235,16 @@ namespace CoreGuard.Tests.Editor
             Assert.That(coreBar.transform.localPosition.y, Is.GreaterThan(0f));
             Assert.That(coreBar.transform.localPosition.y + .4f, Is.LessThan(zone.Radius));
             Assert.That(coreBar.Width, Is.GreaterThan(playerBar.Width));
-            Assert.That(playerBar.FullColor, Is.EqualTo(Color.green));
-            Assert.That(coreBar.FullColor, Is.EqualTo(Color.cyan));
+            Assert.That(playerBar.FullColor, Is.EqualTo(Color.red));
+            Assert.That(coreBar.FullColor, Is.EqualTo(Color.red));
+            Assert.That(playerBar.UsesSpriteArt, Is.True);
+            Assert.That(coreBar.UsesSpriteArt, Is.True);
+            Assert.That(playerBar.BarSprite, Is.Not.Null);
+            Assert.That(playerBar.FillSprite, Is.Not.Null);
+            Assert.That(playerBar.IconSprite, Is.Not.Null);
+            Assert.That(coreBar.BarSprite, Is.SameAs(playerBar.BarSprite));
+            Assert.That(coreBar.FillSprite, Is.SameAs(playerBar.FillSprite));
+            Assert.That(coreBar.IconSprite, Is.SameAs(playerBar.IconSprite));
         }
 
         [Test]
@@ -259,6 +272,27 @@ namespace CoreGuard.Tests.Editor
             Assert.That(hud.LoadingProgress, Is.Not.Null);
             Assert.That(hud.SettingsPanel.activeSelf, Is.False);
             Assert.That(hud.LoadingPanel.activeSelf, Is.False);
+            Assert.That(hud.EntryScreen, Is.Not.Null);
+            Assert.That(hud.EntryScreen.activeSelf, Is.True);
+            Assert.That(hud.StatsText.gameObject.activeSelf, Is.False);
+            Assert.That(hud.CoreText.gameObject.activeSelf, Is.False);
+            Assert.That(hud.TimerText.gameObject.activeSelf, Is.False);
+            Assert.That(hud.WeaponText.gameObject.activeSelf, Is.False);
+            Assert.That(hud.CooldownsText.gameObject.activeSelf, Is.False);
+            Assert.That(hud.PlayerHealthPanel.activeSelf, Is.False);
+            Assert.That(hud.BulletButton.gameObject.activeSelf, Is.False);
+            Assert.That(hud.RocketButton.gameObject.activeSelf, Is.False);
+            Assert.That(hud.MineButton.gameObject.activeSelf, Is.False);
+            Assert.That(hud.ShieldButton.gameObject.activeSelf, Is.False);
+            Assert.That(hud.EmpButton.gameObject.activeSelf, Is.False);
+            Assert.That(hud.GameplayRoots, Is.Not.Null);
+            Assert.That(hud.GameplayRoots.Length, Is.EqualTo(5));
+            Assert.That(hud.PlayerHealthPanel, Is.Not.Null);
+            Assert.That(hud.PlayerHealthFill, Is.Not.Null);
+            Assert.That(hud.PlayerHealthValue, Is.Not.Null);
+            Assert.That(hud.PlayerHealthFill.sprite, Is.Not.Null);
+            Assert.That(hud.EntryScreen.transform.Find("Menu player barrel"), Is.Not.Null);
+            Assert.That(hud.EntryScreen.transform.Find("Menu enemy barrel"), Is.Not.Null);
             var audioView = hud.GetComponent<CoreGuard.AudioToggleView>();
             Assert.That(audioView, Is.Not.Null);
             Assert.That(audioView.SoundOff, Is.Not.Null);
@@ -273,6 +307,9 @@ namespace CoreGuard.Tests.Editor
                 Is.EqualTo(((RectTransform)audioView.MusicOff.transform).anchoredPosition));
             Assert.That(((RectTransform)audioView.MusicOn.transform).sizeDelta,
                 Is.EqualTo(((RectTransform)audioView.MusicOff.transform).sizeDelta));
+            var inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/Settings/InputSystem_Actions.inputactions");
+            Assert.That(inputActions.FindAction("Gameplay/Shield", false).bindings[0].path,
+                Is.EqualTo("<Keyboard>/digit0"));
             Assert.That(hud.ResultImage, Is.Not.Null);
             Assert.That(hud.WinSprite, Is.Not.Null);
             Assert.That(hud.LoseSprite, Is.Not.Null);
