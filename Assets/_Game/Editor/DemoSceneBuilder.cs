@@ -364,13 +364,21 @@ public static class DemoSceneBuilder
 
         var weaponCycleButton = ActionButton(root.transform, "Weapon cycle button", "R  BULLET", new Vector2(-150, -271));
         Layout((RectTransform)weaponCycleButton.transform, new Vector2(-150, -271), new Vector2(160, 42));
+        weaponCycleButton.gameObject.SetActive(false);
         hud.WeaponCycleButton = weaponCycleButton;
         hud.BulletButton = weaponCycleButton;
 
         var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(30, -271));
+        shieldButton.gameObject.SetActive(false);
         var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
+        empButton.gameObject.SetActive(false);
         if (!hud.ShieldButton) hud.ShieldButton = shieldButton;
         if (!hud.EmpButton) hud.EmpButton = empButton;
+        foreach (var name in new[] { "Bullet button", "Rocket button", "Mine button", "Actions" })
+        {
+            var oldChild = root.transform.Find(name);
+            if (oldChild) oldChild.gameObject.SetActive(false);
+        }
         var homeBg = ImportedSprite(HomeBackgroundPath, null);
         var homeLogo = ImportedSprite(HomeLogoPath, null);
         hud.HomeBackground = homeBg;

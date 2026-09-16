@@ -188,6 +188,7 @@ namespace CoreGuard
 
         private void ApplyCompactPresentation()
         {
+            HideBottomButtons();
             if (!CompactHud) return;
             HideVerboseLabel("Objective");
             HideVerboseLabel("Controls");
@@ -197,6 +198,25 @@ namespace CoreGuard
             SetTextRect(TimerText, Vector2.one, Vector2.one, new Vector2(-24, -52), new Vector2(120, 26), TextAnchor.UpperRight);
             SetTextRect(WeaponText, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(160, 26), TextAnchor.LowerLeft);
             SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26), TextAnchor.LowerRight);
+        }
+
+        private void HideBottomButtons()
+        {
+            var buttonNames = new[]
+            {
+                "Bullet button", "Rocket button", "Mine button", "Shield button", "EMP button", "Weapon cycle button", "Actions"
+            };
+            foreach (var name in buttonNames)
+            {
+                var child = transform.Find(name);
+                if (child) child.gameObject.SetActive(false);
+            }
+            if (BulletButton) BulletButton.gameObject.SetActive(false);
+            if (RocketButton) RocketButton.gameObject.SetActive(false);
+            if (MineButton) MineButton.gameObject.SetActive(false);
+            if (ShieldButton) ShieldButton.gameObject.SetActive(false);
+            if (EmpButton) EmpButton.gameObject.SetActive(false);
+            if (WeaponCycleButton) WeaponCycleButton.gameObject.SetActive(false);
         }
 
         private void HideVerboseLabel(string childName)
@@ -586,6 +606,8 @@ namespace CoreGuard
             if (EmpButton) EmpButton.interactable = gameplayActionsEnabled && Session.Defense
                 && Session.Defense.EmpCooldownRemaining <= 0f
                 && (!Session.Player || Session.Player.CanUseSkill());
+
+            HideBottomButtons();
         }
     }
 }

@@ -396,5 +396,38 @@ namespace CoreGuard.Tests.Editor
             Assert.That(startBtn.gameObject.activeSelf, Is.True);
             Assert.That(settingsBtn.gameObject.activeSelf, Is.True);
         }
+
+        [Test]
+        public void Gameplay_BottomActionButtonsAreHidden()
+        {
+            var session = MakeSession();
+            var canvas = Make<Canvas>("Canvas");
+            var hud = Make<HudPresenter>("HUD");
+            hud.transform.SetParent(canvas.transform, false);
+            hud.Session = session;
+
+            var bulletBtn = Make<Button>("Bullet button");
+            bulletBtn.transform.SetParent(hud.transform, false);
+            hud.BulletButton = bulletBtn;
+
+            var cycleBtn = Make<Button>("Weapon cycle button");
+            cycleBtn.transform.SetParent(hud.transform, false);
+            hud.WeaponCycleButton = cycleBtn;
+
+            var shieldBtn = Make<Button>("Shield button");
+            shieldBtn.transform.SetParent(hud.transform, false);
+            hud.ShieldButton = shieldBtn;
+
+            var empBtn = Make<Button>("EMP button");
+            empBtn.transform.SetParent(hud.transform, false);
+            hud.EmpButton = empBtn;
+
+            hud.Bind();
+
+            Assert.That(bulletBtn.gameObject.activeSelf, Is.False, "Bullet button must be hidden");
+            Assert.That(cycleBtn.gameObject.activeSelf, Is.False, "Weapon cycle button must be hidden");
+            Assert.That(shieldBtn.gameObject.activeSelf, Is.False, "Shield button must be hidden");
+            Assert.That(empBtn.gameObject.activeSelf, Is.False, "Emp button must be hidden");
+        }
     }
 }
