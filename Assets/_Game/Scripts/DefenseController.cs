@@ -38,6 +38,12 @@ namespace CoreGuard
         public bool TryActivateShield()
         {
             if (!CanUse() || ShieldActive || shieldCooldownRemaining > 0) return false;
+            var player = Player ? Player : (Session ? Session.Player : GetComponent<PlayerStats>());
+            if (player && !player.TryConsumeEnergy(PlayerStats.SkillEnergyCost))
+            {
+                Session?.Weapon?.RejectAction("NOT ENOUGH ENERGY (20)");
+                return false;
+            }
             shieldRemaining = ShieldDuration;
             shieldHitsRemaining = ShieldMaxHits;
             shieldCooldownRemaining = ShieldCooldown;
@@ -66,13 +72,19 @@ namespace CoreGuard
 
         public bool TryActivateEmp()
         {
-            if (!CanUse() || empCooldownRemaining > 0 || !Player) return false;
+            if (!CanUse() || empCooldownRemaining > 0) return false;
+            var player = Player ? Player : (Session ? Session.Player : GetComponent<PlayerStats>());
+            if (!player || !player.TryConsumeEnergy(PlayerStats.SkillEnergyCost))
+            {
+                Session?.Weapon?.RejectAction("NOT ENOUGH ENERGY (20)");
+                return false;
+            }
             var affectedCount = 0;
             var radiusSquared = EmpRadius * EmpRadius;
             foreach (var enemy in EnemyController.ActiveEnemies)
             {
                 if (!enemy || !enemy.IsAlive || enemy.Session != Session) continue;
-                if (((Vector2)(enemy.transform.position - Player.transform.position)).sqrMagnitude > radiusSquared) continue;
+                if (((Vector2)(enemy.transform.position - player.transform.position)).sqrMagnitude > radiusSquared) continue;
                 enemy.Stun(EmpDuration);
                 affectedCount++;
             }

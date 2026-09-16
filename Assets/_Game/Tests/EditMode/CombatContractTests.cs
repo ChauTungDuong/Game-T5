@@ -412,6 +412,21 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.Player.HP, Is.EqualTo(90));
         }
 
+        [Test]
+        public void EnemyProjectile_DamagesHpDirectlyWithoutConsumingEnergy()
+        {
+            var session = MakeSession();
+            Assert.That(session.Player.Energy, Is.EqualTo(100));
+            Assert.That(session.Player.HP, Is.EqualTo(100));
+
+            var shot = Make<Projectile>("Enemy shot");
+            shot.InitializeEnemyShot(session, Vector2.right, 10, 7, 4);
+
+            Assert.That(shot.ResolveAgainst(session.Player.GetComponent<CircleCollider2D>()), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(90), "Damage must be deducted from HP.");
+            Assert.That(session.Player.Energy, Is.EqualTo(100), "Energy must not be deducted when hit.");
+        }
+
         // Break caught: the audio service has no observable firing-SFX contract.
         [Test]
         public void AudioService_ExposesSfxPlayedContract()

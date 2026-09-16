@@ -571,9 +571,11 @@ namespace CoreGuard
             if (RocketButton) RocketButton.interactable = gameplayActionsEnabled;
             if (MineButton) MineButton.interactable = gameplayActionsEnabled;
             if (ShieldButton) ShieldButton.interactable = gameplayActionsEnabled && Session.Defense
-                && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f;
+                && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f
+                && (!Session.Player || Session.Player.CanUseSkill());
             if (EmpButton) EmpButton.interactable = gameplayActionsEnabled && Session.Defense
-                && Session.Defense.EmpCooldownRemaining <= 0f;
+                && Session.Defense.EmpCooldownRemaining <= 0f
+                && (!Session.Player || Session.Player.CanUseSkill());
         }
     }
 }

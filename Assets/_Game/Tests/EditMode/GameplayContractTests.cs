@@ -49,20 +49,47 @@ namespace CoreGuard.Tests.Editor
             Assert.That(PlayerMotor.NormalizeMove(Vector2.right), Is.EqualTo(Vector2.right));
             Assert.That(PlayerMotor.NormalizeMove(new Vector2(.25f, 0)), Is.EqualTo(new Vector2(.25f, 0)));
         }
-        [Test] public void Stats_ArmorAbsorbsDamageBeforeHpAndNotifies()
+        [Test] public void Stats_DamageReducesHpDirectlyWithoutConsumingEnergy()
         {
             var stats = Make<PlayerStats>("Stats");
             stats.ResetStats();
             var changes = 0;
             stats.Changed += () => changes++;
             stats.ApplyDamage(60);
-            Assert.That(stats.HP, Is.EqualTo(90));
-            Assert.That(stats.Armor, Is.Zero);
+            Assert.That(stats.HP, Is.EqualTo(40), "Damage must reduce HP directly.");
+            Assert.That(stats.Energy, Is.EqualTo(100), "Damage must not reduce energy.");
             Assert.That(changes, Is.EqualTo(1));
             stats.ApplyDamage(-10);
-            Assert.That(stats.HP, Is.EqualTo(90));
+            Assert.That(stats.HP, Is.EqualTo(40));
             stats.ApplyDamage(200);
             Assert.That(stats.HP, Is.Zero);
+        }
+        [Test] public void Stats_SkillsConsume20Energy_AndRegenerate5PerSecond()
+        {
+            var stats = Make<PlayerStats>("Stats");
+            stats.ResetStats();
+            Assert.That(stats.Energy, Is.EqualTo(100));
+
+            // Using skill reduces energy by 20
+            Assert.That(stats.TryConsumeEnergy(20), Is.True);
+            Assert.That(stats.Energy, Is.EqualTo(80));
+
+            // Regenerates 5 per second
+            stats.Advance(1f);
+            Assert.That(stats.Energy, Is.EqualTo(85));
+
+            // Consume rest of energy
+            stats.TryConsumeEnergy(85);
+            Assert.That(stats.Energy, Is.Zero);
+            Assert.That(stats.CanUseSkill(), Is.False);
+            Assert.That(stats.TryConsumeEnergy(20), Is.False, "Cannot use skill without at least 20 energy.");
+
+            // Regenerate for 4 seconds -> 20 energy
+            stats.Advance(4f);
+            Assert.That(stats.Energy, Is.EqualTo(20));
+            Assert.That(stats.CanUseSkill(), Is.True);
+            Assert.That(stats.TryConsumeEnergy(20), Is.True);
+            Assert.That(stats.Energy, Is.Zero);
         }
         [Test] public void Enemy_ContactDamagesCoreExactlyOnceAndRetires()
         {

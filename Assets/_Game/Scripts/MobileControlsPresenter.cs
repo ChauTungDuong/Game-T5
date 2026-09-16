@@ -236,6 +236,7 @@ namespace CoreGuard
             if (Session)
             {
                 Session.Changed += Refresh;
+                if (Session.Player) Session.Player.Changed += Refresh;
                 if (Session.Weapon)
                 {
                     Session.Weapon.WeaponChanged += HandleWeaponChanged;
@@ -259,6 +260,7 @@ namespace CoreGuard
             if (Session)
             {
                 Session.Changed -= Refresh;
+                if (Session.Player) Session.Player.Changed -= Refresh;
                 if (Session.Weapon)
                 {
                     Session.Weapon.WeaponChanged -= HandleWeaponChanged;
@@ -327,12 +329,14 @@ namespace CoreGuard
             WeaponCycleButton.interactable = true;
             if (ShieldButton)
             {
-                var canUseShield = Session.Defense && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f;
+                var canUseShield = Session.Defense && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f
+                    && (!Session.Player || Session.Player.CanUseSkill());
                 ShieldButton.interactable = canUseShield;
             }
             if (EmpButton)
             {
-                var canUseEmp = Session.Defense && Session.Defense.EmpCooldownRemaining <= 0f;
+                var canUseEmp = Session.Defense && Session.Defense.EmpCooldownRemaining <= 0f
+                    && (!Session.Player || Session.Player.CanUseSkill());
                 EmpButton.interactable = canUseEmp;
             }
 

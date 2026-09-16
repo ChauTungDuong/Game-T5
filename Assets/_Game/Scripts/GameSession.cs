@@ -71,6 +71,7 @@ namespace CoreGuard
         public void Advance(float delta)
         {
             if (State != MatchState.Playing || delta <= 0) return;
+            if (Player) Player.Advance(delta);
             if (Weapon) Weapon.Advance(delta);
             if (Defense) Defense.Advance(delta);
             if (Effects) Effects.Advance(delta);
