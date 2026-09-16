@@ -47,6 +47,14 @@ namespace CoreGuard
         public event Action<WeaponKind> WeaponSelected;
         public event Action<string> ActionRejected;
 
+        public void RejectAction(string reason)
+        {
+            if (!string.IsNullOrEmpty(reason))
+            {
+                ActionRejected?.Invoke(reason);
+            }
+        }
+
         private readonly List<Mine> mines = new List<Mine>();
         private readonly float[] cooldowns = new float[4];
 
