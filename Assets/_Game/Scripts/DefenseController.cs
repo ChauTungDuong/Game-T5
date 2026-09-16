@@ -9,15 +9,15 @@ namespace CoreGuard
         public PlayerStats Player;
         public float ShieldDuration = 3f;
         public int ShieldMaxHits = 3;
-        public float ShieldCooldown = 8f;
+        public float ShieldCooldown = 0f;
         public float EmpRadius = 3f;
         public float EmpDuration = 2f;
-        public float EmpCooldown = 6f;
+        public float EmpCooldown = 0f;
         public bool ShieldActive => shieldRemaining > 0 && shieldHitsRemaining > 0;
         public int ShieldHitsRemaining => shieldHitsRemaining;
         public float ShieldRemaining => Mathf.Max(0, shieldRemaining);
-        public float ShieldCooldownRemaining => Mathf.Max(0, shieldCooldownRemaining);
-        public float EmpCooldownRemaining => Mathf.Max(0, empCooldownRemaining);
+        public float ShieldCooldownRemaining => 0f;
+        public float EmpCooldownRemaining => 0f;
         public int LastEmpAffectedCount { get; private set; }
         public event Action Changed;
         public event Action ShieldActivated;
@@ -37,7 +37,7 @@ namespace CoreGuard
 
         public bool TryActivateShield()
         {
-            if (!CanUse() || ShieldActive || shieldCooldownRemaining > 0) return false;
+            if (!CanUse() || ShieldActive) return false;
             var player = Player ? Player : (Session ? Session.Player : GetComponent<PlayerStats>());
             if (player && !player.TryConsumeEnergy(PlayerStats.SkillEnergyCost))
             {
@@ -46,7 +46,7 @@ namespace CoreGuard
             }
             shieldRemaining = ShieldDuration;
             shieldHitsRemaining = ShieldMaxHits;
-            shieldCooldownRemaining = ShieldCooldown;
+            shieldCooldownRemaining = 0f;
             ShieldActivated?.Invoke();
             Changed?.Invoke();
             return true;
@@ -72,7 +72,7 @@ namespace CoreGuard
 
         public bool TryActivateEmp()
         {
-            if (!CanUse() || empCooldownRemaining > 0) return false;
+            if (!CanUse()) return false;
             var player = Player ? Player : (Session ? Session.Player : GetComponent<PlayerStats>());
             if (!player || !player.TryConsumeEnergy(PlayerStats.SkillEnergyCost))
             {
@@ -90,7 +90,7 @@ namespace CoreGuard
             }
 
             LastEmpAffectedCount = affectedCount;
-            empCooldownRemaining = EmpCooldown;
+            empCooldownRemaining = 0f;
             EmpActivated?.Invoke();
             EmpResolved?.Invoke(LastEmpAffectedCount);
             Changed?.Invoke();

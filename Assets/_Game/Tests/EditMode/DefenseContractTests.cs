@@ -110,11 +110,14 @@ namespace CoreGuard.Tests.Editor
             Assert.That(near.IsStunned, Is.True);
             Assert.That(far.IsStunned, Is.False);
             Assert.That(foreign.IsStunned, Is.False);
-            Assert.That(defense.TryActivateEmp(), Is.False, "EMP cooldown must reject an immediate second pulse.");
+            Assert.That(defense.TryActivateEmp(), Is.True, "Without cooldown, player can use EMP again as long as energy >= 20.");
+            Assert.That(session.Player.Energy, Is.EqualTo(60f));
+            session.Player.TryConsumeEnergy(60f);
+            Assert.That(defense.TryActivateEmp(), Is.False, "EMP must reject when not enough energy (< 20).");
         }
 
         [Test]
-        public void Defense_CooldownsAndShieldExpireOnlyDuringPlaying()
+        public void Defense_ShieldExpiresOnlyDuringPlaying_AndReactivatesImmediatelyWithEnergy()
         {
             var session = MakeSession(out var defense);
             Assert.That(defense.TryActivateShield(), Is.True);
@@ -125,11 +128,13 @@ namespace CoreGuard.Tests.Editor
             session.TogglePause();
             session.Advance(3);
             Assert.That(defense.ShieldActive, Is.False);
-            Assert.That(defense.ShieldCooldownRemaining, Is.EqualTo(5).Within(.001));
+            Assert.That(defense.ShieldCooldownRemaining, Is.Zero);
+            Assert.That(defense.TryActivateShield(), Is.True, "Can activate shield again immediately once expired when energy >= 20.");
+            Assert.That(session.Player.Energy, Is.EqualTo(60f));
         }
 
         [Test]
-        public void Defense_PauseFreezesEmpCooldownAndResetClearsAllState()
+        public void Defense_PauseFreezesShieldAndResetClearsAllState()
         {
             var session = MakeSession(out var defense);
             MakeEnemy(session, "Near", new Vector2(1, 0));
@@ -138,7 +143,7 @@ namespace CoreGuard.Tests.Editor
 
             session.TogglePause();
             defense.Advance(20f);
-            Assert.That(defense.EmpCooldownRemaining, Is.EqualTo(6f).Within(.001f));
+            Assert.That(defense.EmpCooldownRemaining, Is.Zero);
             Assert.That(defense.ShieldRemaining, Is.EqualTo(3f).Within(.001f));
 
             session.ResetForDemo();

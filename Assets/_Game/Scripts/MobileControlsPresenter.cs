@@ -38,9 +38,9 @@ namespace CoreGuard
 
         private void Update()
         {
-            if (Session && Session.Defense && (Session.Defense.ShieldCooldownRemaining > 0 || Session.Defense.EmpCooldownRemaining > 0 || Session.Defense.ShieldActive))
+            if (Session && Session.State == MatchState.Playing)
             {
-                RefreshDefenseLabels();
+                Refresh();
             }
         }
 
@@ -329,13 +329,13 @@ namespace CoreGuard
             WeaponCycleButton.interactable = true;
             if (ShieldButton)
             {
-                var canUseShield = Session.Defense && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f
+                var canUseShield = Session.Defense && !Session.Defense.ShieldActive
                     && (!Session.Player || Session.Player.CanUseSkill());
                 ShieldButton.interactable = canUseShield;
             }
             if (EmpButton)
             {
-                var canUseEmp = Session.Defense && Session.Defense.EmpCooldownRemaining <= 0f
+                var canUseEmp = Session.Defense
                     && (!Session.Player || Session.Player.CanUseSkill());
                 EmpButton.interactable = canUseEmp;
             }
@@ -363,10 +363,6 @@ namespace CoreGuard
                 {
                     ShieldLabel.text = $"Q\n{Session.Defense.ShieldHitsRemaining} HIT";
                 }
-                else if (Session.Defense.ShieldCooldownRemaining > 0f)
-                {
-                    ShieldLabel.text = $"Q\n{Session.Defense.ShieldCooldownRemaining:0.0}s";
-                }
                 else
                 {
                     ShieldLabel.text = "Q\nSHIELD";
@@ -375,18 +371,7 @@ namespace CoreGuard
 
             if (EmpLabel)
             {
-                if (!Session || !Session.Defense)
-                {
-                    EmpLabel.text = "E\nEMP";
-                }
-                else if (Session.Defense.EmpCooldownRemaining > 0f)
-                {
-                    EmpLabel.text = $"E\n{Session.Defense.EmpCooldownRemaining:0.0}s";
-                }
-                else
-                {
-                    EmpLabel.text = "E\nEMP";
-                }
+                EmpLabel.text = "E\nEMP";
             }
         }
     }

@@ -228,10 +228,18 @@ namespace CoreGuard.Tests.Editor
 
             Assert.That(session.Defense.EmpCooldownRemaining, Is.EqualTo(0f));
             Assert.That(label.text, Does.Contain("EMP"));
+            Assert.That(empBtn.interactable, Is.True);
+            Assert.That(session.Player.Energy, Is.EqualTo(100f));
 
             presenter.OnEmpClicked();
-            Assert.That(session.Defense.EmpCooldownRemaining, Is.GreaterThan(0f));
-            Assert.That(label.text, Does.Contain("s"));
+            Assert.That(session.Defense.EmpCooldownRemaining, Is.EqualTo(0f));
+            Assert.That(session.Player.Energy, Is.EqualTo(80f));
+            Assert.That(label.text, Does.Contain("EMP"));
+            Assert.That(empBtn.interactable, Is.True);
+
+            session.Player.TryConsumeEnergy(80f);
+            presenter.Refresh();
+            Assert.That(empBtn.interactable, Is.False, "Disabled when energy < 20");
         }
 
         [Test]

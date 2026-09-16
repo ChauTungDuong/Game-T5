@@ -536,14 +536,13 @@ namespace CoreGuard
             }
             if (CooldownsText)
             {
-                var shield = !Session.Defense || Session.Defense.ShieldCooldownRemaining <= 0f
+                var hasEnergy = !Session.Player || Session.Player.CanUseSkill();
+                var shield = !Session.Defense
                     ? "READY"
                     : Session.Defense.ShieldActive
                         ? $"{Session.Defense.ShieldHitsRemaining}/{Session.Defense.ShieldMaxHits}"
-                        : $"{Session.Defense.ShieldCooldownRemaining:0.0}s";
-                var emp = !Session.Defense || Session.Defense.EmpCooldownRemaining <= 0f
-                    ? "READY"
-                    : $"{Session.Defense.EmpCooldownRemaining:0.0}s  AFFECTED: {Session.Defense.LastEmpAffectedCount}";
+                        : (hasEnergy ? "READY" : "NO EN");
+                var emp = hasEnergy ? "READY" : "NO EN";
                 var speed = Session.Effects ? Session.Effects.CurrentSpeed :
                     Session.Motor ? Session.Motor.CurrentSpeed : 0f;
                 CooldownsText.text = CompactHud
@@ -601,10 +600,9 @@ namespace CoreGuard
             if (RocketButton) RocketButton.interactable = gameplayActionsEnabled;
             if (MineButton) MineButton.interactable = gameplayActionsEnabled;
             if (ShieldButton) ShieldButton.interactable = gameplayActionsEnabled && Session.Defense
-                && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f
+                && !Session.Defense.ShieldActive
                 && (!Session.Player || Session.Player.CanUseSkill());
             if (EmpButton) EmpButton.interactable = gameplayActionsEnabled && Session.Defense
-                && Session.Defense.EmpCooldownRemaining <= 0f
                 && (!Session.Player || Session.Player.CanUseSkill());
 
             HideBottomButtons();
