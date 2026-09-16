@@ -107,8 +107,8 @@ namespace CoreGuard
 
             if (IsEnemyProjectile)
             {
-                visual.localScale = Vector3.one * .82f;
-                renderer.color = new Color(1f, .12f, .08f);
+                visual.localScale = new Vector3(1.4f, 1.5f, 1f);
+                renderer.color = new Color(1f, .18f, .12f);
                 return;
             }
 
