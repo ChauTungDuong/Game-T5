@@ -39,6 +39,7 @@ public static class DemoSceneBuilder
     private const string ZIconPath = "Assets/_Game/Art/Kenney/Icons/plus.png";
     private const string UiPanelPath = "Assets/_Game/Art/Kenney/UI/panel_glass.png";
     private const string UiButtonPath = "Assets/_Game/Art/Kenney/UI/button_rectangle_depth.png";
+    private const string UiSquareButtonPath = "Assets/_Game/Art/Kenney/UI/button_square_depth.png";
     private const string UiFontPath = "Assets/_Game/Art/Kenney/UI/Kenney Future.ttf";
     private const string BulletAudioPath = "Assets/_Game/Audio/Kenney/laserSmall_000.ogg";
     private const string RocketAudioPath = "Assets/_Game/Audio/Kenney/laserLarge_000.ogg";
@@ -416,6 +417,7 @@ public static class DemoSceneBuilder
         progressImage.raycastTarget = false;
         hud.LoadingPanel = loadingPanel;
         hud.LoadingProgress = progressImage;
+        EnsureMobileControls(root.transform, session);
         BuildDemoPanel(root.transform, session.Demo);
     }
 
@@ -639,6 +641,158 @@ public static class DemoSceneBuilder
         var label = Label(go.transform, "Label", title, Vector2.zero, new Vector2(106, 38), 13, Color.white);
         Layout((RectTransform)label.transform, Vector2.zero, new Vector2(106, 38));
         return go.GetComponent<Button>();
+    }
+
+    private static void EnsureMobileControls(Transform parent, GameSession session)
+    {
+        var mobileRoot = parent.Find("Mobile controls");
+        GameObject go;
+        if (!mobileRoot)
+        {
+            go = new GameObject("Mobile controls", typeof(RectTransform), typeof(MobileControlsPresenter));
+            go.transform.SetParent(parent, false);
+        }
+        else
+        {
+            go = mobileRoot.gameObject;
+        }
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        var presenter = go.GetComponent<MobileControlsPresenter>() ?? go.AddComponent<MobileControlsPresenter>();
+        presenter.Session = session;
+
+        var squareSprite = ImportedSprite(UiSquareButtonPath, null);
+        var rectSprite = ImportedSprite(UiButtonPath, null);
+
+        // --- D-Pad Container at Bottom-Left ---
+        var dpadTransform = go.transform.Find("Dpad");
+        GameObject dpadObj;
+        if (!dpadTransform)
+        {
+            dpadObj = new GameObject("Dpad", typeof(RectTransform));
+            dpadObj.transform.SetParent(go.transform, false);
+        }
+        else
+        {
+            dpadObj = dpadTransform.gameObject;
+        }
+        var dpadRt = (RectTransform)dpadObj.transform;
+        dpadRt.anchorMin = Vector2.zero;
+        dpadRt.anchorMax = Vector2.zero;
+        dpadRt.pivot = Vector2.zero;
+        dpadRt.anchoredPosition = new Vector2(24, 24);
+        dpadRt.sizeDelta = new Vector2(170, 170);
+
+        presenter.UpButton = CreateDirectionalButton(dpadObj.transform, "Dpad Up", "▲", new Vector2(85, 140), new Vector2(50, 48), Vector2.up, squareSprite, presenter);
+        presenter.DownButton = CreateDirectionalButton(dpadObj.transform, "Dpad Down", "▼", new Vector2(85, 30), new Vector2(50, 48), Vector2.down, squareSprite, presenter);
+        presenter.LeftButton = CreateDirectionalButton(dpadObj.transform, "Dpad Left", "◄", new Vector2(30, 85), new Vector2(48, 50), Vector2.left, squareSprite, presenter);
+        presenter.RightButton = CreateDirectionalButton(dpadObj.transform, "Dpad Right", "►", new Vector2(140, 85), new Vector2(48, 50), Vector2.right, squareSprite, presenter);
+
+        // --- Weapon Switch Button at Bottom-Right ---
+        var weaponBtnTransform = go.transform.Find("Mobile Weapon Switch");
+        GameObject weaponBtnObj;
+        if (!weaponBtnTransform)
+        {
+            weaponBtnObj = new GameObject("Mobile Weapon Switch", typeof(RectTransform), typeof(Image), typeof(Button));
+            weaponBtnObj.transform.SetParent(go.transform, false);
+        }
+        else
+        {
+            weaponBtnObj = weaponBtnTransform.gameObject;
+        }
+        var weaponRt = (RectTransform)weaponBtnObj.transform;
+        weaponRt.anchorMin = new Vector2(1, 0);
+        weaponRt.anchorMax = new Vector2(1, 0);
+        weaponRt.pivot = new Vector2(1, 0);
+        weaponRt.anchoredPosition = new Vector2(-24, 115);
+        weaponRt.sizeDelta = new Vector2(115, 52);
+
+        var weaponImg = weaponBtnObj.GetComponent<Image>();
+        if (rectSprite) weaponImg.sprite = rectSprite;
+        weaponImg.color = new Color(.13f, .45f, .48f, .55f);
+
+        var weaponBtn = weaponBtnObj.GetComponent<Button>();
+        StyleButton(weaponBtn, new Color(.13f, .45f, .48f, .55f));
+
+        var labelTransform = weaponBtnObj.transform.Find("Label");
+        Text weaponLabel;
+        if (!labelTransform)
+        {
+            weaponLabel = Label(weaponBtnObj.transform, "Label", "WEAPON\n[BULLET]", Vector2.zero, new Vector2(105, 46), 12, Color.white);
+        }
+        else
+        {
+            weaponLabel = labelTransform.GetComponent<Text>();
+        }
+        weaponLabel.alignment = TextAnchor.MiddleCenter;
+        Layout((RectTransform)weaponLabel.transform, Vector2.zero, new Vector2(105, 46));
+
+        presenter.WeaponCycleButton = weaponBtn;
+        presenter.WeaponCycleLabel = weaponLabel;
+        presenter.Bind();
+    }
+
+    private static VirtualDirectionalButton CreateDirectionalButton(
+        Transform parent,
+        string name,
+        string arrow,
+        Vector2 position,
+        Vector2 size,
+        Vector2 direction,
+        Sprite sprite,
+        MobileControlsPresenter presenter)
+    {
+        var existing = parent.Find(name);
+        GameObject go;
+        if (!existing)
+        {
+            go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(VirtualDirectionalButton));
+            go.transform.SetParent(parent, false);
+        }
+        else
+        {
+            go = existing.gameObject;
+        }
+
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = new Vector2(.5f, .5f);
+        rt.anchorMax = new Vector2(.5f, .5f);
+        rt.pivot = new Vector2(.5f, .5f);
+        rt.anchoredPosition = position - new Vector2(85, 85);
+        rt.sizeDelta = size;
+
+        var img = go.GetComponent<Image>();
+        if (sprite) img.sprite = sprite;
+        img.color = new Color(.12f, .38f, .44f, .4f);
+
+        var btn = go.GetComponent<VirtualDirectionalButton>() ?? go.AddComponent<VirtualDirectionalButton>();
+        btn.Direction = direction;
+        btn.Presenter = presenter;
+        btn.NormalAlpha = .4f;
+        btn.PressedAlpha = .85f;
+
+        var labelTransform = go.transform.Find("Label");
+        Text label;
+        if (!labelTransform)
+        {
+            label = Label(go.transform, "Label", arrow, Vector2.zero, size, 22, Color.white);
+        }
+        else
+        {
+            label = labelTransform.GetComponent<Text>();
+            label.text = arrow;
+        }
+        label.alignment = TextAnchor.MiddleCenter;
+        Layout((RectTransform)label.transform, Vector2.zero, size);
+        btn.LabelText = label;
+        btn.BackgroundImage = img;
+
+        return btn;
     }
 
     private static GameObject CreateHudBar(

@@ -72,6 +72,7 @@ namespace CoreGuard
             if (EmpButton) EmpButton.onClick.AddListener(ActivateEmp);
             if (EmpButton) EmpButton.onClick.AddListener(PlayUiClick);
             ApplyCompactPresentation();
+            EnsureMobileControls();
             Refresh();
         }
 
@@ -206,6 +207,23 @@ namespace CoreGuard
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
             text.alignment = alignment;
+        }
+
+        private void EnsureMobileControls()
+        {
+            var mobileRoot = transform.Find("Mobile controls");
+            if (!mobileRoot)
+            {
+                var go = new GameObject("Mobile controls", typeof(RectTransform), typeof(MobileControlsPresenter));
+                go.transform.SetParent(transform, false);
+                mobileRoot = go.transform;
+            }
+            var presenter = mobileRoot.GetComponent<MobileControlsPresenter>();
+            if (presenter)
+            {
+                presenter.Session = Session;
+                presenter.Bind();
+            }
         }
 
         private void HandleSessionReset()
