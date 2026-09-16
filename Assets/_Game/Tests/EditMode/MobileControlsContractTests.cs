@@ -268,5 +268,32 @@ namespace CoreGuard.Tests.Editor
             Assert.That(presenter.EmpLabel.text, Does.Contain("E"));
             Assert.That(presenter.WeaponCycleLabel.text, Does.Contain("R"));
         }
+
+        [Test]
+        public void MobileControls_HiddenWhenNotInPlayState()
+        {
+            var session = MakeSession();
+            var canvas = Make<Canvas>("Canvas");
+            var presenter = Make<MobileControlsPresenter>("Mobile controls");
+            presenter.transform.SetParent(canvas.transform, false);
+            presenter.Session = session;
+            presenter.EnsureControls();
+            presenter.Bind();
+
+            // When Playing (MatchState.Playing)
+            Assert.That(presenter.ShieldButton.gameObject.activeSelf, Is.True);
+            Assert.That(presenter.EmpButton.gameObject.activeSelf, Is.True);
+            Assert.That(presenter.WeaponCycleButton.gameObject.activeSelf, Is.True);
+            Assert.That(presenter.transform.Find("Dpad").gameObject.activeSelf, Is.True);
+
+            // When on Home Screen (MatchState.Ready)
+            session.Retry();
+            presenter.Refresh();
+
+            Assert.That(presenter.ShieldButton.gameObject.activeSelf, Is.False);
+            Assert.That(presenter.EmpButton.gameObject.activeSelf, Is.False);
+            Assert.That(presenter.WeaponCycleButton.gameObject.activeSelf, Is.False);
+            Assert.That(presenter.transform.Find("Dpad").gameObject.activeSelf, Is.False);
+        }
     }
 }

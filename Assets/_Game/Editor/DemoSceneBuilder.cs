@@ -41,6 +41,8 @@ public static class DemoSceneBuilder
     private const string UiButtonPath = "Assets/_Game/Art/Kenney/UI/button_rectangle_depth.png";
     private const string UiSquareButtonPath = "Assets/_Game/Art/Kenney/UI/button_square_depth.png";
     private const string UiCircleButtonPath = "Assets/_Game/Art/UI/button_circle.png";
+    private const string HomeBackgroundPath = "Assets/_Game/Art/background-gamet5.png";
+    private const string HomeLogoPath = "Assets/_Game/Art/logo.png";
     private const string UiFontPath = "Assets/_Game/Art/Kenney/UI/Kenney Future.ttf";
     private const string BulletAudioPath = "Assets/_Game/Audio/Kenney/laserSmall_000.ogg";
     private const string RocketAudioPath = "Assets/_Game/Audio/Kenney/laserLarge_000.ogg";
@@ -368,16 +370,84 @@ public static class DemoSceneBuilder
         var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
         if (!hud.ShieldButton) hud.ShieldButton = shieldButton;
         if (!hud.EmpButton) hud.EmpButton = empButton;
-        if (!hud.StartPanel)
+        var homeBg = ImportedSprite(HomeBackgroundPath, null);
+        var homeLogo = ImportedSprite(HomeLogoPath, null);
+
+        var startPanelGo = hud.StartPanel;
+        if (!startPanelGo)
         {
-            hud.StartPanel = Panel(root.transform, "Start panel", true);
+            var existing = root.Find("Start panel");
+            startPanelGo = existing ? existing.gameObject : Child(root.transform, "Start panel", typeof(RectTransform), typeof(Image));
+            hud.StartPanel = startPanelGo;
         }
-        Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n[R] Cycle Weapon (Bullet/Rocket/Laser)\nQ shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
-        if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
+
+        var startRt = (RectTransform)startPanelGo.transform;
+        startRt.anchorMin = Vector2.zero;
+        startRt.anchorMax = Vector2.one;
+        startRt.offsetMin = Vector2.zero;
+        startRt.offsetMax = Vector2.zero;
+
+        var startBgImg = startPanelGo.GetComponent<Image>() ?? startPanelGo.AddComponent<Image>();
+        if (homeBg)
+        {
+            startBgImg.sprite = homeBg;
+            startBgImg.type = Image.Type.Simple;
+            startBgImg.preserveAspect = false;
+            startBgImg.color = Color.white;
+        }
+        else
+        {
+            startBgImg.color = Ink;
+        }
+        startBgImg.raycastTarget = true;
+        startPanelGo.SetActive(true);
+
+        // Logo Image
+        var logoGo = Child(startPanelGo.transform, "Logo", typeof(RectTransform), typeof(Image));
+        var logoRt = (RectTransform)logoGo.transform;
+        logoRt.anchorMin = new Vector2(.5f, .5f);
+        logoRt.anchorMax = new Vector2(.5f, .5f);
+        logoRt.pivot = new Vector2(.5f, .5f);
+        logoRt.anchoredPosition = new Vector2(0, 75);
+        logoRt.sizeDelta = new Vector2(460, 153);
+        var logoImg = logoGo.GetComponent<Image>();
+        if (homeLogo)
+        {
+            logoImg.sprite = homeLogo;
+            logoImg.preserveAspect = true;
+            logoImg.color = Color.white;
+        }
+        logoImg.raycastTarget = false;
+
+        var oldHeading = startPanelGo.transform.Find("Heading");
+        if (oldHeading) oldHeading.gameObject.SetActive(false);
+
+        if (!hud.StartButton) hud.StartButton = Button(startPanelGo.transform, "Start button", "START DEFENSE", new Vector2(0, -65));
+        var startBtnRt = (RectTransform)hud.StartButton.transform;
+        startBtnRt.anchorMin = new Vector2(.5f, .5f);
+        startBtnRt.anchorMax = new Vector2(.5f, .5f);
+        startBtnRt.pivot = new Vector2(.5f, .5f);
+        startBtnRt.anchoredPosition = new Vector2(0, -65);
+        startBtnRt.sizeDelta = new Vector2(230, 68);
         ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
-        var settingsButton = AudioButton(hud.StartPanel.transform, "Settings", "SETTINGS", new Vector2(196, -103));
+
+        var settingsButton = AudioButton(startPanelGo.transform, "Settings", "SETTINGS", Vector2.zero);
+        var settingsRt = (RectTransform)settingsButton.transform;
+        settingsRt.anchorMin = Vector2.one;
+        settingsRt.anchorMax = Vector2.one;
+        settingsRt.pivot = Vector2.one;
+        settingsRt.anchoredPosition = new Vector2(-28, -28);
+        settingsRt.sizeDelta = new Vector2(56, 56);
         hud.SettingsButton = settingsButton;
+
+        var briefText = Label(startPanelGo.transform, "Brief", "WASD / D-Pad move  •  Touch / Mouse aim & fire\nQ Shield  •  E EMP  •  [R] Cycle Weapon", new Vector2(0, -135), new Vector2(560, 36), 13, new Color(.85f, .92f, .95f, .9f));
+        var briefRt = (RectTransform)briefText.transform;
+        briefRt.anchorMin = new Vector2(.5f, .5f);
+        briefRt.anchorMax = new Vector2(.5f, .5f);
+        briefRt.pivot = new Vector2(.5f, .5f);
+        briefRt.anchoredPosition = new Vector2(0, -135);
+        briefRt.sizeDelta = new Vector2(560, 36);
+
         var closeSettingsButton = Button(settingsPanel.transform, "Close settings button", "BACK", new Vector2(0, -92));
         hud.CloseSettingsButton = closeSettingsButton;
         if (!hud.PausePanel)
@@ -1171,6 +1241,7 @@ public static class DemoSceneBuilder
             importer.SaveAndReimport();
         }
         var imported = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (!imported) imported = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
         return imported ? imported : fallback;
     }
     private static AudioClip PreferImportedClip(string path, AudioClip fallback)

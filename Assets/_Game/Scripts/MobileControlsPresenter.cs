@@ -315,15 +315,24 @@ namespace CoreGuard
         public void Refresh()
         {
             var playing = Session && Session.State == MatchState.Playing;
-            if (WeaponCycleButton) WeaponCycleButton.interactable = playing;
+
+            var dpadT = transform.Find("Dpad");
+            if (dpadT) dpadT.gameObject.SetActive(playing);
+            if (ShieldButton) ShieldButton.gameObject.SetActive(playing);
+            if (EmpButton) EmpButton.gameObject.SetActive(playing);
+            if (WeaponCycleButton) WeaponCycleButton.gameObject.SetActive(playing);
+
+            if (!playing) return;
+
+            WeaponCycleButton.interactable = true;
             if (ShieldButton)
             {
-                var canUseShield = playing && Session.Defense && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f;
+                var canUseShield = Session.Defense && !Session.Defense.ShieldActive && Session.Defense.ShieldCooldownRemaining <= 0f;
                 ShieldButton.interactable = canUseShield;
             }
             if (EmpButton)
             {
-                var canUseEmp = playing && Session.Defense && Session.Defense.EmpCooldownRemaining <= 0f;
+                var canUseEmp = Session.Defense && Session.Defense.EmpCooldownRemaining <= 0f;
                 EmpButton.interactable = canUseEmp;
             }
 

@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -72,6 +73,7 @@ namespace CoreGuard
             if (EmpButton) EmpButton.onClick.AddListener(ActivateEmp);
             if (EmpButton) EmpButton.onClick.AddListener(PlayUiClick);
             ApplyCompactPresentation();
+            EnsureHomeScreen();
             EnsureMobileControls();
             Refresh();
         }
@@ -207,6 +209,63 @@ namespace CoreGuard
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
             text.alignment = alignment;
+        }
+
+        private void EnsureHomeScreen()
+        {
+            if (!StartPanel) return;
+            var rt = StartPanel.transform as RectTransform;
+            if (rt)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+            }
+
+            var bgImg = StartPanel.GetComponent<Image>();
+            if (bgImg && (!bgImg.sprite || bgImg.sprite.name.Contains("panel_glass")))
+            {
+                var bgSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("background-gamet5"));
+                if (bgSprite)
+                {
+                    bgImg.sprite = bgSprite;
+                    bgImg.color = Color.white;
+                    bgImg.type = Image.Type.Simple;
+                    bgImg.preserveAspect = false;
+                }
+            }
+
+            var logoT = StartPanel.transform.Find("Logo");
+            if (!logoT)
+            {
+                var logoGo = new GameObject("Logo", typeof(RectTransform), typeof(Image));
+                logoGo.transform.SetParent(StartPanel.transform, false);
+                logoT = logoGo.transform;
+            }
+            var logoRt = (RectTransform)logoT;
+            logoRt.anchorMin = new Vector2(.5f, .5f);
+            logoRt.anchorMax = new Vector2(.5f, .5f);
+            logoRt.pivot = new Vector2(.5f, .5f);
+            logoRt.anchoredPosition = new Vector2(0, 75);
+            logoRt.sizeDelta = new Vector2(460, 153);
+            var logoImg = logoT.GetComponent<Image>();
+            if (logoImg && !logoImg.sprite)
+            {
+                var logoSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("logo"));
+                if (logoSprite)
+                {
+                    logoImg.sprite = logoSprite;
+                    logoImg.preserveAspect = true;
+                    logoImg.color = Color.white;
+                }
+            }
+
+            var oldHeading = StartPanel.transform.Find("Heading");
+            if (oldHeading && logoImg && logoImg.sprite)
+            {
+                oldHeading.gameObject.SetActive(false);
+            }
         }
 
         private void EnsureMobileControls()
@@ -350,15 +409,41 @@ namespace CoreGuard
                     ? $"SH {shield}  •  EMP {emp}"
                     : $"SPEED: {speed:0.0}\nSHIELD: {shield}\nEMP: {emp}";
             }
-            if (StartPanel) StartPanel.SetActive(Session.State == MatchState.Ready && !countdownActive && !loadingActive && !settingsOpen);
+            var isPlaying = Session && Session.State == MatchState.Playing;
+            if (StartPanel)
+            {
+                var showStart = Session && Session.State == MatchState.Ready && !countdownActive && !loadingActive && !settingsOpen;
+                StartPanel.SetActive(showStart);
+                if (showStart) StartPanel.transform.SetAsLastSibling();
+            }
             if (PausePanel) PausePanel.SetActive(Session.State == MatchState.Paused);
             if (ResultPanel) ResultPanel.SetActive(Session.State == MatchState.Won || Session.State == MatchState.Lost);
-            if (SettingsPanel) SettingsPanel.SetActive(settingsOpen && Session.State == MatchState.Ready && !loadingActive && !countdownActive);
+            if (SettingsPanel)
+            {
+                var showSettings = settingsOpen && Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+                SettingsPanel.SetActive(showSettings);
+                if (showSettings) SettingsPanel.transform.SetAsLastSibling();
+            }
             if (LoadingPanel) LoadingPanel.SetActive(loadingActive);
-            if (SettingsButton) SettingsButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+            if (SettingsButton) SettingsButton.interactable = Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive;
             if (CloseSettingsButton) CloseSettingsButton.interactable = settingsOpen;
-            if (StartButton) StartButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive && !settingsOpen;
-            var gameplayActionsEnabled = Session.State == MatchState.Playing;
+            if (StartButton) StartButton.interactable = Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive && !settingsOpen;
+
+            if (StatsText) StatsText.gameObject.SetActive(isPlaying);
+            if (CoreText) CoreText.gameObject.SetActive(isPlaying);
+            if (TimerText) TimerText.gameObject.SetActive(isPlaying);
+            if (WeaponText) WeaponText.gameObject.SetActive(isPlaying);
+            if (CooldownsText) CooldownsText.gameObject.SetActive(isPlaying);
+            if (PlayerHpFill && PlayerHpFill.transform.parent && PlayerHpFill.transform.parent.parent)
+                PlayerHpFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            if (PlayerArmorFill && PlayerArmorFill.transform.parent && PlayerArmorFill.transform.parent.parent)
+                PlayerArmorFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            if (CoreHpFill && CoreHpFill.transform.parent && CoreHpFill.transform.parent.parent)
+                CoreHpFill.transform.parent.parent.gameObject.SetActive(isPlaying);
+            var title = transform.Find("Title");
+            if (title) title.gameObject.SetActive(isPlaying);
+
+            var gameplayActionsEnabled = isPlaying;
             if (WeaponCycleButton)
             {
                 WeaponCycleButton.interactable = gameplayActionsEnabled;
