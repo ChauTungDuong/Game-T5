@@ -245,6 +245,34 @@ namespace CoreGuard.Tests.Editor
             Assert.That(hud.StatsText.alignment, Is.EqualTo(TextAnchor.UpperLeft));
             Assert.That(hud.CoreText.alignment, Is.EqualTo(TextAnchor.UpperRight));
             Assert.That(hud.CooldownsText.alignment, Is.EqualTo(TextAnchor.LowerRight));
+            Assert.That(hud.CompactHud, Is.True);
+            var objective = hud.transform.Find("Objective");
+            var controls = hud.transform.Find("Controls");
+            var actions = hud.transform.Find("Actions");
+            Assert.That(objective == null || !objective.gameObject.activeSelf, Is.True);
+            Assert.That(controls == null || !controls.gameObject.activeSelf, Is.True);
+            Assert.That(actions == null || !actions.gameObject.activeSelf, Is.True);
+            Assert.That(hud.SettingsPanel, Is.Not.Null);
+            Assert.That(hud.SettingsButton, Is.Not.Null);
+            Assert.That(hud.CloseSettingsButton, Is.Not.Null);
+            Assert.That(hud.LoadingPanel, Is.Not.Null);
+            Assert.That(hud.LoadingProgress, Is.Not.Null);
+            Assert.That(hud.SettingsPanel.activeSelf, Is.False);
+            Assert.That(hud.LoadingPanel.activeSelf, Is.False);
+            var audioView = hud.GetComponent<CoreGuard.AudioToggleView>();
+            Assert.That(audioView, Is.Not.Null);
+            Assert.That(audioView.SoundOff, Is.Not.Null);
+            Assert.That(audioView.SoundOn, Is.Not.Null);
+            Assert.That(audioView.MusicOn, Is.Not.Null);
+            Assert.That(audioView.MusicOff, Is.Not.Null);
+            Assert.That(((RectTransform)audioView.SoundOff.transform).anchoredPosition,
+                Is.EqualTo(((RectTransform)audioView.SoundOn.transform).anchoredPosition));
+            Assert.That(((RectTransform)audioView.SoundOff.transform).sizeDelta,
+                Is.EqualTo(((RectTransform)audioView.SoundOn.transform).sizeDelta));
+            Assert.That(((RectTransform)audioView.MusicOn.transform).anchoredPosition,
+                Is.EqualTo(((RectTransform)audioView.MusicOff.transform).anchoredPosition));
+            Assert.That(((RectTransform)audioView.MusicOn.transform).sizeDelta,
+                Is.EqualTo(((RectTransform)audioView.MusicOff.transform).sizeDelta));
             Assert.That(hud.ResultImage, Is.Not.Null);
             Assert.That(hud.WinSprite, Is.Not.Null);
             Assert.That(hud.LoseSprite, Is.Not.Null);

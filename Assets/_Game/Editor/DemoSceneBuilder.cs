@@ -44,7 +44,7 @@ public static class DemoSceneBuilder
     private const string AlertAudioPath = "Assets/_Game/Audio/Kenney/computerNoise_000.ogg";
     private const string ShieldAudioPath = "Assets/_Game/Audio/Kenney/forceField_000.ogg";
     private const string EmpAudioPath = "Assets/_Game/Audio/Kenney/impactMetal_000.ogg";
-    private const string MusicAudioPath = "Assets/_Game/Audio/Kenney/spaceEngineLow_000.ogg";
+    private const string MusicAudioPath = "Assets/_Game/Audio/Provided/music.mp3";
     private const string UiClickAudioPath = "Assets/_Game/Audio/Provided/click.ogg";
     private const string ExplosionAudioPath = "Assets/_Game/Audio/Provided/explosion.wav";
     private const string VictoryAudioPath = "Assets/_Game/Audio/Provided/congratulation.wav";
@@ -56,6 +56,7 @@ public static class DemoSceneBuilder
     private const string CountdownOnePath = "Assets/_Game/Art/Provided/Countdown/one.png";
     private const string CountdownTwoPath = "Assets/_Game/Art/Provided/Countdown/two.png";
     private const string CountdownThreePath = "Assets/_Game/Art/Provided/Countdown/three.png";
+    private const string SettingsIconPath = "Assets/_Game/Art/Provided/Settings/setting.png";
     private static readonly string[] ExplosionFramePaths =
     {
         "Assets/_Game/Art/Provided/Explosion/explosion_01.png",
@@ -265,41 +266,49 @@ public static class DemoSceneBuilder
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
         var hud = GetOrAdd<HudPresenter>(root); if (!hud.Session) hud.Session = session;
+        hud.CompactHud = true;
         var audioView = GetOrAdd<AudioToggleView>(root);
         if (!audioView.Audio) audioView.Audio = session.Audio;
         // Keep the arena unobstructed. Older scene versions may already contain
         // these large surfaces, so explicitly disable them during reconfigure.
         DisableHudSurface(root.transform, "Top bar");
         DisableHudSurface(root.transform, "Bottom bar");
-        var soundOff = AudioButton(root.transform, "SoundOff", "SFX\nOFF", new Vector2(548, 320));
-        var soundOn = AudioButton(root.transform, "SoundOn", "SFX\nON", new Vector2(548, 320));
-        var musicOn = AudioButton(root.transform, "MusicOn", "BGM\nON", new Vector2(610, 320));
-        var musicOff = AudioButton(root.transform, "MusicOff", "BGM\nOFF", new Vector2(610, 320));
-        Anchor((RectTransform)soundOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
-        Anchor((RectTransform)soundOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
-        Anchor((RectTransform)musicOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
-        Anchor((RectTransform)musicOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
+        var settingsPanel = Panel(root.transform, "Settings panel", false);
+        settingsPanel.SetActive(false);
+        Layout((RectTransform)settingsPanel.transform, Vector2.zero, new Vector2(420, 270));
+        Label(settingsPanel.transform, "Heading", "SETTINGS", new Vector2(0, 92), new Vector2(360, 42), 28, Cyan);
+        Label(settingsPanel.transform, "Audio hint", "AUDIO", new Vector2(0, 52), new Vector2(220, 24), 13, new Color(.67f, .8f, .84f));
+        MoveChild(root.transform, settingsPanel.transform, "SoundOff");
+        MoveChild(root.transform, settingsPanel.transform, "SoundOn");
+        MoveChild(root.transform, settingsPanel.transform, "MusicOn");
+        MoveChild(root.transform, settingsPanel.transform, "MusicOff");
+        var soundOff = AudioButton(settingsPanel.transform, "SoundOff", "SFX", new Vector2(-72, 8));
+        var soundOn = AudioButton(settingsPanel.transform, "SoundOn", "SFX", new Vector2(-72, 8));
+        var musicOn = AudioButton(settingsPanel.transform, "MusicOn", "BGM", new Vector2(72, 8));
+        var musicOff = AudioButton(settingsPanel.transform, "MusicOff", "BGM", new Vector2(72, 8));
         if (!audioView.SoundOff) audioView.SoundOff = soundOff;
         if (!audioView.SoundOn) audioView.SoundOn = soundOn;
         if (!audioView.MusicOn) audioView.MusicOn = musicOn;
         if (!audioView.MusicOff) audioView.MusicOff = musicOff;
+        hud.SettingsPanel = settingsPanel;
         var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
         Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
-        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100\nARMOR 50/50\nCOINS 0", Vector2.zero, new Vector2(280, 72), 16, Color.white);
-        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(280, 72));
+        var statsText = Label(root.transform, "Stats", "HP 100/100  •  ARM 50/50  •  C 0", Vector2.zero, new Vector2(390, 30), 15, Color.white);
+        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(390, 30));
         statsText.alignment = TextAnchor.UpperLeft;
         if (!hud.StatsText) hud.StatsText = statsText;
-        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(220, 30), 20, Cyan);
-        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(220, 30));
+        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(190, 28), 18, Cyan);
+        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(190, 28));
         coreText.alignment = TextAnchor.UpperRight;
         if (!hud.CoreText) hud.CoreText = coreText;
-        var timerText = Label(root.transform, "Timer", "TIME 90.0", Vector2.zero, new Vector2(220, 30), 20, Color.white);
-        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -54), new Vector2(220, 30));
+        var timerText = Label(root.transform, "Timer", "90.0s", Vector2.zero, new Vector2(120, 26), 18, Color.white);
+        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -52), new Vector2(120, 26));
         timerText.alignment = TextAnchor.UpperRight;
         if (!hud.TimerText) hud.TimerText = timerText;
-        var stateText = Label(root.transform, "State", "READY", Vector2.zero, new Vector2(220, 24), 14, Cyan);
-        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -86), new Vector2(220, 24));
+        var stateText = Label(root.transform, "State", string.Empty, Vector2.zero, new Vector2(1, 1), 1, Color.clear);
+        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -80), new Vector2(1, 1));
         stateText.alignment = TextAnchor.UpperRight;
+        stateText.gameObject.SetActive(false);
         if (!hud.StateText) hud.StateText = stateText;
         hud.WinSprite = ImportedSprite(WinSpritePath, hud.WinSprite);
         hud.LoseSprite = ImportedSprite(LoseSpritePath, hud.LoseSprite);
@@ -310,16 +319,16 @@ public static class DemoSceneBuilder
         var countdownImage = SpriteImage(root.transform, "Start countdown", hud.CountdownThree, Vector2.zero, new Vector2(128, 128));
         if (!hud.CountdownImage) hud.CountdownImage = countdownImage;
         hud.CountdownImage.gameObject.SetActive(false);
-        Label(root.transform, "Objective", "OBJECTIVE  Protect the blue core from red invaders", new Vector2(0, 235), new Vector2(680, 30), 17, Color.white);
-        Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LEFT MOUSE BUTTON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
-        Label(root.transform, "Actions", "WEAPONS  1 Bullet  •  2 Rocket  •  3 Mine     DEFENSE  Q Shield  •  E EMP     R RETRY  •  F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
-        var weaponText = Label(root.transform, "Weapon", "WEAPON: BULLET", Vector2.zero, new Vector2(230, 26), 15, Color.white);
-        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(230, 26));
+        DisableHudSurface(root.transform, "Objective");
+        DisableHudSurface(root.transform, "Controls");
+        DisableHudSurface(root.transform, "Actions");
+        var weaponText = Label(root.transform, "Weapon", "BULLET", Vector2.zero, new Vector2(160, 26), 15, Color.white);
+        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(160, 26));
         weaponText.alignment = TextAnchor.LowerLeft;
         if (!hud.WeaponText) hud.WeaponText = weaponText;
-        var cooldownsText = Label(root.transform, "Cooldowns", "Cooldowns  —", new Vector2(390, -245), new Vector2(280, 26), 14, new Color(.67f, .8f, .84f));
+        var cooldownsText = Label(root.transform, "Cooldowns", "SH READY  •  EMP READY", new Vector2(390, -245), new Vector2(300, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
-        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 70));
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
         var feedbackText = Label(root.transform, "Feedback", string.Empty, new Vector2(0, -245), new Vector2(380, 28), 15, new Color(1f, .65f, .25f));
         feedbackText.alignment = TextAnchor.MiddleCenter;
@@ -341,26 +350,51 @@ public static class DemoSceneBuilder
             hud.StartPanel = Panel(root.transform, "Start panel", true);
         }
         Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "The blue core is your base. Stop red invaders before they reach it.\n\nMove WASD   Aim Mouse   Fire Hold LMB\nSwitch 1/2/3   Shield Q   EMP E", new Vector2(0, 0), new Vector2(490, 135), 17, Color.white);
+        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n1–3 weapons  •  Q shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
         if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
         ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
+        var settingsButton = AudioButton(hud.StartPanel.transform, "Settings", "SETTINGS", new Vector2(196, -103));
+        hud.SettingsButton = settingsButton;
+        var closeSettingsButton = Button(settingsPanel.transform, "Close settings button", "BACK", new Vector2(0, -92));
+        hud.CloseSettingsButton = closeSettingsButton;
         if (!hud.PausePanel)
         {
             hud.PausePanel = Panel(root.transform, "Pause panel", false);
             Label(hud.PausePanel.transform, "Heading", "PAUSED", new Vector2(0, 55), new Vector2(490, 55), 34, Cyan);
-            Label(hud.PausePanel.transform, "Hint", "Take a breath. The arena is waiting.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
+            Label(hud.PausePanel.transform, "Hint", "ESC to resume", new Vector2(0, -5), new Vector2(490, 40), 20, Color.white);
         }
         if (!hud.ResumeButton) hud.ResumeButton = Button(hud.PausePanel.transform, "Resume button", "CONTINUE", new Vector2(0, -103));
         if (!hud.ResultPanel)
         {
             hud.ResultPanel = Panel(root.transform, "Result panel", false);
-            Label(hud.ResultPanel.transform, "Hint", "Press R or click TRY AGAIN to defend the core again.", new Vector2(0, -5), new Vector2(490, 50), 18, Color.white);
+            Label(hud.ResultPanel.transform, "Hint", "R or TRY AGAIN", new Vector2(0, -5), new Vector2(490, 40), 18, Color.white);
         }
         if (!hud.ResultText) hud.ResultText = Label(hud.ResultPanel.transform, "Heading", "CORE OFFLINE — LOST", new Vector2(0, 55), new Vector2(510, 55), 30, Cyan);
         var resultImage = SpriteImage(hud.ResultPanel.transform, "Result artwork", hud.LoseSprite, new Vector2(0, 116), new Vector2(390, 74));
         if (!hud.ResultImage) hud.ResultImage = resultImage;
         hud.ResultImage.sprite = hud.LoseSprite;
         if (!hud.RetryButton) hud.RetryButton = Button(hud.ResultPanel.transform, "Retry button", "TRY AGAIN", new Vector2(0, -103));
+        var loadingPanel = Panel(root.transform, "Loading panel", false);
+        loadingPanel.SetActive(false);
+        Layout((RectTransform)loadingPanel.transform, Vector2.zero, new Vector2(520, 250));
+        Label(loadingPanel.transform, "Heading", "LOADING", new Vector2(0, 62), new Vector2(440, 42), 28, Cyan);
+        Label(loadingPanel.transform, "Loading label", "LOADING 0%", new Vector2(0, 18), new Vector2(360, 28), 15, Color.white);
+        var loadingTrack = Child(loadingPanel.transform, "Loading track", typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)loadingTrack.transform, new Vector2(0, -28), new Vector2(320, 16));
+        var trackImage = loadingTrack.GetComponent<Image>();
+        trackImage.color = new Color(.08f, .18f, .21f, 1f);
+        trackImage.raycastTarget = false;
+        var loadingProgress = Child(loadingTrack.transform, "Loading progress", typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)loadingProgress.transform, Vector2.zero, new Vector2(320, 16));
+        var progressImage = loadingProgress.GetComponent<Image>();
+        progressImage.color = Cyan;
+        progressImage.type = Image.Type.Filled;
+        progressImage.fillMethod = Image.FillMethod.Horizontal;
+        progressImage.fillOrigin = 0;
+        progressImage.fillAmount = 0f;
+        progressImage.raycastTarget = false;
+        hud.LoadingPanel = loadingPanel;
+        hud.LoadingProgress = progressImage;
         BuildDemoPanel(root.transform, session.Demo);
     }
 
@@ -589,7 +623,8 @@ public static class DemoSceneBuilder
         var go = existing ? existing.gameObject : Child(parent, name, typeof(RectTransform), typeof(Image), typeof(Button));
         Layout((RectTransform)go.transform, position, new Vector2(56, 56));
         StyleButton(go.GetComponent<Button>(), new Color(.13f, .43f, .46f));
-        var iconPath = name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
+        var iconPath = name == "Settings" ? SettingsIconPath :
+            name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
             name == "SoundOn" ? "Assets/_Game/Art/Kenney/Icons/audioOn.png" :
             name == "MusicOn" ? "Assets/_Game/Art/Kenney/Icons/musicOn.png" :
             "Assets/_Game/Art/Kenney/Icons/musicOff.png";
@@ -618,6 +653,11 @@ public static class DemoSceneBuilder
     {
         var existing = parent.Find(name);
         if (existing) existing.gameObject.SetActive(false);
+    }
+    private static void MoveChild(Transform from, Transform to, string name)
+    {
+        var existing = from.Find(name);
+        if (existing && existing.parent != to) existing.SetParent(to, false);
     }
     private static void StyleButton(Button button, Color normal)
     {

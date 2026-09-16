@@ -18,6 +18,7 @@ Verification date: 2026-09-15. Unity: `6000.3.23f1`. Automated results are from 
 | R10 | Start/result feedback | Show 3–2–1 before Playing; show the correct win/loss artwork and play the matching clip | `DemoSceneBuilder` imports and serializes all countdown/result references; PlayMode HUD flow passes; owner visual/audio smoke check remains | PASS automated / PARTIAL manual |
 | R11 | Detonation feedback | Rocket/mine detonation plays supplied explosion audio and a nine-frame animation | `CombatVfxPresenter.ExplosionFrames` is configured and verified at length 9; owner visual/audio smoke check remains | PASS automated / PARTIAL manual |
 | R12 | Tank scale/death feedback | Enemy tank is visually the same size as the player tank; both tanks show a one-shot explosion on death | Enemy prefab and builder use 1.6 visual scale / 0.6 collider; PlayMode death-feedback regression covers player and enemy paths | PASS code / pending final runtime smoke |
+| R13 | Game entry flow | Start screen exposes Start and Settings; Settings toggles SFX/BGM; starting shows a short loading panel before 3–2–1 | `HudPresenter` gates duplicate clicks, presents loading progress and wires the settings controls; EditMode/PlayMode coverage added, final Unity smoke check remains | PASS code / pending final runtime smoke |
 
 | Verification | Result | Evidence |
 |---|---|---|
@@ -29,7 +30,7 @@ Verification date: 2026-09-15. Unity: `6000.3.23f1`. Automated results are from 
 
 ## Owner smoke pass in Unity
 
-1. Run `Core Guard → Configure Project`, open `Assets/_Game/Scenes/Main.unity`, press Play and click Start; confirm the centered 3–2–1 image countdown before gameplay begins.
+1. Run `Core Guard → Configure Project`, open `Assets/_Game/Scenes/Main.unity`, press Play; confirm the entry screen, open Settings to toggle SFX/BGM independently, then click Start and confirm loading followed by the centered 3–2–1 image countdown.
 2. Move with WASD/arrows and aim with the mouse. Press 1/2/3 and confirm the HUD weapon label changes; hold left mouse for Bullet and click for Rocket/Mine.
 3. Place three mines, wait for the mine cooldown, try a fourth and confirm `MINE LIMIT 3/3` appears without creating another mine.
 4. Press Q before an enemy shot and confirm Shield absorbs up to three hits. Press E near enemies and confirm only nearby enemies stun for about two seconds.

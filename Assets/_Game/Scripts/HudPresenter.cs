@@ -8,16 +8,24 @@ namespace CoreGuard
         public GameSession Session;
         public Text StatsText, CoreText, TimerText, StateText, ResultText;
         public Text WeaponText, CooldownsText, FeedbackText;
+        public bool CompactHud = true;
         public Image ResultImage, CountdownImage;
+        public Image LoadingProgress;
         public Sprite WinSprite, LoseSprite, CountdownZero, CountdownOne, CountdownTwo, CountdownThree;
         public float CountdownDuration = 3f;
+        public float LoadingDuration = .75f;
         public GameObject StartPanel, PausePanel, ResultPanel;
+        public GameObject SettingsPanel, LoadingPanel;
         public Button StartButton, ResumeButton, RetryButton;
+        public Button SettingsButton, CloseSettingsButton;
         public Button BulletButton, RocketButton, MineButton, ShieldButton, EmpButton;
         private GameSession boundSession;
         private float feedbackRemaining;
         private float countdownRemaining;
+        private float loadingRemaining;
         private bool countdownActive;
+        private bool loadingActive;
+        private bool settingsOpen;
 
         private void OnEnable() { if (Session) Bind(); }
         private void OnDisable() => Unbind();
@@ -37,11 +45,15 @@ namespace CoreGuard
                 Session.Weapon.ActionRejected += ShowActionRejected;
             }
             Session.Reset += HandleSessionReset;
-            StartButton.onClick.AddListener(BeginStartCountdown);
+            if (StartButton) StartButton.onClick.AddListener(BeginStartCountdown);
             if (StartButton) StartButton.onClick.AddListener(PlayUiClick);
-            ResumeButton.onClick.AddListener(Session.TogglePause);
+            if (SettingsButton) SettingsButton.onClick.AddListener(OpenSettings);
+            if (SettingsButton) SettingsButton.onClick.AddListener(PlayUiClick);
+            if (CloseSettingsButton) CloseSettingsButton.onClick.AddListener(CloseSettings);
+            if (CloseSettingsButton) CloseSettingsButton.onClick.AddListener(PlayUiClick);
+            if (ResumeButton) ResumeButton.onClick.AddListener(Session.TogglePause);
             if (ResumeButton) ResumeButton.onClick.AddListener(PlayUiClick);
-            RetryButton.onClick.AddListener(Session.Retry);
+            if (RetryButton) RetryButton.onClick.AddListener(Session.Retry);
             if (RetryButton) RetryButton.onClick.AddListener(PlayUiClick);
             if (BulletButton) BulletButton.onClick.AddListener(SelectBullet);
             if (BulletButton) BulletButton.onClick.AddListener(PlayUiClick);
@@ -53,6 +65,7 @@ namespace CoreGuard
             if (ShieldButton) ShieldButton.onClick.AddListener(PlayUiClick);
             if (EmpButton) EmpButton.onClick.AddListener(ActivateEmp);
             if (EmpButton) EmpButton.onClick.AddListener(PlayUiClick);
+            ApplyCompactPresentation();
             Refresh();
         }
 
@@ -72,6 +85,10 @@ namespace CoreGuard
             boundSession.Reset -= HandleSessionReset;
             if (StartButton) StartButton.onClick.RemoveListener(BeginStartCountdown);
             if (StartButton) StartButton.onClick.RemoveListener(PlayUiClick);
+            if (SettingsButton) SettingsButton.onClick.RemoveListener(OpenSettings);
+            if (SettingsButton) SettingsButton.onClick.RemoveListener(PlayUiClick);
+            if (CloseSettingsButton) CloseSettingsButton.onClick.RemoveListener(CloseSettings);
+            if (CloseSettingsButton) CloseSettingsButton.onClick.RemoveListener(PlayUiClick);
             if (ResumeButton) ResumeButton.onClick.RemoveListener(boundSession.TogglePause);
             if (ResumeButton) ResumeButton.onClick.RemoveListener(PlayUiClick);
             if (RetryButton) RetryButton.onClick.RemoveListener(boundSession.Retry);
@@ -99,10 +116,37 @@ namespace CoreGuard
 
         private void BeginStartCountdown()
         {
-            if (!Session || Session.State != MatchState.Ready || countdownActive) return;
+            if (!Session || Session.State != MatchState.Ready || countdownActive || loadingActive || settingsOpen) return;
+            if (!LoadingPanel)
+            {
+                BeginCountdown();
+                return;
+            }
+            loadingActive = true;
+            loadingRemaining = Mathf.Max(.1f, LoadingDuration);
+            RefreshLoading();
+            Refresh();
+        }
+
+        private void BeginCountdown()
+        {
             countdownActive = true;
             countdownRemaining = Mathf.Max(.1f, CountdownDuration);
             RefreshCountdown();
+            Refresh();
+        }
+
+        private void OpenSettings()
+        {
+            if (!Session || Session.State != MatchState.Ready || loadingActive || countdownActive || !SettingsPanel) return;
+            settingsOpen = true;
+            SettingsPanel.transform.SetAsLastSibling();
+            Refresh();
+        }
+
+        private void CloseSettings()
+        {
+            settingsOpen = false;
             Refresh();
         }
 
@@ -122,17 +166,62 @@ namespace CoreGuard
             FeedbackText.gameObject.SetActive(false);
         }
 
+        private void ApplyCompactPresentation()
+        {
+            if (!CompactHud) return;
+            HideVerboseLabel("Objective");
+            HideVerboseLabel("Controls");
+            HideVerboseLabel("Actions");
+            SetTextRect(StatsText, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(390, 30), TextAnchor.UpperLeft);
+            SetTextRect(CoreText, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(190, 28), TextAnchor.UpperRight);
+            SetTextRect(TimerText, Vector2.one, Vector2.one, new Vector2(-24, -52), new Vector2(120, 26), TextAnchor.UpperRight);
+            SetTextRect(WeaponText, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(160, 26), TextAnchor.LowerLeft);
+            SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26), TextAnchor.LowerRight);
+        }
+
+        private void HideVerboseLabel(string childName)
+        {
+            var child = transform.Find(childName);
+            if (child) child.gameObject.SetActive(false);
+        }
+
+        private static void SetTextRect(Text text, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size, TextAnchor alignment)
+        {
+            if (!text) return;
+            var rect = text.rectTransform;
+            rect.anchorMin = rect.anchorMax = anchor;
+            rect.pivot = pivot;
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            text.alignment = alignment;
+        }
+
         private void HandleSessionReset()
         {
             ClearFeedback();
+            settingsOpen = false;
+            loadingActive = false;
+            loadingRemaining = 0f;
             countdownActive = false;
             countdownRemaining = 0f;
             if (CountdownImage) CountdownImage.gameObject.SetActive(false);
+            if (LoadingPanel) LoadingPanel.SetActive(false);
         }
 
         private void Update()
         {
-            if (countdownActive)
+            if (loadingActive)
+            {
+                loadingRemaining = Mathf.Max(0f, loadingRemaining - Time.unscaledDeltaTime);
+                RefreshLoading();
+                if (loadingRemaining <= 0f)
+                {
+                    loadingActive = false;
+                    if (LoadingPanel) LoadingPanel.SetActive(false);
+                    BeginCountdown();
+                }
+            }
+            else if (countdownActive)
             {
                 countdownRemaining = Mathf.Max(0f, countdownRemaining - Time.unscaledDeltaTime);
                 if (countdownRemaining <= 0f)
@@ -159,15 +248,41 @@ namespace CoreGuard
             CountdownImage.gameObject.SetActive(sprite != null);
         }
 
+        private void RefreshLoading()
+        {
+            var duration = Mathf.Max(.1f, LoadingDuration);
+            var progress = Mathf.Clamp01(1f - loadingRemaining / duration);
+            if (LoadingProgress)
+            {
+                LoadingProgress.type = Image.Type.Filled;
+                LoadingProgress.fillMethod = Image.FillMethod.Horizontal;
+                LoadingProgress.fillOrigin = 0;
+                LoadingProgress.fillAmount = progress;
+            }
+            var loadingText = LoadingPanel ? LoadingPanel.transform.Find("Loading label")?.GetComponent<Text>() : null;
+            if (loadingText) loadingText.text = $"LOADING {Mathf.RoundToInt(progress * 100f):0}%";
+            if (LoadingPanel) LoadingPanel.SetActive(loadingActive);
+        }
+
         private void Refresh()
         {
-            StatsText.text = $"PLAYER HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}\nARMOR {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}\nCOINS {Session.Player.Coins}";
-            CoreText.text = $"CORE {Session.Core.HP:0}/{CoreHealth.MaxHP:0}";
-            TimerText.text = $"TIME {Session.Remaining:00.0}";
-            StateText.text = Session.State.ToString().ToUpperInvariant();
-            ResultText.text = Session.State == MatchState.Won ? "CORE SECURED — YOU WIN" : "CORE OFFLINE — LOST — TRY AGAIN";
+            if (StatsText)
+                StatsText.text = CompactHud
+                    ? $"HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}  •  ARM {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}  •  C {Session.Player.Coins}"
+                    : $"PLAYER HP {Session.Player.HP:0}/{PlayerStats.MaxHP:0}\nARMOR {Session.Player.Armor:0}/{PlayerStats.MaxArmor:0}\nCOINS {Session.Player.Coins}";
+            if (CoreText)
+                CoreText.text = $"CORE {Session.Core.HP:0}/{CoreHealth.MaxHP:0}";
+            if (TimerText)
+                TimerText.text = CompactHud ? $"{Session.Remaining:00.0}s" : $"TIME {Session.Remaining:00.0}";
+            if (StateText)
+                StateText.text = CompactHud ? string.Empty : Session.State.ToString().ToUpperInvariant();
+            if (StateText) StateText.gameObject.SetActive(!CompactHud);
+            if (ResultText)
+                ResultText.text = Session.State == MatchState.Won ? "CORE SECURED — YOU WIN" : "CORE OFFLINE — LOST — TRY AGAIN";
             if (WeaponText)
-                WeaponText.text = Session.Weapon ? $"WEAPON: {Session.Weapon.SelectedWeapon.ToString().ToUpperInvariant()}" : "WEAPON: NONE";
+                WeaponText.text = CompactHud
+                    ? (Session.Weapon ? Session.Weapon.SelectedWeapon.ToString().ToUpperInvariant() : "—")
+                    : (Session.Weapon ? $"WEAPON: {Session.Weapon.SelectedWeapon.ToString().ToUpperInvariant()}" : "WEAPON: NONE");
             if (ResultImage)
             {
                 var hasResult = Session.State == MatchState.Won || Session.State == MatchState.Lost;
@@ -186,11 +301,18 @@ namespace CoreGuard
                     : $"{Session.Defense.EmpCooldownRemaining:0.0}s  AFFECTED: {Session.Defense.LastEmpAffectedCount}";
                 var speed = Session.Effects ? Session.Effects.CurrentSpeed :
                     Session.Motor ? Session.Motor.CurrentSpeed : 0f;
-                CooldownsText.text = $"SPEED: {speed:0.0}\nSHIELD: {shield}\nEMP: {emp}";
+                CooldownsText.text = CompactHud
+                    ? $"SH {shield}  •  EMP {emp}"
+                    : $"SPEED: {speed:0.0}\nSHIELD: {shield}\nEMP: {emp}";
             }
-            StartPanel.SetActive(Session.State == MatchState.Ready && !countdownActive);
-            PausePanel.SetActive(Session.State == MatchState.Paused);
-            ResultPanel.SetActive(Session.State == MatchState.Won || Session.State == MatchState.Lost);
+            if (StartPanel) StartPanel.SetActive(Session.State == MatchState.Ready && !countdownActive && !loadingActive && !settingsOpen);
+            if (PausePanel) PausePanel.SetActive(Session.State == MatchState.Paused);
+            if (ResultPanel) ResultPanel.SetActive(Session.State == MatchState.Won || Session.State == MatchState.Lost);
+            if (SettingsPanel) SettingsPanel.SetActive(settingsOpen && Session.State == MatchState.Ready && !loadingActive && !countdownActive);
+            if (LoadingPanel) LoadingPanel.SetActive(loadingActive);
+            if (SettingsButton) SettingsButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+            if (CloseSettingsButton) CloseSettingsButton.interactable = settingsOpen;
+            if (StartButton) StartButton.interactable = Session.State == MatchState.Ready && !loadingActive && !countdownActive && !settingsOpen;
             var gameplayActionsEnabled = Session.State == MatchState.Playing;
             if (BulletButton) BulletButton.interactable = gameplayActionsEnabled;
             if (RocketButton) RocketButton.interactable = gameplayActionsEnabled;

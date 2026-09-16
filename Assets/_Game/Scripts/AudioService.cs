@@ -230,7 +230,7 @@ namespace CoreGuard
             MusicSource = MusicSource ? MusicSource : gameObject.AddComponent<AudioSource>();
             SfxSource = SfxSource ? SfxSource : gameObject.AddComponent<AudioSource>();
             AlertSource = AlertSource ? AlertSource : gameObject.AddComponent<AudioSource>();
-            MusicSource.playOnAwake = false; MusicSource.spatialBlend = 0; MusicSource.loop = true; MusicSource.volume = .25f;
+            MusicSource.playOnAwake = false; MusicSource.spatialBlend = 0; MusicSource.loop = true; MusicSource.volume = .16f;
             SfxSource.playOnAwake = false; SfxSource.spatialBlend = 0; SfxSource.volume = 1f;
             AlertSource.playOnAwake = false; AlertSource.spatialBlend = 0; AlertSource.volume = 1f;
         }

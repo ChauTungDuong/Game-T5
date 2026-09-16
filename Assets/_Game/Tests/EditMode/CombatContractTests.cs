@@ -89,6 +89,28 @@ namespace CoreGuard.Tests.Editor
             Assert.That(enemy.HP, Is.Zero, "Two standard bullets should defeat a 60 HP enemy.");
         }
 
+        [TestCase(WeaponKind.Bullet)]
+        [TestCase(WeaponKind.Rocket)]
+        [TestCase(WeaponKind.Mine)]
+        public void PlayerAttack_RequestsTheConfiguredShortSfx(WeaponKind kind)
+        {
+            var session = MakeSession();
+            var audio = Make<AudioService>("Audio");
+            var weapon = MakeWeapon(session, out _, out _);
+            session.Audio = audio;
+            audio.Session = session;
+            audio.Weapon = weapon;
+            audio.Bind();
+            var expected = kind == WeaponKind.Bullet ? audio.BulletFire :
+                kind == WeaponKind.Rocket ? audio.RocketLaunch : audio.MineDrop;
+            AudioClip played = null;
+            audio.SfxPlayed += clip => played = clip;
+
+            Assert.That(weapon.Select(kind), Is.True);
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            Assert.That(played, Is.SameAs(expected));
+        }
+
         [Test]
         public void Projectile_IgnoresItsOwnColliderInsteadOfRetiringAtSpawn()
         {
