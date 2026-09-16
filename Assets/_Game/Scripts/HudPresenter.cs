@@ -75,6 +75,7 @@ namespace CoreGuard
             if (EmpButton) EmpButton.onClick.AddListener(PlayUiClick);
             ApplyCompactPresentation();
             EnsureHomeScreen();
+            EnsureSettingsPanel();
             EnsureMobileControls();
             Refresh();
         }
@@ -154,7 +155,9 @@ namespace CoreGuard
 
         private void OpenSettings()
         {
-            if (!Session || Session.State != MatchState.Ready || loadingActive || countdownActive || !SettingsPanel) return;
+            if (!Session || Session.State != MatchState.Ready || loadingActive || countdownActive) return;
+            EnsureSettingsPanel();
+            if (!SettingsPanel) return;
             settingsOpen = true;
             SettingsPanel.transform.SetAsLastSibling();
             Refresh();
@@ -339,6 +342,43 @@ namespace CoreGuard
             if (oldBrief) oldBrief.gameObject.SetActive(false);
         }
 
+        private void EnsureSettingsPanel()
+        {
+            if (!SettingsPanel)
+            {
+                var existing = transform.Find("Settings panel");
+                if (existing) SettingsPanel = existing.gameObject;
+            }
+            if (!SettingsPanel) return;
+
+            var rt = SettingsPanel.transform as RectTransform;
+            if (rt)
+            {
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = new Vector2(420, 270);
+            }
+
+            var img = SettingsPanel.GetComponent<Image>();
+            if (img)
+            {
+                img.color = new Color(.055f, .085f, .12f, .97f);
+            }
+
+            if (!CloseSettingsButton)
+            {
+                var closeBtn = SettingsPanel.transform.Find("Close settings button")?.GetComponent<Button>();
+                if (closeBtn)
+                {
+                    CloseSettingsButton = closeBtn;
+                    CloseSettingsButton.onClick.AddListener(CloseSettings);
+                    CloseSettingsButton.onClick.AddListener(PlayUiClick);
+                }
+            }
+        }
+
         private void EnsureMobileControls()
         {
             var mobileRoot = transform.Find("Mobile controls");
@@ -481,24 +521,29 @@ namespace CoreGuard
                     : $"SPEED: {speed:0.0}\nSHIELD: {shield}\nEMP: {emp}";
             }
             var isPlaying = Session && Session.State == MatchState.Playing;
+            var isReady = Session && Session.State == MatchState.Ready && !countdownActive && !loadingActive;
             if (StartPanel)
             {
-                var showStart = Session && Session.State == MatchState.Ready && !countdownActive && !loadingActive && !settingsOpen;
-                StartPanel.SetActive(showStart);
-                if (showStart) StartPanel.transform.SetAsLastSibling();
+                StartPanel.SetActive(isReady);
+                if (isReady && !settingsOpen) StartPanel.transform.SetAsLastSibling();
+
+                var logo = StartPanel.transform.Find("Logo");
+                if (logo) logo.gameObject.SetActive(!settingsOpen);
+                if (StartButton) StartButton.gameObject.SetActive(!settingsOpen);
+                if (SettingsButton) SettingsButton.gameObject.SetActive(!settingsOpen);
             }
             if (PausePanel) PausePanel.SetActive(Session.State == MatchState.Paused);
             if (ResultPanel) ResultPanel.SetActive(Session.State == MatchState.Won || Session.State == MatchState.Lost);
             if (SettingsPanel)
             {
-                var showSettings = settingsOpen && Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+                var showSettings = settingsOpen && isReady;
                 SettingsPanel.SetActive(showSettings);
                 if (showSettings) SettingsPanel.transform.SetAsLastSibling();
             }
             if (LoadingPanel) LoadingPanel.SetActive(loadingActive);
-            if (SettingsButton) SettingsButton.interactable = Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive;
+            if (SettingsButton) SettingsButton.interactable = isReady && !settingsOpen;
             if (CloseSettingsButton) CloseSettingsButton.interactable = settingsOpen;
-            if (StartButton) StartButton.interactable = Session && Session.State == MatchState.Ready && !loadingActive && !countdownActive && !settingsOpen;
+            if (StartButton) StartButton.interactable = isReady && !settingsOpen;
 
             if (StatsText) StatsText.gameObject.SetActive(isPlaying);
             if (CoreText) CoreText.gameObject.SetActive(isPlaying);

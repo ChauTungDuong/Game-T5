@@ -340,5 +340,61 @@ namespace CoreGuard.Tests.Editor
             Assert.That(heading.gameObject.activeSelf, Is.False);
             Assert.That(brief.gameObject.activeSelf, Is.False);
         }
+
+        [Test]
+        public void SettingsPanel_DisplaysAsSmallWindowOverBackground()
+        {
+            var session = MakeSession();
+            session.Retry();
+            var canvas = Make<Canvas>("Canvas");
+            var hud = Make<HudPresenter>("HUD");
+            hud.transform.SetParent(canvas.transform, false);
+            hud.Session = session;
+
+            var startPanel = Make<Image>("Start panel");
+            startPanel.transform.SetParent(hud.transform, false);
+            hud.StartPanel = startPanel.gameObject;
+
+            var startBtn = Make<Button>("Start button");
+            startBtn.transform.SetParent(startPanel.transform, false);
+            hud.StartButton = startBtn;
+
+            var settingsBtn = Make<Button>("Settings button");
+            settingsBtn.transform.SetParent(startPanel.transform, false);
+            hud.SettingsButton = settingsBtn;
+
+            var settingsPanel = Make<Image>("Settings panel");
+            settingsPanel.transform.SetParent(hud.transform, false);
+            hud.SettingsPanel = settingsPanel.gameObject;
+
+            var closeBtn = Make<Button>("Close settings button");
+            closeBtn.transform.SetParent(settingsPanel.transform, false);
+            hud.CloseSettingsButton = closeBtn;
+
+            hud.Bind();
+
+            Assert.That(startPanel.gameObject.activeSelf, Is.True);
+            Assert.That(settingsPanel.gameObject.activeSelf, Is.False);
+            Assert.That(startBtn.gameObject.activeSelf, Is.True);
+            Assert.That(settingsBtn.gameObject.activeSelf, Is.True);
+
+            settingsBtn.onClick.Invoke();
+
+            Assert.That(startPanel.gameObject.activeSelf, Is.True, "Background StartPanel must remain active when settings is open");
+            Assert.That(settingsPanel.gameObject.activeSelf, Is.True, "SettingsPanel must be active");
+            Assert.That(startBtn.gameObject.activeSelf, Is.False, "Start button should be hidden while settings is open");
+            Assert.That(settingsBtn.gameObject.activeSelf, Is.False, "Settings button should be hidden while settings is open");
+
+            var settingsRt = (RectTransform)settingsPanel.transform;
+            Assert.That(settingsRt.sizeDelta, Is.EqualTo(new Vector2(420, 270)));
+            Assert.That(settingsRt.anchoredPosition, Is.EqualTo(Vector2.zero));
+
+            closeBtn.onClick.Invoke();
+
+            Assert.That(startPanel.gameObject.activeSelf, Is.True);
+            Assert.That(settingsPanel.gameObject.activeSelf, Is.False);
+            Assert.That(startBtn.gameObject.activeSelf, Is.True);
+            Assert.That(settingsBtn.gameObject.activeSelf, Is.True);
+        }
     }
 }
