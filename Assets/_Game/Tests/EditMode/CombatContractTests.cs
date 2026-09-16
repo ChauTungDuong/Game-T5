@@ -180,6 +180,30 @@ namespace CoreGuard.Tests.Editor
             Assert.That(bullet.IsLive, Is.True);
         }
 
+        [TestCase(WeaponKind.Bullet)]
+        [TestCase(WeaponKind.Rocket)]
+        [TestCase(WeaponKind.Laser)]
+        public void Projectile_PassesThroughCore_AndHitsEnemyBehindIt(WeaponKind kind)
+        {
+            var session = MakeSession();
+            var coreCollider = session.Core.gameObject.AddComponent<CircleCollider2D>();
+            coreCollider.radius = .75f;
+            coreCollider.isTrigger = true;
+
+            var enemy = MakeEnemy(session, "Enemy behind core", new Vector2(3, 0));
+            var weapon = MakeWeapon(session, out _, out _);
+            weapon.Select(kind);
+
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            var projectile = session.GetComponentsInChildren<Projectile>(true).Single(p => p.IsLive);
+
+            Assert.That(projectile.ResolveAgainst(coreCollider), Is.False, "Core must not block player projectile.");
+            Assert.That(projectile.IsLive, Is.True, "Projectile remains live as it travels past the Core.");
+
+            projectile.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
+            Assert.That(enemy.HP, Is.LessThan(60), "Enemy behind Core takes damage.");
+        }
+
         [Test]
         public void EnemyProjectile_PassesThroughInteractionObjects()
         {

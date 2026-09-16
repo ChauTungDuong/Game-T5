@@ -182,10 +182,12 @@ namespace CoreGuard
         {
             if (resolved || !other || other == hitCollider) return false;
 
-            // Projectiles pass through interactive objects (X, Y, Z), mines, and zone triggers
+            // Projectiles pass through interactive objects (X, Y, Z), mines, zone triggers, and the central Core
             if (other.GetComponentInParent<InteractionObject>() ||
                 other.GetComponentInParent<ForbiddenZone>() ||
-                other.GetComponentInParent<Mine>())
+                other.GetComponentInParent<Mine>() ||
+                other.GetComponentInParent<CoreHealth>() ||
+                (other.transform.root && other.transform.root.name == "Core"))
             {
                 return false;
             }
@@ -206,7 +208,6 @@ namespace CoreGuard
                 }
 
                 if (other.GetComponentInParent<EnemyController>()) return false;
-                if (other.GetComponentInParent<CoreHealth>()) return false;
                 Retire();
                 return true;
             }
@@ -233,9 +234,9 @@ namespace CoreGuard
                 return true;
             }
 
-            // Player weapons never damage the player or the core. Any other
+            // Player weapons never damage the player. Any other
             // collider is treated as arena geometry.
-            if (other.GetComponentInParent<PlayerStats>() || other.GetComponentInParent<CoreHealth>()) return false;
+            if (other.GetComponentInParent<PlayerStats>()) return false;
             if (Kind == ProjectileKind.Rocket) Detonate();
             else Retire();
             return true;
