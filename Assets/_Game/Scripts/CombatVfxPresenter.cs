@@ -43,15 +43,15 @@ namespace CoreGuard
 
         private void HandleAttack(WeaponKind kind, Vector2 origin, Vector2 direction)
         {
-            var sprite = kind == WeaponKind.Bullet ? BulletFlash : kind == WeaponKind.Rocket ? RocketFlash : MineFlash;
-            var scale = kind == WeaponKind.Mine ? .045f : kind == WeaponKind.Rocket ? .055f : .032f;
+            var sprite = kind == WeaponKind.Bullet ? BulletFlash : kind == WeaponKind.Rocket ? RocketFlash : kind == WeaponKind.Laser ? (EmpFlash ? EmpFlash : RocketFlash) : MineFlash;
+            var scale = kind == WeaponKind.Mine ? .045f : kind == WeaponKind.Rocket ? .055f : kind == WeaponKind.Laser ? .065f : .032f;
             var shotDirection = direction.sqrMagnitude > .000001f ? direction.normalized : Vector2.right;
             var angle = Mathf.Atan2(shotDirection.y, shotDirection.x) * Mathf.Rad2Deg;
             // Kenney muzzle particles point upward by default; rotate them so the
             // flash follows the exact muzzle-to-aim direction.
             var rotation = Quaternion.Euler(0, 0, angle - 90f);
-            Spawn(sprite, origin + shotDirection * .025f, rotation, scale,
-                kind == WeaponKind.Rocket ? new Color(1f, .6f, .25f) : Color.white, .09f);
+            var color = kind == WeaponKind.Rocket ? new Color(1f, .6f, .25f) : kind == WeaponKind.Laser ? new Color(.2f, .9f, 1f) : Color.white;
+            Spawn(sprite, origin + shotDirection * .025f, rotation, scale, color, .09f);
         }
 
         private void HandleShield()

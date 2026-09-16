@@ -27,6 +27,7 @@ namespace CoreGuard
         private bool bodyColorCaptured;
         private LineRenderer healthBack;
         private LineRenderer healthFill;
+        private SpriteRenderer healthBadge;
         private float hitFlashRemaining;
         private float fireFlashRemaining;
         private float shootRemaining;
@@ -136,8 +137,17 @@ namespace CoreGuard
         private void CreateHealthBar()
         {
             if (!Application.isPlaying) return;
-            healthBack = CreateBar("Enemy health background", new Color(.04f, .06f, .08f, .9f), .1f);
-            healthFill = CreateBar("Enemy health", new Color(.2f, .95f, .35f, 1f), .12f);
+            healthBack = CreateBar("Enemy health background", new Color(.08f, .08f, .1f, .95f), .15f, 6);
+            healthFill = CreateBar("Enemy health", new Color(.95f, .18f, .22f, 1f), .10f, 7);
+            var badgeObj = new GameObject("Enemy health badge");
+            badgeObj.transform.SetParent(transform, false);
+            badgeObj.transform.localPosition = new Vector3(-.55f - .12f, .72f, 0);
+            healthBadge = badgeObj.AddComponent<SpriteRenderer>();
+            healthBadge.sortingOrder = 8;
+            healthBadge.transform.localScale = Vector3.one * .28f;
+#if UNITY_EDITOR
+            healthBadge.sprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Art/UI/badge_heart_red.png");
+#endif
         }
 
         private void FlashWhenFiring()
@@ -157,7 +167,7 @@ namespace CoreGuard
             }
         }
 
-        private LineRenderer CreateBar(string name, Color color, float width)
+        private LineRenderer CreateBar(string name, Color color, float width, int order)
         {
             var barObject = new GameObject(name);
             barObject.transform.SetParent(transform, false);
@@ -168,7 +178,9 @@ namespace CoreGuard
             bar.widthMultiplier = width;
             bar.startColor = color;
             bar.endColor = color;
-            bar.sortingOrder = 6;
+            bar.sortingOrder = order;
+            var shader = Shader.Find("Sprites/Default");
+            if (shader) bar.material = new Material(shader);
             bar.SetPosition(0, new Vector3(-.55f, 0, 0));
             bar.SetPosition(1, new Vector3(.55f, 0, 0));
             return bar;
@@ -176,15 +188,17 @@ namespace CoreGuard
 
         private void RefreshHealthBar()
         {
-            if (!healthFill) return;
+            if (!healthFill || !healthBack) return;
             var ratio = Mathf.Clamp01(HP / MaxHP);
             healthFill.SetPosition(1, new Vector3(-.55f + 1.1f * ratio, 0, 0));
             healthBack.enabled = IsAlive;
-            healthFill.enabled = IsAlive;
+            healthFill.enabled = IsAlive && ratio > 0f;
+            if (healthBadge) healthBadge.enabled = IsAlive;
         }
         private void Retire()
         {
             retired = true;
+            if (healthBadge) healthBadge.enabled = false;
             gameObject.SetActive(false);
             // Destruction is deferred during play, but immediately excluded from simulation.
             if (Application.isPlaying) Destroy(gameObject);

@@ -34,16 +34,31 @@ namespace CoreGuard
         public void ReadCommands()
         {
             if (!Session || gameplay == null) return;
-            if (pause.WasPressedThisFrame()) Session.TogglePause();
-            if (retry.WasPressedThisFrame()) Session.Retry();
+            if (pause != null && pause.WasPressedThisFrame()) Session.TogglePause();
             if (demoToggle != null && demoToggle.WasPressedThisFrame() && Session.Demo) Session.Demo.Toggle();
+
+            var rPressed = (retry != null && retry.WasPressedThisFrame())
+                || (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame);
+
+            if (Session.State == MatchState.Won || Session.State == MatchState.Lost)
+            {
+                if (rPressed) Session.Retry();
+                return;
+            }
+
             if (Session.State != MatchState.Playing) return;
+
+            if (rPressed && Session.Weapon)
+            {
+                Session.Weapon.CycleNextWeapon();
+            }
+
             if (shield != null && shield.WasPressedThisFrame() && Session.Defense) Session.Defense.TryActivateShield();
             if (emp != null && emp.WasPressedThisFrame() && Session.Defense) Session.Defense.TryActivateEmp();
             if (!Session.Weapon) return;
             if (weapon1 != null && weapon1.WasPressedThisFrame()) Session.Weapon.Select(WeaponKind.Bullet);
             if (weapon2 != null && weapon2.WasPressedThisFrame()) Session.Weapon.Select(WeaponKind.Rocket);
-            if (weapon3 != null && weapon3.WasPressedThisFrame()) Session.Weapon.Select(WeaponKind.Mine);
+            if (weapon3 != null && weapon3.WasPressedThisFrame()) Session.Weapon.Select(WeaponKind.Laser);
             Session.Weapon.ProcessInput(
                 fire != null && fire.IsPressed() && PointerAllowsGameplay,
                 fire != null && fire.WasPressedThisFrame() && PointerAllowsGameplay,

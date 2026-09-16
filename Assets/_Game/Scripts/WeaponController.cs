@@ -8,6 +8,7 @@ namespace CoreGuard
     {
         Bullet,
         Rocket,
+        Laser,
         Mine,
     }
 
@@ -18,13 +19,16 @@ namespace CoreGuard
         public Projectile ProjectilePrefab;
         public Mine MinePrefab;
         public WeaponKind SelectedWeapon { get; private set; } = WeaponKind.Bullet;
-        public float BulletDamage = 30;
+        public float BulletDamage = 20;
         public float BulletSpeed = 14;
         public float BulletCooldown = .2f;
-        public float RocketDamage = 35;
+        public float RocketDamage = 50;
         public float RocketSpeed = 11;
-        public float RocketCooldown = 1f;
+        public float RocketCooldown = 1.2f;
         public float RocketRadius = 1.5f;
+        public float LaserDamage = 60;
+        public float LaserSpeed = 22;
+        public float LaserCooldown = 2f;
         public float MineDamage = 50;
         public float MineCooldown = 2;
         public int MaxMines = 3;
@@ -36,18 +40,32 @@ namespace CoreGuard
                 return mines.Count;
             }
         }
-        public float CooldownRemaining => cooldowns[(int)SelectedWeapon];
+        public float CooldownRemaining => (int)SelectedWeapon < cooldowns.Length ? cooldowns[(int)SelectedWeapon] : 0f;
 
         public event Action<WeaponKind, Vector2, Vector2> AttackAccepted;
+        public event Action<WeaponKind> WeaponChanged;
 
         private readonly List<Mine> mines = new List<Mine>();
-        private readonly float[] cooldowns = new float[3];
+        private readonly float[] cooldowns = new float[4];
 
         public bool Select(WeaponKind weapon)
         {
             if (Session && Session.State != MatchState.Playing) return false;
             SelectedWeapon = weapon;
+            WeaponChanged?.Invoke(weapon);
             return true;
+        }
+
+        public WeaponKind CycleNextWeapon()
+        {
+            var next = SelectedWeapon switch
+            {
+                WeaponKind.Bullet => WeaponKind.Rocket,
+                WeaponKind.Rocket => WeaponKind.Laser,
+                _ => WeaponKind.Bullet
+            };
+            Select(next);
+            return SelectedWeapon;
         }
 
         public void ProcessInput(bool fireHeld, bool firePressed, Vector2 aimWorld)
@@ -86,6 +104,14 @@ namespace CoreGuard
                     AttackAccepted?.Invoke(SelectedWeapon, origin, direction);
                     return true;
 
+                case WeaponKind.Laser:
+                    if (!ProjectilePrefab) return false;
+                    var laser = Instantiate(ProjectilePrefab, origin, Quaternion.identity, Session.transform);
+                    laser.InitializePlayerShot(Session, direction, ProjectileKind.Laser, LaserDamage, LaserSpeed, 2.5f, 0);
+                    cooldowns[(int)WeaponKind.Laser] = LaserCooldown;
+                    AttackAccepted?.Invoke(SelectedWeapon, origin, direction);
+                    return true;
+
                 case WeaponKind.Mine:
                     if (!MinePrefab) return false;
                     var mine = Instantiate(MinePrefab, origin, Quaternion.identity, Session.transform);
@@ -113,6 +139,7 @@ namespace CoreGuard
             for (var i = 0; i < cooldowns.Length; i++) cooldowns[i] = 0;
             SelectedWeapon = WeaponKind.Bullet;
             mines.Clear();
+            WeaponChanged?.Invoke(SelectedWeapon);
         }
 
         private void RemoveDeadMines()

@@ -79,14 +79,31 @@ namespace CoreGuard.Tests.Editor
             bullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
             bullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
 
-            Assert.That(enemy.HP, Is.EqualTo(30));
+            Assert.That(enemy.HP, Is.EqualTo(40), "First bullet must deal 20 damage to a 60 HP enemy.");
             Assert.That(bullet.IsLive, Is.False);
             Assert.That(weapon.TryFire(Vector2.right), Is.False, "Bullet cooldown must reject an immediate second shot.");
             weapon.Advance(.2f);
             Assert.That(weapon.TryFire(Vector2.right), Is.True);
             var secondBullet = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             secondBullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
-            Assert.That(enemy.HP, Is.Zero, "Two standard bullets should defeat a 60 HP enemy.");
+            Assert.That(enemy.HP, Is.EqualTo(20), "Second bullet leaves 20 HP.");
+            weapon.Advance(.2f);
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            var thirdBullet = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
+            thirdBullet.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
+            Assert.That(enemy.HP, Is.Zero, "Three standard bullets (20 damage each) defeat a 60 HP enemy.");
+        }
+
+        [Test]
+        public void Weapon_CycleNextWeapon_AlternatesBulletRocketLaser()
+        {
+            var session = MakeSession();
+            var weapon = MakeWeapon(session, out _, out _);
+
+            Assert.That(weapon.SelectedWeapon, Is.EqualTo(WeaponKind.Bullet));
+            Assert.That(weapon.CycleNextWeapon(), Is.EqualTo(WeaponKind.Rocket));
+            Assert.That(weapon.CycleNextWeapon(), Is.EqualTo(WeaponKind.Laser));
+            Assert.That(weapon.CycleNextWeapon(), Is.EqualTo(WeaponKind.Bullet));
         }
 
         [Test]
@@ -102,6 +119,62 @@ namespace CoreGuard.Tests.Editor
             Assert.That(bullet.IsLive, Is.True);
         }
 
+        [TestCase(WeaponKind.Bullet)]
+        [TestCase(WeaponKind.Rocket)]
+        [TestCase(WeaponKind.Laser)]
+        public void Projectile_PassesThroughInteractionObjects_WithoutResolvingOrConsuming(WeaponKind weaponKind)
+        {
+            var session = MakeSession();
+            var interaction = Make<InteractionObject>("Interaction X");
+            interaction.Kind = InteractionKind.X;
+            interaction.Session = session;
+            var interactionCollider = interaction.gameObject.AddComponent<CircleCollider2D>();
+            interactionCollider.isTrigger = true;
+
+            var weapon = MakeWeapon(session, out _, out _);
+            weapon.Select(weaponKind);
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            var projectile = session.GetComponentsInChildren<Projectile>(true).Single(p => p.IsLive);
+
+            Assert.That(projectile.ResolveAgainst(interactionCollider), Is.False);
+            Assert.That(projectile.IsLive, Is.True);
+            Assert.That(interaction.IsConsumed, Is.False);
+        }
+
+        [Test]
+        public void Projectile_PassesThroughForbiddenZone_WithoutResolving()
+        {
+            var session = MakeSession();
+            var zone = Make<ForbiddenZone>("ForbiddenZone");
+            zone.Session = session;
+            var zoneCollider = zone.gameObject.AddComponent<CircleCollider2D>();
+            zoneCollider.isTrigger = true;
+
+            var weapon = MakeWeapon(session, out _, out _);
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            var bullet = session.GetComponentsInChildren<Projectile>(true).Single(p => p.IsLive);
+
+            Assert.That(bullet.ResolveAgainst(zoneCollider), Is.False);
+            Assert.That(bullet.IsLive, Is.True);
+        }
+
+        [Test]
+        public void EnemyProjectile_PassesThroughInteractionObjects()
+        {
+            var session = MakeSession();
+            var interaction = Make<InteractionObject>("Interaction Y");
+            interaction.Kind = InteractionKind.Y;
+            interaction.Session = session;
+            var interactionCollider = interaction.gameObject.AddComponent<CircleCollider2D>();
+            interactionCollider.isTrigger = true;
+
+            var shot = Make<Projectile>("Enemy shot");
+            shot.InitializeEnemyShot(session, Vector2.right, 10, 7, 4);
+
+            Assert.That(shot.ResolveAgainst(interactionCollider), Is.False);
+            Assert.That(shot.IsLive, Is.True);
+        }
+
         [Test]
         public void Rocket_DamagesEachEnemyInRadiusOnce()
         {
@@ -115,9 +188,26 @@ namespace CoreGuard.Tests.Editor
             var rocket = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
             rocket.ResolveAgainst(first.GetComponent<CircleCollider2D>());
 
-            Assert.That(first.HP, Is.EqualTo(25));
-            Assert.That(second.HP, Is.EqualTo(25));
+            Assert.That(first.HP, Is.EqualTo(10), "Rocket dealing 50 damage leaves 10 HP on a 60 HP enemy.");
+            Assert.That(second.HP, Is.EqualTo(10), "Rocket explosion deals 50 damage to second enemy in radius.");
             Assert.That(rocket.IsLive, Is.False);
+        }
+
+        [Test]
+        public void Laser_RangedAttackDefeatsEnemyInSingleShot()
+        {
+            var session = MakeSession();
+            var enemy = MakeEnemy(session, "Enemy", new Vector2(3, 0));
+            var weapon = MakeWeapon(session, out _, out _);
+            weapon.Select(WeaponKind.Laser);
+
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            var laser = session.GetComponentsInChildren<Projectile>(true).Single(projectile => projectile.IsLive);
+            Assert.That(laser.Kind, Is.EqualTo(ProjectileKind.Laser));
+            laser.ResolveAgainst(enemy.GetComponent<CircleCollider2D>());
+
+            Assert.That(enemy.HP, Is.Zero, "Laser dealing 60 damage instantly defeats a 60 HP enemy.");
+            Assert.That(laser.IsLive, Is.False);
         }
 
         [Test]

@@ -6,6 +6,7 @@ namespace CoreGuard
     {
         Bullet,
         Rocket,
+        Laser,
     }
 
     [RequireComponent(typeof(Rigidbody2D), typeof(CircleCollider2D))]
@@ -15,6 +16,13 @@ namespace CoreGuard
         public ProjectileKind Kind { get; private set; }
         public bool IsEnemyProjectile { get; private set; }
         public bool IsLive => this && gameObject.activeSelf && !resolved;
+
+        public Sprite RocketSprite;
+        public Sprite LaserSprite;
+        public Sprite BulletSprite;
+
+        private static Sprite cachedRocketSprite;
+        private static Sprite cachedLaserSprite;
 
         private Rigidbody2D body;
         private CircleCollider2D hitCollider;
@@ -93,9 +101,54 @@ namespace CoreGuard
             if (!visual) return;
             var renderer = visual.GetComponent<SpriteRenderer>();
             if (!renderer) return;
-            visual.localScale = Vector3.one * (IsEnemyProjectile ? .82f : Kind == ProjectileKind.Rocket ? 1.25f : 1.0f);
-            renderer.color = IsEnemyProjectile ? new Color(1f, .12f, .08f) :
-                Kind == ProjectileKind.Rocket ? new Color(1f, .6f, .2f) : new Color(.55f, .95f, 1f);
+
+            if (IsEnemyProjectile)
+            {
+                visual.localScale = Vector3.one * .82f;
+                renderer.color = new Color(1f, .12f, .08f);
+                return;
+            }
+
+            if (Kind == ProjectileKind.Rocket)
+            {
+                var sprite = RocketSprite;
+                if (!sprite)
+                {
+                    if (!cachedRocketSprite)
+                    {
+#if UNITY_EDITOR
+                        cachedRocketSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Art/Kenney/Tanks/rocket_outline.png");
+#endif
+                    }
+                    sprite = cachedRocketSprite;
+                }
+                if (sprite) renderer.sprite = sprite;
+                visual.localScale = new Vector3(1.3f, 1.3f, 1f);
+                renderer.color = Color.white;
+            }
+            else if (Kind == ProjectileKind.Laser)
+            {
+                var sprite = LaserSprite;
+                if (!sprite)
+                {
+                    if (!cachedLaserSprite)
+                    {
+#if UNITY_EDITOR
+                        cachedLaserSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/_Game/Art/Kenney/Tanks/laser_outline.png");
+#endif
+                    }
+                    sprite = cachedLaserSprite;
+                }
+                if (sprite) renderer.sprite = sprite;
+                visual.localScale = new Vector3(1.3f, 1.5f, 1f);
+                renderer.color = Color.white;
+            }
+            else
+            {
+                if (BulletSprite) renderer.sprite = BulletSprite;
+                visual.localScale = Vector3.one;
+                renderer.color = new Color(.55f, .95f, 1f);
+            }
         }
 
         private void FixedUpdate()
@@ -124,6 +177,14 @@ namespace CoreGuard
         public bool ResolveAgainst(Collider2D other)
         {
             if (resolved || !other || other == hitCollider) return false;
+
+            // Projectiles pass through interactive objects (X, Y, Z), mines, and zone triggers
+            if (other.GetComponentInParent<InteractionObject>() ||
+                other.GetComponentInParent<ForbiddenZone>() ||
+                other.GetComponentInParent<Mine>())
+            {
+                return false;
+            }
 
             if (IsEnemyProjectile)
             {

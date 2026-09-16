@@ -14,6 +14,7 @@ namespace CoreGuard
         public AudioSource AlertSource;
         public AudioClip BulletFire;
         public AudioClip RocketLaunch;
+        public AudioClip LaserFire;
         public AudioClip MineDrop;
         public AudioClip AlertBeep;
         public AudioClip ShieldActivate;
@@ -179,6 +180,7 @@ namespace CoreGuard
             {
                 case WeaponKind.Bullet: PlaySfx(BulletFire); break;
                 case WeaponKind.Rocket: PlaySfx(RocketLaunch); break;
+                case WeaponKind.Laser: PlaySfx(LaserFire ? LaserFire : RocketLaunch); break;
                 case WeaponKind.Mine: PlaySfx(MineDrop); break;
             }
         }

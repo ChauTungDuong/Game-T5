@@ -21,6 +21,16 @@ namespace CoreGuard
             trigger = GetComponent<CircleCollider2D>();
             trigger.isTrigger = true;
             trigger.radius = Radius;
+            var ring = GetComponentInChildren<LineRenderer>();
+            if (ring)
+            {
+                ring.widthMultiplier = .05f;
+                ring.startColor = new Color(1f, .82f, .12f, .9f);
+                ring.endColor = ring.startColor;
+                var shader = Shader.Find("Sprites/Default");
+                if (shader && (ring.sharedMaterial == null || ring.sharedMaterial.name.Contains("Default-Line")))
+                    ring.material = new Material(shader);
+            }
         }
 
         private void OnTriggerEnter2D(Collider2D other)

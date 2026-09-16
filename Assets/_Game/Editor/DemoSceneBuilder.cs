@@ -23,6 +23,8 @@ public static class DemoSceneBuilder
     private const string GroundTilePath = "Assets/_Game/Art/Kenney/Tanks/tileSand1.png";
     private const string CoreBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_darkLarge_outline.png";
     private const string ProjectileSpritePath = "Assets/_Game/Art/Kenney/Tanks/bulletBlue1_outline.png";
+    private const string RocketSpritePath = "Assets/_Game/Art/Kenney/Tanks/rocket_outline.png";
+    private const string LaserSpritePath = "Assets/_Game/Art/Kenney/Tanks/laser_outline.png";
     private const string MineSpritePath = "Assets/_Game/Art/Kenney/Particles/scorch_01.png";
     private const string CoreGlowPath = "Assets/_Game/Art/Kenney/Particles/circle_04.png";
     private const string BulletFlashPath = "Assets/_Game/Art/Kenney/Particles/muzzle_02.png";
@@ -82,7 +84,8 @@ public static class DemoSceneBuilder
         Visual(coreObject.transform, "Core body", coreBodySprite, Vector2.zero, new Vector2(1.45f, 1.45f), Cyan, 1);
         ApplySprite(coreObject.transform, "Core body", coreBodySprite);
         Visual(coreObject.transform, "Core center", sprite, Vector2.zero, new Vector2(.55f, .55f), Ink, 2);
-        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, core.HealthBar, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .14f, Color.cyan);
+        var coreHealthBar = EnsureWorldHealthBar(coreObject.transform, core.HealthBar, "Core health bar", new Vector3(0f, 1.15f, 0f), 2.2f, .18f, Color.green);
+        coreHealthBar.UseThresholdColors = false;
         if (!core.HealthBar) core.HealthBar = coreHealthBar;
         core.RefreshHealthBar();
 
@@ -100,7 +103,8 @@ public static class DemoSceneBuilder
         var playerBarrelSprite = ImportedSprite(PlayerBarrelPath, sprite);
         Visual(playerObject.transform, "Player body", playerBodySprite, Vector2.zero, new Vector2(1.6f, 1.6f), new Color(.3f, .65f, 1), 3);
         ApplySprite(playerObject.transform, "Player body", playerBodySprite);
-        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, stats.HealthBar, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .12f, Color.green);
+        var playerHealthBar = EnsureWorldHealthBar(playerObject.transform, stats.HealthBar, "Player health bar", new Vector3(0f, .95f, 0f), 1.25f, .16f, Color.green);
+        playerHealthBar.UseThresholdColors = false;
         if (!stats.HealthBar) stats.HealthBar = playerHealthBar;
         stats.RefreshHealthBar();
         var turret = Child(playerObject.transform, "Turret");
@@ -124,10 +128,13 @@ public static class DemoSceneBuilder
         var audio = GetOrAdd<AudioService>(session.gameObject);
         var demo = GetOrAdd<DemoDirector>(session.gameObject);
         if (!weapon.Session) weapon.Session = session;
-        // Enemy HP is 60, so two standard bullets (30 damage each) defeat it.
-        weapon.BulletDamage = 30f;
+        weapon.BulletDamage = 20f;
+        weapon.RocketDamage = 50f;
         weapon.RocketSpeed = 11f;
-        weapon.RocketCooldown = 1f;
+        weapon.RocketCooldown = 1.2f;
+        weapon.LaserDamage = 60f;
+        weapon.LaserSpeed = 22f;
+        weapon.LaserCooldown = 2.0f;
         if (!defense.Session) defense.Session = session;
         if (!defense.Player) defense.Player = stats;
         if (!vfx.Weapon) vfx.Weapon = weapon;
@@ -256,41 +263,54 @@ public static class DemoSceneBuilder
         if (!audioView.MusicOff) audioView.MusicOff = musicOff;
         var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
         Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
-        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100\nARMOR 50/50\nCOINS 0", Vector2.zero, new Vector2(280, 72), 16, Color.white);
-        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -22), new Vector2(280, 72));
+        var barBg = ImportedSprite("Assets/_Game/Art/UI/bar_container_bg.png", null);
+        var hpFillSprite = ImportedSprite("Assets/_Game/Art/UI/bar_fill_green.png", null);
+        var armorFillSprite = ImportedSprite("Assets/_Game/Art/UI/bar_fill_yellow_segmented.png", null);
+        var coreFillSprite = ImportedSprite("Assets/_Game/Art/UI/bar_fill_cyan.png", null);
+        var heartBadge = ImportedSprite("Assets/_Game/Art/UI/badge_heart_green.png", null);
+        var lightningBadge = ImportedSprite("Assets/_Game/Art/UI/badge_lightning.png", null);
+        var coreBadge = ImportedSprite("Assets/_Game/Art/UI/badge_heart_cyan.png", null);
+
+        CreateHudBar(root.transform, "Player HP bar", new Vector2(24, -18), new Vector2(230, 26), barBg, hpFillSprite, heartBadge, false, out hud.PlayerHpFill, out hud.PlayerHpLabel);
+        CreateHudBar(root.transform, "Player Armor bar", new Vector2(24, -48), new Vector2(230, 26), barBg, armorFillSprite, lightningBadge, false, out hud.PlayerArmorFill, out hud.PlayerArmorLabel);
+        CreateHudBar(root.transform, "Core HP bar", new Vector2(-24, -18), new Vector2(230, 26), barBg, coreFillSprite, coreBadge, true, out hud.CoreHpFill, out _);
+
+        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100\nARMOR 50/50\nCOINS 0", Vector2.zero, new Vector2(240, 22), 14, new Color(.78f, .9f, .94f));
+        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -78), new Vector2(240, 22));
         statsText.alignment = TextAnchor.UpperLeft;
         if (!hud.StatsText) hud.StatsText = statsText;
-        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(220, 30), 20, Cyan);
-        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(220, 30));
+        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(220, 22), 16, Cyan);
+        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -48), new Vector2(220, 22));
         coreText.alignment = TextAnchor.UpperRight;
         if (!hud.CoreText) hud.CoreText = coreText;
-        var timerText = Label(root.transform, "Timer", "TIME 90.0", Vector2.zero, new Vector2(220, 30), 20, Color.white);
-        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -54), new Vector2(220, 30));
+        var timerText = Label(root.transform, "Timer", "TIME 90.0", Vector2.zero, new Vector2(220, 24), 18, Color.white);
+        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -72), new Vector2(220, 24));
         timerText.alignment = TextAnchor.UpperRight;
         if (!hud.TimerText) hud.TimerText = timerText;
-        var stateText = Label(root.transform, "State", "READY", Vector2.zero, new Vector2(220, 24), 14, Cyan);
-        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -86), new Vector2(220, 24));
+        var stateText = Label(root.transform, "State", "READY", Vector2.zero, new Vector2(220, 22), 14, Cyan);
+        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -98), new Vector2(220, 22));
         stateText.alignment = TextAnchor.UpperRight;
         if (!hud.StateText) hud.StateText = stateText;
         Label(root.transform, "Objective", "OBJECTIVE  Protect the blue core from red invaders", new Vector2(0, 235), new Vector2(680, 30), 17, Color.white);
-        Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LEFT MOUSE BUTTON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
-        Label(root.transform, "Actions", "WEAPONS  1 Bullet  •  2 Rocket  •  3 Mine     DEFENSE  Q Shield  •  E EMP     R RETRY  •  F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
-        var weaponText = Label(root.transform, "Weapon", "WEAPON: BULLET", Vector2.zero, new Vector2(230, 26), 15, Color.white);
-        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(230, 26));
+        Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LMB     R  CYCLE WEAPON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
+        Label(root.transform, "Actions", "WEAPONS  [R] Bullet (20 dmg) / Rocket (50 dmg) / Laser (60 dmg)     DEFENSE  Q Shield • E EMP     F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
+        var weaponText = Label(root.transform, "Weapon", "WEAPON: BULLET  [R]", Vector2.zero, new Vector2(240, 26), 15, Color.white);
+        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(240, 26));
         weaponText.alignment = TextAnchor.LowerLeft;
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "Cooldowns  —", new Vector2(390, -245), new Vector2(280, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
         Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 50));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
-        var bulletButton = ActionButton(root.transform, "Bullet button", "1  BULLET", new Vector2(-315, -271));
-        var rocketButton = ActionButton(root.transform, "Rocket button", "2  ROCKET", new Vector2(-185, -271));
-        var mineButton = ActionButton(root.transform, "Mine button", "3  MINE", new Vector2(-55, -271));
-        var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(105, -271));
-        var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(235, -271));
-        if (!hud.BulletButton) hud.BulletButton = bulletButton;
-        if (!hud.RocketButton) hud.RocketButton = rocketButton;
-        if (!hud.MineButton) hud.MineButton = mineButton;
+        var weaponCycleButton = ActionButton(root.transform, "Weapon cycle button", "R  BULLET", new Vector2(-150, -271));
+        Layout((RectTransform)weaponCycleButton.transform, new Vector2(-150, -271), new Vector2(160, 42));
+        var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(30, -271));
+        var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
+        hud.WeaponCycleButton = weaponCycleButton;
+        hud.BulletButton = weaponCycleButton;
+        var oldBullet = root.transform.Find("Bullet button"); if (oldBullet && oldBullet != weaponCycleButton.transform) oldBullet.gameObject.SetActive(false);
+        var oldRocket = root.transform.Find("Rocket button"); if (oldRocket) oldRocket.gameObject.SetActive(false);
+        var oldMine = root.transform.Find("Mine button"); if (oldMine) oldMine.gameObject.SetActive(false);
         if (!hud.ShieldButton) hud.ShieldButton = shieldButton;
         if (!hud.EmpButton) hud.EmpButton = empButton;
         if (!hud.StartPanel)
@@ -298,7 +318,7 @@ public static class DemoSceneBuilder
             hud.StartPanel = Panel(root.transform, "Start panel", true);
         }
         Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "The blue core is your base. Stop red invaders before they reach it.\n\nMove WASD   Aim Mouse   Fire Hold LMB\nSwitch 1/2/3   Shield Q   EMP E", new Vector2(0, 0), new Vector2(490, 135), 17, Color.white);
+        Label(hud.StartPanel.transform, "Brief", "The blue core is your base. Stop red invaders before they reach it.\n\nMove WASD   Aim Mouse   Fire Hold LMB\n[R] Cycle Weapon (Bullet/Rocket/Laser)\nShield Q   EMP E", new Vector2(0, 0), new Vector2(490, 135), 17, Color.white);
         if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
         if (!hud.PausePanel)
         {
@@ -411,9 +431,12 @@ public static class DemoSceneBuilder
         ring.loop = true;
         ring.useWorldSpace = false;
         ring.positionCount = 64;
-        ring.widthMultiplier = .045f;
-        ring.startColor = new Color(1, .18f, .22f, .72f);
+        ring.widthMultiplier = .05f;
+        ring.startColor = new Color(1f, .82f, .12f, .9f);
         ring.endColor = ring.startColor;
+        var shader = Shader.Find("Sprites/Default");
+        if (shader && (ring.sharedMaterial == null || ring.sharedMaterial.name.Contains("Default-Line")))
+            ring.material = new Material(shader);
         ring.sortingOrder = -1;
         for (var i = 0; i < ring.positionCount; i++)
         {
@@ -507,6 +530,85 @@ public static class DemoSceneBuilder
         var label = Label(go.transform, "Label", title, Vector2.zero, new Vector2(106, 38), 13, Color.white);
         Layout((RectTransform)label.transform, Vector2.zero, new Vector2(106, 38));
         return go.GetComponent<Button>();
+    }
+
+    private static GameObject CreateHudBar(
+        Transform parent,
+        string name,
+        Vector2 position,
+        Vector2 size,
+        Sprite bgSprite,
+        Sprite fillSprite,
+        Sprite badgeSprite,
+        bool anchorRight,
+        out Image fillImage,
+        out Text valueText)
+    {
+        var existing = parent.Find(name);
+        if (existing) Object.DestroyImmediate(existing.gameObject);
+
+        var root = new GameObject(name, typeof(RectTransform));
+        root.transform.SetParent(parent, false);
+        var rt = (RectTransform)root.transform;
+        var anchor = anchorRight ? new Vector2(1, 1) : new Vector2(0, 1);
+        rt.anchorMin = anchor;
+        rt.anchorMax = anchor;
+        rt.pivot = anchor;
+        rt.anchoredPosition = position;
+        rt.sizeDelta = size;
+
+        var bgObj = new GameObject("Background", typeof(RectTransform), typeof(Image));
+        bgObj.transform.SetParent(root.transform, false);
+        var bgRt = (RectTransform)bgObj.transform;
+        bgRt.anchorMin = Vector2.zero;
+        bgRt.anchorMax = Vector2.one;
+        bgRt.offsetMin = new Vector2(size.y * 0.45f, 0);
+        bgRt.offsetMax = Vector2.zero;
+        var bgImg = bgObj.GetComponent<Image>();
+        bgImg.sprite = bgSprite;
+        bgImg.type = Image.Type.Simple;
+
+        var fillObj = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        fillObj.transform.SetParent(bgObj.transform, false);
+        var fillRt = (RectTransform)fillObj.transform;
+        fillRt.anchorMin = Vector2.zero;
+        fillRt.anchorMax = Vector2.one;
+        fillRt.offsetMin = new Vector2(3, 2.5f);
+        fillRt.offsetMax = new Vector2(-12, -2.5f);
+        fillImage = fillObj.GetComponent<Image>();
+        fillImage.sprite = fillSprite;
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Horizontal;
+        fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImage.fillAmount = 1f;
+
+        var textObj = new GameObject("Value", typeof(RectTransform), typeof(Text));
+        textObj.transform.SetParent(bgObj.transform, false);
+        var textRt = (RectTransform)textObj.transform;
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = new Vector2(8, 0);
+        textRt.offsetMax = new Vector2(-16, 0);
+        valueText = textObj.GetComponent<Text>();
+        valueText.font = AssetDatabase.LoadAssetAtPath<Font>(UiFontPath) ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        valueText.fontSize = 12;
+        valueText.fontStyle = FontStyle.Bold;
+        valueText.alignment = TextAnchor.MiddleCenter;
+        valueText.color = Color.white;
+
+        var badgeObj = new GameObject("Badge", typeof(RectTransform), typeof(Image));
+        badgeObj.transform.SetParent(root.transform, false);
+        var badgeRt = (RectTransform)badgeObj.transform;
+        var badgeSize = size.y * 1.35f;
+        badgeRt.anchorMin = new Vector2(0, 0.5f);
+        badgeRt.anchorMax = new Vector2(0, 0.5f);
+        badgeRt.pivot = new Vector2(0.5f, 0.5f);
+        badgeRt.anchoredPosition = new Vector2(badgeSize * 0.42f, 0);
+        badgeRt.sizeDelta = new Vector2(badgeSize, badgeSize);
+        var badgeImg = badgeObj.GetComponent<Image>();
+        badgeImg.sprite = badgeSprite;
+
+        return root;
     }
 
     private static Button AudioButton(Transform parent, string name, string title, Vector2 position)
@@ -670,16 +772,30 @@ public static class DemoSceneBuilder
     private static Projectile EnsureProjectilePrefab(Scene scene, Sprite sprite)
     {
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectilePath);
-        if (existing) return UpdatePrefabVisual<Projectile>(ProjectilePath, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.one, Color.white, .14f);
-
-        var go = new GameObject("Projectile", typeof(Projectile));
-        SceneManager.MoveGameObjectToScene(go, scene);
-        var collider = go.GetComponent<CircleCollider2D>();
-        collider.radius = .14f;
-        Visual(go.transform, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.zero, Vector2.one, Color.white, 5);
-        var prefab = PrefabUtility.SaveAsPrefabAsset(go, ProjectilePath);
-        Object.DestroyImmediate(go);
-        return prefab.GetComponent<Projectile>();
+        Projectile result;
+        if (existing)
+        {
+            result = UpdatePrefabVisual<Projectile>(ProjectilePath, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.one, Color.white, .14f);
+        }
+        else
+        {
+            var go = new GameObject("Projectile", typeof(Projectile));
+            SceneManager.MoveGameObjectToScene(go, scene);
+            var collider = go.GetComponent<CircleCollider2D>();
+            collider.radius = .14f;
+            Visual(go.transform, "Projectile body", ImportedSprite(ProjectileSpritePath, sprite), Vector2.zero, Vector2.one, Color.white, 5);
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, ProjectilePath);
+            Object.DestroyImmediate(go);
+            result = prefab.GetComponent<Projectile>();
+        }
+        if (result)
+        {
+            result.RocketSprite = ImportedSprite(RocketSpritePath, null);
+            result.LaserSprite = ImportedSprite(LaserSpritePath, null);
+            result.BulletSprite = ImportedSprite(ProjectileSpritePath, sprite);
+            EditorUtility.SetDirty(result);
+        }
+        return result;
     }
 
     private static Mine EnsureMinePrefab(Scene scene, Sprite sprite)
