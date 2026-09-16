@@ -295,5 +295,50 @@ namespace CoreGuard.Tests.Editor
             Assert.That(presenter.WeaponCycleButton.gameObject.activeSelf, Is.False);
             Assert.That(presenter.transform.Find("Dpad").gameObject.activeSelf, Is.False);
         }
+
+        [Test]
+        public void HomeScreen_EnsuresFullScreenBackgroundAndLogo()
+        {
+            var session = MakeSession();
+            session.Retry();
+            var canvas = Make<Canvas>("Canvas");
+            var hud = Make<HudPresenter>("HUD");
+            hud.transform.SetParent(canvas.transform, false);
+            hud.Session = session;
+
+            var startPanel = Make<Image>("Start panel");
+            startPanel.transform.SetParent(hud.transform, false);
+            hud.StartPanel = startPanel.gameObject;
+
+            var heading = Make<Text>("Heading");
+            heading.transform.SetParent(startPanel.transform, false);
+            var brief = Make<Text>("Brief");
+            brief.transform.SetParent(startPanel.transform, false);
+
+            var startBtn = Make<Button>("Start button");
+            startBtn.transform.SetParent(startPanel.transform, false);
+            hud.StartButton = startBtn;
+
+            var dummyBg = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            var dummyLogo = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            hud.HomeBackground = dummyBg;
+            hud.HomeLogo = dummyLogo;
+
+            hud.Bind();
+
+            var startRt = (RectTransform)startPanel.transform;
+            Assert.That(startRt.anchorMin, Is.EqualTo(Vector2.zero));
+            Assert.That(startRt.anchorMax, Is.EqualTo(Vector2.one));
+            Assert.That(startPanel.sprite, Is.EqualTo(dummyBg));
+
+            var logo = startPanel.transform.Find("Logo");
+            Assert.That(logo, Is.Not.Null);
+            var logoImg = logo.GetComponent<Image>();
+            Assert.That(logoImg, Is.Not.Null);
+            Assert.That(logoImg.sprite, Is.EqualTo(dummyLogo));
+
+            Assert.That(heading.gameObject.activeSelf, Is.False);
+            Assert.That(brief.gameObject.activeSelf, Is.False);
+        }
     }
 }

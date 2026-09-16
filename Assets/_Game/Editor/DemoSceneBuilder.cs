@@ -372,11 +372,13 @@ public static class DemoSceneBuilder
         if (!hud.EmpButton) hud.EmpButton = empButton;
         var homeBg = ImportedSprite(HomeBackgroundPath, null);
         var homeLogo = ImportedSprite(HomeLogoPath, null);
+        hud.HomeBackground = homeBg;
+        hud.HomeLogo = homeLogo;
 
         var startPanelGo = hud.StartPanel;
         if (!startPanelGo)
         {
-            var existing = root.Find("Start panel");
+            var existing = root.transform.Find("Start panel");
             startPanelGo = existing ? existing.gameObject : Child(root.transform, "Start panel", typeof(RectTransform), typeof(Image));
             hud.StartPanel = startPanelGo;
         }
@@ -421,6 +423,8 @@ public static class DemoSceneBuilder
 
         var oldHeading = startPanelGo.transform.Find("Heading");
         if (oldHeading) oldHeading.gameObject.SetActive(false);
+        var oldBrief = startPanelGo.transform.Find("Brief");
+        if (oldBrief) oldBrief.gameObject.SetActive(false);
 
         if (!hud.StartButton) hud.StartButton = Button(startPanelGo.transform, "Start button", "START DEFENSE", new Vector2(0, -65));
         var startBtnRt = (RectTransform)hud.StartButton.transform;
@@ -1236,7 +1240,7 @@ public static class DemoSceneBuilder
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.alphaIsTransparency = true;
-            importer.filterMode = FilterMode.Point;
+            importer.filterMode = path.Contains("Kenney") ? FilterMode.Point : FilterMode.Bilinear;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }

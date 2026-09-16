@@ -15,6 +15,7 @@ namespace CoreGuard
         public Image ResultImage, CountdownImage;
         public Image LoadingProgress;
         public Sprite WinSprite, LoseSprite, CountdownZero, CountdownOne, CountdownTwo, CountdownThree;
+        public Sprite HomeBackground, HomeLogo;
         public float CountdownDuration = 3f;
         public float LoadingDuration = .75f;
         public GameObject StartPanel, PausePanel, ResultPanel;
@@ -211,6 +212,23 @@ namespace CoreGuard
             text.alignment = alignment;
         }
 
+        private static Sprite LoadSpriteFromFile(string path)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(path)) return null;
+                var bytes = System.IO.File.ReadAllBytes(path);
+                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (ImageConversion.LoadImage(tex, bytes))
+                {
+                    tex.filterMode = FilterMode.Bilinear;
+                    return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                }
+            }
+            catch (System.Exception) {}
+            return null;
+        }
+
         private void EnsureHomeScreen()
         {
             if (!StartPanel) return;
@@ -224,12 +242,18 @@ namespace CoreGuard
             }
 
             var bgImg = StartPanel.GetComponent<Image>();
-            if (bgImg && (!bgImg.sprite || bgImg.sprite.name.Contains("panel_glass")))
+            if (bgImg)
             {
-                var bgSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("background-gamet5"));
-                if (bgSprite)
+                var spriteToUse = HomeBackground;
+                if (!spriteToUse && (!bgImg.sprite || bgImg.sprite.name.Contains("panel_glass")))
                 {
-                    bgImg.sprite = bgSprite;
+                    spriteToUse = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("background-gamet5"));
+                    if (!spriteToUse)
+                        spriteToUse = LoadSpriteFromFile("Assets/_Game/Art/background-gamet5.png");
+                }
+                if (spriteToUse)
+                {
+                    bgImg.sprite = spriteToUse;
                     bgImg.color = Color.white;
                     bgImg.type = Image.Type.Simple;
                     bgImg.preserveAspect = false;
@@ -250,22 +274,69 @@ namespace CoreGuard
             logoRt.anchoredPosition = new Vector2(0, 75);
             logoRt.sizeDelta = new Vector2(460, 153);
             var logoImg = logoT.GetComponent<Image>();
-            if (logoImg && !logoImg.sprite)
+            if (logoImg)
             {
-                var logoSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("logo"));
-                if (logoSprite)
+                var spriteToUse = HomeLogo;
+                if (!spriteToUse && !logoImg.sprite)
                 {
-                    logoImg.sprite = logoSprite;
+                    spriteToUse = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("logo"));
+                    if (!spriteToUse)
+                        spriteToUse = LoadSpriteFromFile("Assets/_Game/Art/logo.png");
+                }
+                if (spriteToUse)
+                {
+                    logoImg.sprite = spriteToUse;
                     logoImg.preserveAspect = true;
                     logoImg.color = Color.white;
                 }
             }
 
-            var oldHeading = StartPanel.transform.Find("Heading");
-            if (oldHeading && logoImg && logoImg.sprite)
+            if (StartButton)
             {
-                oldHeading.gameObject.SetActive(false);
+                var startBtnRt = StartButton.transform as RectTransform;
+                if (startBtnRt)
+                {
+                    startBtnRt.anchorMin = new Vector2(.5f, .5f);
+                    startBtnRt.anchorMax = new Vector2(.5f, .5f);
+                    startBtnRt.pivot = new Vector2(.5f, .5f);
+                    startBtnRt.anchoredPosition = new Vector2(0, -65);
+                    startBtnRt.sizeDelta = new Vector2(230, 68);
+                }
+                var startBtnImg = StartButton.GetComponent<Image>();
+                if (startBtnImg && (!startBtnImg.sprite || startBtnImg.sprite.name.Contains("button_rectangle")))
+                {
+                    var startSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name.Contains("start1"));
+                    if (!startSprite)
+                        startSprite = LoadSpriteFromFile("Assets/_Game/Art/Provided/Results/start1.png");
+                    if (startSprite)
+                    {
+                        startBtnImg.sprite = startSprite;
+                        startBtnImg.type = Image.Type.Simple;
+                        startBtnImg.preserveAspect = true;
+                        startBtnImg.color = Color.white;
+                        var lbl = StartButton.transform.Find("Label")?.GetComponent<Text>();
+                        if (lbl) lbl.enabled = false;
+                    }
+                }
             }
+
+            if (SettingsButton)
+            {
+                var sRt = SettingsButton.transform as RectTransform;
+                if (sRt)
+                {
+                    sRt.anchorMin = Vector2.one;
+                    sRt.anchorMax = Vector2.one;
+                    sRt.pivot = Vector2.one;
+                    sRt.anchoredPosition = new Vector2(-28, -28);
+                    sRt.sizeDelta = new Vector2(56, 56);
+                }
+            }
+
+            var oldHeading = StartPanel.transform.Find("Heading");
+            if (oldHeading) oldHeading.gameObject.SetActive(false);
+            var oldBrief = StartPanel.transform.Find("Brief");
+            if (oldBrief) oldBrief.gameObject.SetActive(false);
         }
 
         private void EnsureMobileControls()

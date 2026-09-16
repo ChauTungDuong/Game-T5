@@ -9,8 +9,30 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+[InitializeOnLoad]
 public static class BuildDemo
 {
+    static BuildDemo()
+    {
+        EditorApplication.delayCall += AutoRunConfigure;
+    }
+
+    private static void AutoRunConfigure()
+    {
+        EditorApplication.delayCall -= AutoRunConfigure;
+        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+        if (SessionState.GetBool("BuildDemo_AutoConfigured_v1", false)) return;
+        try
+        {
+            ConfigureProject();
+            SessionState.SetBool("BuildDemo_AutoConfigured_v1", true);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[BuildDemo] Auto configuration skipped or deferred: {ex.Message}");
+        }
+    }
+
     private const string ConfigureMenuPath = "Core Guard/Configure Project";
     private const string MainScenePath = "Assets/_Game/Scenes/Main.unity";
 
