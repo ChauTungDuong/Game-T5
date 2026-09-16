@@ -189,7 +189,7 @@ namespace CoreGuard
             SetTextRect(CoreText, Vector2.one, Vector2.one, new Vector2(-24, -22), new Vector2(190, 28), TextAnchor.UpperRight);
             SetTextRect(TimerText, Vector2.one, Vector2.one, new Vector2(-24, -52), new Vector2(120, 26), TextAnchor.UpperRight);
             SetTextRect(WeaponText, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(160, 26), TextAnchor.LowerLeft);
-            SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26), TextAnchor.LowerRight);
+            SetTextRect(CooldownsText, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26), TextAnchor.LowerRight);
         }
 
         private void HideVerboseLabel(string childName)

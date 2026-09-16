@@ -40,6 +40,7 @@ public static class DemoSceneBuilder
     private const string UiPanelPath = "Assets/_Game/Art/Kenney/UI/panel_glass.png";
     private const string UiButtonPath = "Assets/_Game/Art/Kenney/UI/button_rectangle_depth.png";
     private const string UiSquareButtonPath = "Assets/_Game/Art/Kenney/UI/button_square_depth.png";
+    private const string UiCircleButtonPath = "Assets/_Game/Art/UI/button_circle.png";
     private const string UiFontPath = "Assets/_Game/Art/Kenney/UI/Kenney Future.ttf";
     private const string BulletAudioPath = "Assets/_Game/Audio/Kenney/laserSmall_000.ogg";
     private const string RocketAudioPath = "Assets/_Game/Audio/Kenney/laserLarge_000.ogg";
@@ -349,7 +350,7 @@ public static class DemoSceneBuilder
         if (!hud.WeaponText) hud.WeaponText = weaponText;
         var cooldownsText = Label(root.transform, "Cooldowns", "SH READY  •  EMP READY", new Vector2(390, -245), new Vector2(300, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
-        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26));
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 180), new Vector2(300, 26));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
 
         var feedbackText = Label(root.transform, "Feedback", string.Empty, new Vector2(0, -245), new Vector2(380, 28), 15, new Color(1f, .65f, .25f));
@@ -693,48 +694,73 @@ public static class DemoSceneBuilder
         presenter.LeftButton = CreateDirectionalButton(dpadObj.transform, "Dpad Left", "◄", new Vector2(30, 85), new Vector2(48, 50), Vector2.left, squareSprite, presenter);
         presenter.RightButton = CreateDirectionalButton(dpadObj.transform, "Dpad Right", "►", new Vector2(140, 85), new Vector2(48, 50), Vector2.right, squareSprite, presenter);
 
-        // --- Weapon Switch Button at Bottom-Right ---
-        var weaponBtnTransform = go.transform.Find("Mobile Weapon Switch");
-        GameObject weaponBtnObj;
-        if (!weaponBtnTransform)
+        // --- Clean up obsolete rectangular button if present ---
+        var oldWeapon = go.transform.Find("Mobile Weapon Switch");
+        if (oldWeapon) UnityEngine.Object.DestroyImmediate(oldWeapon.gameObject);
+
+        // --- 3 Round Action Buttons at Bottom-Right: Q (Shield), E (EMP), R (Weapon) ---
+        var circleSprite = ImportedSprite(UiCircleButtonPath, null);
+
+        presenter.ShieldButton = CreateCircularActionButton(go.transform, "Mobile Shield Button", "Q\nSHIELD", new Vector2(-135, 120), new Vector2(62, 62), new Color(.12f, .48f, .68f, .55f), circleSprite, out presenter.ShieldLabel);
+        presenter.EmpButton = CreateCircularActionButton(go.transform, "Mobile Emp Button", "E\nEMP", new Vector2(-55, 120), new Vector2(62, 62), new Color(.48f, .20f, .65f, .55f), circleSprite, out presenter.EmpLabel);
+        presenter.WeaponCycleButton = CreateCircularActionButton(go.transform, "Mobile Weapon Button", "R\n[BULLET]", new Vector2(-95, 48), new Vector2(68, 68), new Color(.13f, .45f, .48f, .55f), circleSprite, out presenter.WeaponCycleLabel);
+
+        presenter.Bind();
+    }
+
+    private static Button CreateCircularActionButton(
+        Transform parent,
+        string name,
+        string title,
+        Vector2 position,
+        Vector2 size,
+        Color tintColor,
+        Sprite sprite,
+        out Text label)
+    {
+        var existing = parent.Find(name);
+        GameObject go;
+        if (!existing)
         {
-            weaponBtnObj = new GameObject("Mobile Weapon Switch", typeof(RectTransform), typeof(Image), typeof(Button));
-            weaponBtnObj.transform.SetParent(go.transform, false);
+            go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
         }
         else
         {
-            weaponBtnObj = weaponBtnTransform.gameObject;
+            go = existing.gameObject;
         }
-        var weaponRt = (RectTransform)weaponBtnObj.transform;
-        weaponRt.anchorMin = new Vector2(1, 0);
-        weaponRt.anchorMax = new Vector2(1, 0);
-        weaponRt.pivot = new Vector2(1, 0);
-        weaponRt.anchoredPosition = new Vector2(-24, 115);
-        weaponRt.sizeDelta = new Vector2(115, 52);
 
-        var weaponImg = weaponBtnObj.GetComponent<Image>();
-        if (rectSprite) weaponImg.sprite = rectSprite;
-        weaponImg.color = new Color(.13f, .45f, .48f, .55f);
+        var rt = (RectTransform)go.transform;
+        rt.anchorMin = new Vector2(1, 0);
+        rt.anchorMax = new Vector2(1, 0);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = position;
+        rt.sizeDelta = size;
 
-        var weaponBtn = weaponBtnObj.GetComponent<Button>();
-        StyleButton(weaponBtn, new Color(.13f, .45f, .48f, .55f));
+        var img = go.GetComponent<Image>() ?? go.AddComponent<Image>();
+        if (sprite) img.sprite = sprite;
+        img.color = tintColor;
+        img.type = Image.Type.Simple;
 
-        var labelTransform = weaponBtnObj.transform.Find("Label");
-        Text weaponLabel;
+        var btn = go.GetComponent<Button>() ?? go.AddComponent<Button>();
+        StyleButton(btn, tintColor);
+
+        var labelTransform = go.transform.Find("Label");
         if (!labelTransform)
         {
-            weaponLabel = Label(weaponBtnObj.transform, "Label", "WEAPON\n[BULLET]", Vector2.zero, new Vector2(105, 46), 12, Color.white);
+            label = Label(go.transform, "Label", title, Vector2.zero, size, 11, Color.white);
         }
         else
         {
-            weaponLabel = labelTransform.GetComponent<Text>();
+            label = labelTransform.GetComponent<Text>();
+            label.text = title;
+            label.fontSize = 11;
         }
-        weaponLabel.alignment = TextAnchor.MiddleCenter;
-        Layout((RectTransform)weaponLabel.transform, Vector2.zero, new Vector2(105, 46));
+        label.alignment = TextAnchor.MiddleCenter;
+        label.lineSpacing = 0.9f;
+        Layout((RectTransform)label.transform, Vector2.zero, size);
 
-        presenter.WeaponCycleButton = weaponBtn;
-        presenter.WeaponCycleLabel = weaponLabel;
-        presenter.Bind();
+        return btn;
     }
 
     private static VirtualDirectionalButton CreateDirectionalButton(

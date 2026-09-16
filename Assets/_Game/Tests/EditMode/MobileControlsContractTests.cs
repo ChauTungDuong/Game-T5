@@ -25,6 +25,9 @@ namespace CoreGuard.Tests.Editor
             session.Core = Make<CoreHealth>("Core");
             session.Motor = session.Player.gameObject.AddComponent<PlayerMotor>();
             session.Motor.Session = session;
+            session.Defense = session.Player.gameObject.AddComponent<DefenseController>();
+            session.Defense.Session = session;
+            session.Defense.Player = session.Player;
             session.Input = Make<InputReader>("Input");
             session.Input.Session = session;
             session.Spawner = Make<EnemySpawner>("Spawner");
@@ -190,7 +193,49 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void EnsureControls_CreatesAllFiveButtonsAutomatically()
+        public void ShieldButton_ActivatesShieldAndUpdatesLabel()
+        {
+            var session = MakeSession();
+            var presenter = Make<MobileControlsPresenter>("Mobile controls");
+            presenter.Session = session;
+
+            var shieldBtn = Make<Button>("Shield button");
+            var label = shieldBtn.gameObject.AddComponent<Text>();
+            presenter.ShieldButton = shieldBtn;
+            presenter.ShieldLabel = label;
+            presenter.Bind();
+
+            Assert.That(session.Defense.ShieldActive, Is.False);
+            Assert.That(label.text, Does.Contain("SHIELD"));
+
+            presenter.OnShieldClicked();
+            Assert.That(session.Defense.ShieldActive, Is.True);
+            Assert.That(label.text, Does.Contain("HIT"));
+        }
+
+        [Test]
+        public void EmpButton_ActivatesEmpAndUpdatesLabel()
+        {
+            var session = MakeSession();
+            var presenter = Make<MobileControlsPresenter>("Mobile controls");
+            presenter.Session = session;
+
+            var empBtn = Make<Button>("Emp button");
+            var label = empBtn.gameObject.AddComponent<Text>();
+            presenter.EmpButton = empBtn;
+            presenter.EmpLabel = label;
+            presenter.Bind();
+
+            Assert.That(session.Defense.EmpCooldownRemaining, Is.EqualTo(0f));
+            Assert.That(label.text, Does.Contain("EMP"));
+
+            presenter.OnEmpClicked();
+            Assert.That(session.Defense.EmpCooldownRemaining, Is.GreaterThan(0f));
+            Assert.That(label.text, Does.Contain("s"));
+        }
+
+        [Test]
+        public void EnsureControls_CreatesDpadAndThreeCircularActionButtonsAutomatically()
         {
             var session = MakeSession();
             var canvas = Make<Canvas>("Canvas");
@@ -200,17 +245,28 @@ namespace CoreGuard.Tests.Editor
 
             presenter.EnsureControls();
 
+            // 4 Directional buttons
             Assert.That(presenter.UpButton, Is.Not.Null);
             Assert.That(presenter.DownButton, Is.Not.Null);
             Assert.That(presenter.LeftButton, Is.Not.Null);
             Assert.That(presenter.RightButton, Is.Not.Null);
-            Assert.That(presenter.WeaponCycleButton, Is.Not.Null);
-            Assert.That(presenter.WeaponCycleLabel, Is.Not.Null);
 
             Assert.That(presenter.UpButton.Direction, Is.EqualTo(Vector2.up));
             Assert.That(presenter.DownButton.Direction, Is.EqualTo(Vector2.down));
             Assert.That(presenter.LeftButton.Direction, Is.EqualTo(Vector2.left));
             Assert.That(presenter.RightButton.Direction, Is.EqualTo(Vector2.right));
+
+            // 3 Circular Action buttons: Q (Shield), E (EMP), R (Weapon)
+            Assert.That(presenter.ShieldButton, Is.Not.Null);
+            Assert.That(presenter.ShieldLabel, Is.Not.Null);
+            Assert.That(presenter.EmpButton, Is.Not.Null);
+            Assert.That(presenter.EmpLabel, Is.Not.Null);
+            Assert.That(presenter.WeaponCycleButton, Is.Not.Null);
+            Assert.That(presenter.WeaponCycleLabel, Is.Not.Null);
+
+            Assert.That(presenter.ShieldLabel.text, Does.Contain("Q"));
+            Assert.That(presenter.EmpLabel.text, Does.Contain("E"));
+            Assert.That(presenter.WeaponCycleLabel.text, Does.Contain("R"));
         }
     }
 }
