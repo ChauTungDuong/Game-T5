@@ -106,6 +106,28 @@ namespace CoreGuard.Tests.Editor
             Assert.That(weapon.CycleNextWeapon(), Is.EqualTo(WeaponKind.Bullet));
         }
 
+        [TestCase(WeaponKind.Bullet)]
+        [TestCase(WeaponKind.Rocket)]
+        [TestCase(WeaponKind.Mine)]
+        public void PlayerAttack_RequestsTheConfiguredShortSfx(WeaponKind kind)
+        {
+            var session = MakeSession();
+            var audio = Make<AudioService>("Audio");
+            var weapon = MakeWeapon(session, out _, out _);
+            session.Audio = audio;
+            audio.Session = session;
+            audio.Weapon = weapon;
+            audio.Bind();
+            var expected = kind == WeaponKind.Bullet ? audio.BulletFire :
+                kind == WeaponKind.Rocket ? audio.RocketLaunch : audio.MineDrop;
+            AudioClip played = null;
+            audio.SfxPlayed += clip => played = clip;
+
+            Assert.That(weapon.Select(kind), Is.True);
+            Assert.That(weapon.TryFire(Vector2.right), Is.True);
+            Assert.That(played, Is.SameAs(expected));
+        }
+
         [Test]
         public void Projectile_IgnoresItsOwnColliderInsteadOfRetiringAtSpawn()
         {
@@ -225,6 +247,25 @@ namespace CoreGuard.Tests.Editor
             Assert.That(mine.IsArmed, Is.True);
             Assert.That(mine.TryDetonate(enemy), Is.True);
             Assert.That(enemy.HP, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Mine_LimitReportsFeedbackWithoutCreatingAnotherMineOrCooldown()
+        {
+            var session = MakeSession();
+            var weapon = MakeWeapon(session, out _, out _);
+            weapon.Select(WeaponKind.Mine);
+            weapon.MaxMines = 1;
+            string rejection = null;
+            weapon.ActionRejected += message => rejection = message;
+
+            Assert.That(weapon.TryFire(Vector2.zero), Is.True);
+            weapon.Advance(weapon.MineCooldown);
+
+            Assert.That(weapon.TryFire(Vector2.zero), Is.False);
+            Assert.That(rejection, Is.EqualTo("MINE LIMIT 1/1"));
+            Assert.That(weapon.LivingMineCount, Is.EqualTo(1));
+            Assert.That(weapon.CooldownRemaining, Is.EqualTo(0).Within(.001));
         }
 
         [Test]

@@ -73,6 +73,11 @@ namespace CoreGuard
             if (!triggeringEnemy || !IsArmed || !triggeringEnemy.IsAlive || detonated) return false;
             if (Session && triggeringEnemy.Session != Session) return false;
             detonated = true;
+            if (Session && Session.Audio) Session.Audio.PlaySfx(Session.Audio.Explosion);
+            var presenter = Session && Session.Player
+                ? Session.Player.GetComponent<CombatVfxPresenter>()
+                : null;
+            if (presenter) presenter.SpawnExplosion(transform.position, .23f);
             Explosion.ApplyAt(transform.position, radius, damage, Session);
             Retire();
             return true;

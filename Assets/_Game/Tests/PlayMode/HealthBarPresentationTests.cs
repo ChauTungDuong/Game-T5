@@ -79,11 +79,11 @@ namespace CoreGuard.Tests.PlayMode
             hud.RetryButton = Make<Button>("Retry button");
 
             hud.Bind();
-            Assert.That(hud.StatsText.text, Is.EqualTo("PLAYER HP 100/100\nARMOR 50/50\nCOINS 0"));
+            Assert.That(hud.StatsText.text, Is.EqualTo("HP 100/100  •  ARM 50/50  •  C 0"));
 
             session.Player.ApplyDamage(60f);
             session.Player.AddCoins(7);
-            Assert.That(hud.StatsText.text, Is.EqualTo("PLAYER HP 90/100\nARMOR 0/50\nCOINS 7"));
+            Assert.That(hud.StatsText.text, Is.EqualTo("HP 90/100  •  ARM 0/50  •  C 7"));
         }
     }
 }

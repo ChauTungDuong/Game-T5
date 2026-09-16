@@ -20,6 +20,7 @@ public static class DemoSceneBuilder
     private const string PlayerBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_blue_outline.png";
     private const string PlayerBarrelPath = "Assets/_Game/Art/Kenney/Tanks/tankBlue_barrel1_outline.png";
     private const string EnemyBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_red_outline.png";
+    private const string EnemyBarrelPath = "Assets/_Game/Art/Kenney/Tanks/tankRed_barrel1_outline.png";
     private const string GroundTilePath = "Assets/_Game/Art/Kenney/Tanks/tileSand1.png";
     private const string CoreBodyPath = "Assets/_Game/Art/Kenney/Tanks/tankBody_darkLarge_outline.png";
     private const string ProjectileSpritePath = "Assets/_Game/Art/Kenney/Tanks/bulletBlue1_outline.png";
@@ -45,7 +46,31 @@ public static class DemoSceneBuilder
     private const string AlertAudioPath = "Assets/_Game/Audio/Kenney/computerNoise_000.ogg";
     private const string ShieldAudioPath = "Assets/_Game/Audio/Kenney/forceField_000.ogg";
     private const string EmpAudioPath = "Assets/_Game/Audio/Kenney/impactMetal_000.ogg";
-    private const string MusicAudioPath = "Assets/_Game/Audio/Kenney/spaceEngineLow_000.ogg";
+    private const string MusicAudioPath = "Assets/_Game/Audio/Provided/music.mp3";
+    private const string UiClickAudioPath = "Assets/_Game/Audio/Provided/click.ogg";
+    private const string ExplosionAudioPath = "Assets/_Game/Audio/Provided/explosion.wav";
+    private const string VictoryAudioPath = "Assets/_Game/Audio/Provided/congratulation.wav";
+    private const string DefeatAudioPath = "Assets/_Game/Audio/Provided/gameover.wav";
+    private const string WinSpritePath = "Assets/_Game/Art/Provided/Results/YOU WIN.png";
+    private const string LoseSpritePath = "Assets/_Game/Art/Provided/Results/YOU LOSE.png";
+    private const string StartSpritePath = "Assets/_Game/Art/Provided/Results/start1.png";
+    private const string CountdownZeroPath = "Assets/_Game/Art/Provided/Countdown/zero.png";
+    private const string CountdownOnePath = "Assets/_Game/Art/Provided/Countdown/one.png";
+    private const string CountdownTwoPath = "Assets/_Game/Art/Provided/Countdown/two.png";
+    private const string CountdownThreePath = "Assets/_Game/Art/Provided/Countdown/three.png";
+    private const string SettingsIconPath = "Assets/_Game/Art/Provided/Settings/setting.png";
+    private static readonly string[] ExplosionFramePaths =
+    {
+        "Assets/_Game/Art/Provided/Explosion/explosion_01.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_02.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_03.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_04.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_05.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_06.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_07.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_08.png",
+        "Assets/_Game/Art/Provided/Explosion/explosion_09.png",
+    };
     private static readonly Color Cyan = new Color(.25f, .9f, .85f);
     private static readonly Color Ink = new Color(.055f, .085f, .12f, .97f);
 
@@ -145,6 +170,7 @@ public static class DemoSceneBuilder
         vfx.MineFlash = ImportedSprite(MineFlashPath, null);
         vfx.ShieldFlash = ImportedSprite(ShieldFlashPath, null);
         vfx.EmpFlash = ImportedSprite(EmpFlashPath, null);
+        vfx.ExplosionFrames = ExplosionFramePaths.Select(path => ImportedSprite(path, null)).ToArray();
         if (!effects.Session) effects.Session = session;
         if (!audio.Session) audio.Session = session;
         if (!audio.Weapon) audio.Weapon = weapon;
@@ -157,6 +183,10 @@ public static class DemoSceneBuilder
         audio.ShieldActivate = PreferImportedClip(ShieldAudioPath, audio.ShieldActivate);
         audio.EmpActivate = PreferImportedClip(EmpAudioPath, audio.EmpActivate);
         audio.MusicLoop = PreferImportedClip(MusicAudioPath, audio.MusicLoop);
+        audio.UiClick = PreferImportedClip(UiClickAudioPath, audio.UiClick);
+        audio.Explosion = PreferImportedClip(ExplosionAudioPath, audio.Explosion);
+        audio.Victory = PreferImportedClip(VictoryAudioPath, audio.Victory);
+        audio.Defeat = PreferImportedClip(DefeatAudioPath, audio.Defeat);
         audio.EnsureSourcesForScene();
         if (!weapon.Muzzle) weapon.Muzzle = muzzle.transform;
         if (!weapon.ProjectilePrefab) weapon.ProjectilePrefab = projectilePrefab;
@@ -243,24 +273,31 @@ public static class DemoSceneBuilder
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
         var hud = GetOrAdd<HudPresenter>(root); if (!hud.Session) hud.Session = session;
+        hud.CompactHud = true;
         var audioView = GetOrAdd<AudioToggleView>(root);
         if (!audioView.Audio) audioView.Audio = session.Audio;
         // Keep the arena unobstructed. Older scene versions may already contain
         // these large surfaces, so explicitly disable them during reconfigure.
         DisableHudSurface(root.transform, "Top bar");
         DisableHudSurface(root.transform, "Bottom bar");
-        var soundOff = AudioButton(root.transform, "SoundOff", "SFX\nOFF", new Vector2(548, 320));
-        var soundOn = AudioButton(root.transform, "SoundOn", "SFX\nON", new Vector2(548, 320));
-        var musicOn = AudioButton(root.transform, "MusicOn", "BGM\nON", new Vector2(610, 320));
-        var musicOff = AudioButton(root.transform, "MusicOff", "BGM\nOFF", new Vector2(610, 320));
-        Anchor((RectTransform)soundOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
-        Anchor((RectTransform)soundOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-92, 18), new Vector2(56, 56));
-        Anchor((RectTransform)musicOn.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
-        Anchor((RectTransform)musicOff.transform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-28, 18), new Vector2(56, 56));
+        var settingsPanel = Panel(root.transform, "Settings panel", false);
+        settingsPanel.SetActive(false);
+        Layout((RectTransform)settingsPanel.transform, Vector2.zero, new Vector2(420, 270));
+        Label(settingsPanel.transform, "Heading", "SETTINGS", new Vector2(0, 92), new Vector2(360, 42), 28, Cyan);
+        Label(settingsPanel.transform, "Audio hint", "AUDIO", new Vector2(0, 52), new Vector2(220, 24), 13, new Color(.67f, .8f, .84f));
+        MoveChild(root.transform, settingsPanel.transform, "SoundOff");
+        MoveChild(root.transform, settingsPanel.transform, "SoundOn");
+        MoveChild(root.transform, settingsPanel.transform, "MusicOn");
+        MoveChild(root.transform, settingsPanel.transform, "MusicOff");
+        var soundOff = AudioButton(settingsPanel.transform, "SoundOff", "SFX", new Vector2(-72, 8));
+        var soundOn = AudioButton(settingsPanel.transform, "SoundOn", "SFX", new Vector2(-72, 8));
+        var musicOn = AudioButton(settingsPanel.transform, "MusicOn", "BGM", new Vector2(72, 8));
+        var musicOff = AudioButton(settingsPanel.transform, "MusicOff", "BGM", new Vector2(72, 8));
         if (!audioView.SoundOff) audioView.SoundOff = soundOff;
         if (!audioView.SoundOn) audioView.SoundOn = soundOn;
         if (!audioView.MusicOn) audioView.MusicOn = musicOn;
         if (!audioView.MusicOff) audioView.MusicOff = musicOff;
+        hud.SettingsPanel = settingsPanel;
         var title = Label(root.transform, "Title", "CORE GUARD", Vector2.zero, new Vector2(240, 38), 27, Cyan);
         Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(.5f, 1), new Vector2(0, -14), new Vector2(240, 38));
         var barBg = ImportedSprite("Assets/_Game/Art/UI/bar_container_bg.png", null);
@@ -275,42 +312,58 @@ public static class DemoSceneBuilder
         CreateHudBar(root.transform, "Player Armor bar", new Vector2(24, -48), new Vector2(230, 26), barBg, armorFillSprite, lightningBadge, false, out hud.PlayerArmorFill, out hud.PlayerArmorLabel);
         CreateHudBar(root.transform, "Core HP bar", new Vector2(-24, -18), new Vector2(230, 26), barBg, coreFillSprite, coreBadge, true, out hud.CoreHpFill, out _);
 
-        var statsText = Label(root.transform, "Stats", "PLAYER HP 100/100\nARMOR 50/50\nCOINS 0", Vector2.zero, new Vector2(240, 22), 14, new Color(.78f, .9f, .94f));
-        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -78), new Vector2(240, 22));
+        var statsText = Label(root.transform, "Stats", "HP 100/100  •  ARM 50/50  •  C 0", Vector2.zero, new Vector2(390, 22), 14, new Color(.78f, .9f, .94f));
+        Anchor(statsText.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(24, -78), new Vector2(390, 22));
         statsText.alignment = TextAnchor.UpperLeft;
         if (!hud.StatsText) hud.StatsText = statsText;
-        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(220, 22), 16, Cyan);
-        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -48), new Vector2(220, 22));
+        var coreText = Label(root.transform, "Core health", "CORE 100/100", Vector2.zero, new Vector2(190, 22), 16, Cyan);
+        Anchor(coreText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -48), new Vector2(190, 22));
         coreText.alignment = TextAnchor.UpperRight;
         if (!hud.CoreText) hud.CoreText = coreText;
-        var timerText = Label(root.transform, "Timer", "TIME 90.0", Vector2.zero, new Vector2(220, 24), 18, Color.white);
-        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -72), new Vector2(220, 24));
+        var timerText = Label(root.transform, "Timer", "90.0s", Vector2.zero, new Vector2(120, 24), 18, Color.white);
+        Anchor(timerText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -72), new Vector2(120, 24));
         timerText.alignment = TextAnchor.UpperRight;
         if (!hud.TimerText) hud.TimerText = timerText;
-        var stateText = Label(root.transform, "State", "READY", Vector2.zero, new Vector2(220, 22), 14, Cyan);
-        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -98), new Vector2(220, 22));
+        var stateText = Label(root.transform, "State", string.Empty, Vector2.zero, new Vector2(1, 1), 1, Color.clear);
+        Anchor(stateText.rectTransform, Vector2.one, Vector2.one, new Vector2(-24, -80), new Vector2(1, 1));
         stateText.alignment = TextAnchor.UpperRight;
+        stateText.gameObject.SetActive(false);
         if (!hud.StateText) hud.StateText = stateText;
-        Label(root.transform, "Objective", "OBJECTIVE  Protect the blue core from red invaders", new Vector2(0, 235), new Vector2(680, 30), 17, Color.white);
-        Label(root.transform, "Controls", "MOVE  WASD / ARROWS     AIM  MOUSE     FIRE  HOLD LMB     R  CYCLE WEAPON     ESC  PAUSE", new Vector2(0, -335), new Vector2(1120, 24), 15, new Color(.82f, .9f, .93f));
-        Label(root.transform, "Actions", "WEAPONS  [R] Bullet (20 dmg) / Rocket (50 dmg) / Laser (60 dmg)     DEFENSE  Q Shield • E EMP     F1 DEMO", new Vector2(0, -313), new Vector2(1120, 24), 15, new Color(.67f, .8f, .84f));
-        var weaponText = Label(root.transform, "Weapon", "WEAPON: BULLET  [R]", Vector2.zero, new Vector2(240, 26), 15, Color.white);
-        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(240, 26));
+
+        hud.WinSprite = ImportedSprite(WinSpritePath, hud.WinSprite);
+        hud.LoseSprite = ImportedSprite(LoseSpritePath, hud.LoseSprite);
+        hud.CountdownZero = ImportedSprite(CountdownZeroPath, hud.CountdownZero);
+        hud.CountdownOne = ImportedSprite(CountdownOnePath, hud.CountdownOne);
+        hud.CountdownTwo = ImportedSprite(CountdownTwoPath, hud.CountdownTwo);
+        hud.CountdownThree = ImportedSprite(CountdownThreePath, hud.CountdownThree);
+        var countdownImage = SpriteImage(root.transform, "Start countdown", hud.CountdownThree, Vector2.zero, new Vector2(128, 128));
+        if (!hud.CountdownImage) hud.CountdownImage = countdownImage;
+        hud.CountdownImage.gameObject.SetActive(false);
+        DisableHudSurface(root.transform, "Objective");
+        DisableHudSurface(root.transform, "Controls");
+        DisableHudSurface(root.transform, "Actions");
+        var weaponText = Label(root.transform, "Weapon", "BULLET  [R]", Vector2.zero, new Vector2(180, 26), 15, Color.white);
+        Anchor(weaponText.rectTransform, Vector2.zero, Vector2.zero, new Vector2(24, 72), new Vector2(180, 26));
         weaponText.alignment = TextAnchor.LowerLeft;
         if (!hud.WeaponText) hud.WeaponText = weaponText;
-        var cooldownsText = Label(root.transform, "Cooldowns", "Cooldowns  —", new Vector2(390, -245), new Vector2(280, 26), 14, new Color(.67f, .8f, .84f));
+        var cooldownsText = Label(root.transform, "Cooldowns", "SH READY  •  EMP READY", new Vector2(390, -245), new Vector2(300, 26), 14, new Color(.67f, .8f, .84f));
         if (!hud.CooldownsText) hud.CooldownsText = cooldownsText;
-        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(250, 50));
+        Anchor(hud.CooldownsText.rectTransform, new Vector2(1, 0), new Vector2(1, 0), new Vector2(-24, 72), new Vector2(300, 26));
         hud.CooldownsText.alignment = TextAnchor.LowerRight;
+
+        var feedbackText = Label(root.transform, "Feedback", string.Empty, new Vector2(0, -245), new Vector2(380, 28), 15, new Color(1f, .65f, .25f));
+        feedbackText.alignment = TextAnchor.MiddleCenter;
+        feedbackText.raycastTarget = false;
+        if (!hud.FeedbackText) hud.FeedbackText = feedbackText;
+        hud.FeedbackText.gameObject.SetActive(false);
+
         var weaponCycleButton = ActionButton(root.transform, "Weapon cycle button", "R  BULLET", new Vector2(-150, -271));
         Layout((RectTransform)weaponCycleButton.transform, new Vector2(-150, -271), new Vector2(160, 42));
-        var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(30, -271));
-        var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
         hud.WeaponCycleButton = weaponCycleButton;
         hud.BulletButton = weaponCycleButton;
-        var oldBullet = root.transform.Find("Bullet button"); if (oldBullet && oldBullet != weaponCycleButton.transform) oldBullet.gameObject.SetActive(false);
-        var oldRocket = root.transform.Find("Rocket button"); if (oldRocket) oldRocket.gameObject.SetActive(false);
-        var oldMine = root.transform.Find("Mine button"); if (oldMine) oldMine.gameObject.SetActive(false);
+
+        var shieldButton = ActionButton(root.transform, "Shield button", "Q  SHIELD", new Vector2(30, -271));
+        var empButton = ActionButton(root.transform, "EMP button", "E  EMP", new Vector2(170, -271));
         if (!hud.ShieldButton) hud.ShieldButton = shieldButton;
         if (!hud.EmpButton) hud.EmpButton = empButton;
         if (!hud.StartPanel)
@@ -318,22 +371,51 @@ public static class DemoSceneBuilder
             hud.StartPanel = Panel(root.transform, "Start panel", true);
         }
         Label(hud.StartPanel.transform, "Heading", "DEFEND THE CORE", new Vector2(0, 82), new Vector2(490, 50), 30, Cyan);
-        Label(hud.StartPanel.transform, "Brief", "The blue core is your base. Stop red invaders before they reach it.\n\nMove WASD   Aim Mouse   Fire Hold LMB\n[R] Cycle Weapon (Bullet/Rocket/Laser)\nShield Q   EMP E", new Vector2(0, 0), new Vector2(490, 135), 17, Color.white);
+        Label(hud.StartPanel.transform, "Brief", "WASD move  •  Mouse aim  •  LMB fire\n[R] Cycle Weapon (Bullet/Rocket/Laser)\nQ shield  •  E EMP", new Vector2(0, 0), new Vector2(490, 90), 17, Color.white);
         if (!hud.StartButton) hud.StartButton = Button(hud.StartPanel.transform, "Start button", "START DEFENSE", new Vector2(0, -103));
+        ApplyButtonArtwork(hud.StartButton, ImportedSprite(StartSpritePath, null));
+        var settingsButton = AudioButton(hud.StartPanel.transform, "Settings", "SETTINGS", new Vector2(196, -103));
+        hud.SettingsButton = settingsButton;
+        var closeSettingsButton = Button(settingsPanel.transform, "Close settings button", "BACK", new Vector2(0, -92));
+        hud.CloseSettingsButton = closeSettingsButton;
         if (!hud.PausePanel)
         {
             hud.PausePanel = Panel(root.transform, "Pause panel", false);
             Label(hud.PausePanel.transform, "Heading", "PAUSED", new Vector2(0, 55), new Vector2(490, 55), 34, Cyan);
-            Label(hud.PausePanel.transform, "Hint", "Take a breath. The arena is waiting.", new Vector2(0, -5), new Vector2(490, 50), 20, Color.white);
+            Label(hud.PausePanel.transform, "Hint", "ESC to resume", new Vector2(0, -5), new Vector2(490, 40), 20, Color.white);
         }
         if (!hud.ResumeButton) hud.ResumeButton = Button(hud.PausePanel.transform, "Resume button", "CONTINUE", new Vector2(0, -103));
         if (!hud.ResultPanel)
         {
             hud.ResultPanel = Panel(root.transform, "Result panel", false);
-            Label(hud.ResultPanel.transform, "Hint", "Press R or click TRY AGAIN to defend the core again.", new Vector2(0, -5), new Vector2(490, 50), 18, Color.white);
+            Label(hud.ResultPanel.transform, "Hint", "R or TRY AGAIN", new Vector2(0, -5), new Vector2(490, 40), 18, Color.white);
         }
         if (!hud.ResultText) hud.ResultText = Label(hud.ResultPanel.transform, "Heading", "CORE OFFLINE — LOST", new Vector2(0, 55), new Vector2(510, 55), 30, Cyan);
+        var resultImage = SpriteImage(hud.ResultPanel.transform, "Result artwork", hud.LoseSprite, new Vector2(0, 116), new Vector2(390, 74));
+        if (!hud.ResultImage) hud.ResultImage = resultImage;
+        hud.ResultImage.sprite = hud.LoseSprite;
         if (!hud.RetryButton) hud.RetryButton = Button(hud.ResultPanel.transform, "Retry button", "TRY AGAIN", new Vector2(0, -103));
+        var loadingPanel = Panel(root.transform, "Loading panel", false);
+        loadingPanel.SetActive(false);
+        Layout((RectTransform)loadingPanel.transform, Vector2.zero, new Vector2(520, 250));
+        Label(loadingPanel.transform, "Heading", "LOADING", new Vector2(0, 62), new Vector2(440, 42), 28, Cyan);
+        Label(loadingPanel.transform, "Loading label", "LOADING 0%", new Vector2(0, 18), new Vector2(360, 28), 15, Color.white);
+        var loadingTrack = Child(loadingPanel.transform, "Loading track", typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)loadingTrack.transform, new Vector2(0, -28), new Vector2(320, 16));
+        var trackImage = loadingTrack.GetComponent<Image>();
+        trackImage.color = new Color(.08f, .18f, .21f, 1f);
+        trackImage.raycastTarget = false;
+        var loadingProgress = Child(loadingTrack.transform, "Loading progress", typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)loadingProgress.transform, Vector2.zero, new Vector2(320, 16));
+        var progressImage = loadingProgress.GetComponent<Image>();
+        progressImage.color = Cyan;
+        progressImage.type = Image.Type.Filled;
+        progressImage.fillMethod = Image.FillMethod.Horizontal;
+        progressImage.fillOrigin = 0;
+        progressImage.fillAmount = 0f;
+        progressImage.raycastTarget = false;
+        hud.LoadingPanel = loadingPanel;
+        hud.LoadingProgress = progressImage;
         BuildDemoPanel(root.transform, session.Demo);
     }
 
@@ -438,6 +520,7 @@ public static class DemoSceneBuilder
         if (shader && (ring.sharedMaterial == null || ring.sharedMaterial.name.Contains("Default-Line")))
             ring.material = new Material(shader);
         ring.sortingOrder = -1;
+        zone.WarningRing = ring;
         for (var i = 0; i < ring.positionCount; i++)
         {
             var angle = i * Mathf.PI * 2f / ring.positionCount;
@@ -500,6 +583,32 @@ public static class DemoSceneBuilder
         text.text = value; text.fontSize = fontSize; text.color = color;
         text.alignment = TextAnchor.MiddleCenter; text.raycastTarget = false;
         return text;
+    }
+    private static Image SpriteImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
+    {
+        var existing = parent.Find(name);
+        var go = existing ? existing.gameObject : Child(parent, name, typeof(RectTransform), typeof(Image));
+        Layout((RectTransform)go.transform, position, size);
+        var image = GetOrAdd<Image>(go);
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        return image;
+    }
+    private static void ApplyButtonArtwork(Button button, Sprite sprite)
+    {
+        if (!button || !sprite) return;
+        var image = button.GetComponent<Image>();
+        if (image)
+        {
+            image.sprite = sprite;
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = Color.white;
+        }
+        var labelObject = button.transform.Find("Label");
+        var label = labelObject ? labelObject.GetComponent<Text>() : null;
+        if (label) label.enabled = false;
     }
     private static Button Button(Transform parent, string name, string title, Vector2 position)
     {
@@ -617,7 +726,8 @@ public static class DemoSceneBuilder
         var go = existing ? existing.gameObject : Child(parent, name, typeof(RectTransform), typeof(Image), typeof(Button));
         Layout((RectTransform)go.transform, position, new Vector2(56, 56));
         StyleButton(go.GetComponent<Button>(), new Color(.13f, .43f, .46f));
-        var iconPath = name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
+        var iconPath = name == "Settings" ? SettingsIconPath :
+            name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
             name == "SoundOn" ? "Assets/_Game/Art/Kenney/Icons/audioOn.png" :
             name == "MusicOn" ? "Assets/_Game/Art/Kenney/Icons/musicOn.png" :
             "Assets/_Game/Art/Kenney/Icons/musicOff.png";
@@ -646,6 +756,11 @@ public static class DemoSceneBuilder
     {
         var existing = parent.Find(name);
         if (existing) existing.gameObject.SetActive(false);
+    }
+    private static void MoveChild(Transform from, Transform to, string name)
+    {
+        var existing = from.Find(name);
+        if (existing && existing.parent != to) existing.SetParent(to, false);
     }
     private static void StyleButton(Button button, Color normal)
     {
@@ -758,15 +873,61 @@ public static class DemoSceneBuilder
     {
         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyPath);
         var enemySprite = ImportedSprite(EnemyBodyPath, sprite);
-        if (existing) return UpdatePrefabVisual<EnemyController>(EnemyPath, "Enemy body", enemySprite, Vector2.one, new Color(1, .36f, .3f), .45f);
+        var enemyBarrel = ImportedSprite(EnemyBarrelPath, null);
+        if (existing) return UpdateEnemyPrefab(EnemyPath, enemySprite, enemyBarrel);
         var go = new GameObject("Enemy", typeof(EnemyController)); SceneManager.MoveGameObjectToScene(go, scene);
         go.layer = LayerMask.NameToLayer("Enemy");
         var body = go.GetComponent<Rigidbody2D>(); body.gravityScale = 0; body.bodyType = RigidbodyType2D.Kinematic; body.constraints = RigidbodyConstraints2D.FreezeRotation;
-        var collider = go.GetComponent<CircleCollider2D>(); collider.radius = .45f; collider.isTrigger = true;
-        Visual(go.transform, "Enemy body", enemySprite, Vector2.zero, new Vector2(1.0f, 1.0f), new Color(1, .36f, .3f), 3);
+        var collider = go.GetComponent<CircleCollider2D>(); collider.radius = EnemyController.TankColliderRadius; collider.isTrigger = true;
+        Visual(go.transform, "Enemy body", enemySprite, Vector2.zero, Vector2.one * EnemyController.TankVisualScale, new Color(1, .36f, .3f), 3);
+        EnsureEnemyCannon(go.transform, enemyBarrel);
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, EnemyPath);
         Object.DestroyImmediate(go);
         return prefab.GetComponent<EnemyController>();
+    }
+
+    private static EnemyController UpdateEnemyPrefab(string path, Sprite bodySprite, Sprite barrelSprite)
+    {
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            ApplySprite(root.transform, "Enemy body", bodySprite);
+            var body = root.transform.Find("Enemy body");
+            if (body)
+            {
+                body.localScale = Vector3.one * EnemyController.TankVisualScale;
+                var renderer = body.GetComponent<SpriteRenderer>();
+                if (renderer) renderer.color = new Color(1, .36f, .3f);
+            }
+            var collider = root.GetComponent<CircleCollider2D>();
+            if (collider)
+            {
+                collider.radius = EnemyController.TankColliderRadius;
+                collider.isTrigger = true;
+            }
+            EnsureEnemyCannon(root.transform, barrelSprite);
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        return prefab ? prefab.GetComponent<EnemyController>() : null;
+    }
+
+    private static void EnsureEnemyCannon(Transform enemy, Sprite barrelSprite)
+    {
+        var turret = Child(enemy, "Turret");
+        var barrel = Visual(turret.transform, "Barrel", barrelSprite, new Vector2(.68f, 0), new Vector2(1.3f, 1.9f), new Color(1, .32f, .28f), 4);
+        ApplySprite(turret.transform, "Barrel", barrelSprite);
+        barrel.transform.localRotation = Quaternion.Euler(0, 0, -90f);
+        var muzzle = Child(turret.transform, "Muzzle");
+        muzzle.transform.localPosition = new Vector3(.98f, 0, 0);
+        muzzle.transform.localRotation = Quaternion.identity;
+        var controller = enemy.GetComponent<EnemyController>();
+        if (controller)
+        {
+            controller.Turret = turret.transform;
+            controller.Muzzle = muzzle.transform;
+        }
     }
 
     private static Projectile EnsureProjectilePrefab(Scene scene, Sprite sprite)

@@ -149,12 +149,33 @@ namespace CoreGuard.Tests.Editor
             Assert.That(session.Demo, Is.Not.Null);
             Assert.That(session.Audio, Is.Not.Null);
             Assert.That(session.Audio.GetComponents<AudioSource>().Length, Is.EqualTo(3));
+            Assert.That(session.Audio.UiClick, Is.Not.Null);
+            Assert.That(session.Audio.Explosion, Is.Not.Null);
+            Assert.That(session.Audio.Victory, Is.Not.Null);
+            Assert.That(session.Audio.Defeat, Is.Not.Null);
+            Assert.That(session.Audio.UiClick.name, Is.EqualTo("click"));
+            Assert.That(session.Audio.Explosion.name, Is.EqualTo("explosion"));
+            Assert.That(session.Audio.Victory.name, Is.EqualTo("congratulation"));
+            Assert.That(session.Audio.Defeat.name, Is.EqualTo("gameover"));
+            var combatVfx = session.Player.GetComponent<CoreGuard.CombatVfxPresenter>();
+            Assert.That(combatVfx, Is.Not.Null);
+            Assert.That(combatVfx.ExplosionFrames, Is.Not.Null);
+            Assert.That(combatVfx.ExplosionFrames.Length, Is.EqualTo(9));
+            Assert.That(combatVfx.ExplosionFrames[0].name, Is.EqualTo("explosion_01"));
             Assert.That(session.Defense.Player, Is.Not.Null);
             Assert.That(session.Weapon.Muzzle, Is.Not.Null);
             Assert.That(session.Weapon.ProjectilePrefab, Is.Not.Null);
             Assert.That(session.Weapon.MinePrefab, Is.Not.Null);
             Assert.That(session.EnemyProjectilePrefab, Is.Not.Null);
             Assert.That(session.Spawner.Prefab, Is.Not.Null);
+            var enemyBody = session.Spawner.Prefab.transform.Find("Enemy body");
+            Assert.That(enemyBody, Is.Not.Null);
+            Assert.That(enemyBody.localScale, Is.EqualTo(Vector3.one * EnemyController.TankVisualScale));
+            Assert.That(session.Spawner.Prefab.GetComponent<CircleCollider2D>().radius, Is.EqualTo(EnemyController.TankColliderRadius));
+            var enemyTurret = session.Spawner.Prefab.transform.Find("Turret");
+            Assert.That(enemyTurret, Is.Not.Null);
+            Assert.That(enemyTurret.Find("Barrel"), Is.Not.Null);
+            Assert.That(enemyTurret.Find("Muzzle"), Is.Not.Null);
             Assert.That(session.Spawner.Gates.Length, Is.EqualTo(4));
             Assert.That(session.InteractionCycle, Is.Not.Null);
             Assert.That(CountComponentsInScene<CoreGuard.InteractionCycleController>(main.GetRootGameObjects()), Is.EqualTo(1));
@@ -204,6 +225,7 @@ namespace CoreGuard.Tests.Editor
 
             Assert.That(playerBar, Is.Not.Null);
             Assert.That(coreBar, Is.Not.Null);
+            Assert.That(zone.WarningRing, Is.Not.Null);
             Assert.That(playerBar.transform.localPosition.y, Is.GreaterThan(0f));
             Assert.That(coreBar.transform.localPosition.y, Is.GreaterThan(0f));
             Assert.That(coreBar.transform.localPosition.y + .4f, Is.LessThan(zone.Radius));
@@ -223,9 +245,48 @@ namespace CoreGuard.Tests.Editor
             Assert.That(hud.StatsText.alignment, Is.EqualTo(TextAnchor.UpperLeft));
             Assert.That(hud.CoreText.alignment, Is.EqualTo(TextAnchor.UpperRight));
             Assert.That(hud.CooldownsText.alignment, Is.EqualTo(TextAnchor.LowerRight));
+            Assert.That(hud.CompactHud, Is.True);
+            var objective = hud.transform.Find("Objective");
+            var controls = hud.transform.Find("Controls");
+            var actions = hud.transform.Find("Actions");
+            Assert.That(objective == null || !objective.gameObject.activeSelf, Is.True);
+            Assert.That(controls == null || !controls.gameObject.activeSelf, Is.True);
+            Assert.That(actions == null || !actions.gameObject.activeSelf, Is.True);
+            Assert.That(hud.SettingsPanel, Is.Not.Null);
+            Assert.That(hud.SettingsButton, Is.Not.Null);
+            Assert.That(hud.CloseSettingsButton, Is.Not.Null);
+            Assert.That(hud.LoadingPanel, Is.Not.Null);
+            Assert.That(hud.LoadingProgress, Is.Not.Null);
+            Assert.That(hud.SettingsPanel.activeSelf, Is.False);
+            Assert.That(hud.LoadingPanel.activeSelf, Is.False);
+            var audioView = hud.GetComponent<CoreGuard.AudioToggleView>();
+            Assert.That(audioView, Is.Not.Null);
+            Assert.That(audioView.SoundOff, Is.Not.Null);
+            Assert.That(audioView.SoundOn, Is.Not.Null);
+            Assert.That(audioView.MusicOn, Is.Not.Null);
+            Assert.That(audioView.MusicOff, Is.Not.Null);
+            Assert.That(((RectTransform)audioView.SoundOff.transform).anchoredPosition,
+                Is.EqualTo(((RectTransform)audioView.SoundOn.transform).anchoredPosition));
+            Assert.That(((RectTransform)audioView.SoundOff.transform).sizeDelta,
+                Is.EqualTo(((RectTransform)audioView.SoundOn.transform).sizeDelta));
+            Assert.That(((RectTransform)audioView.MusicOn.transform).anchoredPosition,
+                Is.EqualTo(((RectTransform)audioView.MusicOff.transform).anchoredPosition));
+            Assert.That(((RectTransform)audioView.MusicOn.transform).sizeDelta,
+                Is.EqualTo(((RectTransform)audioView.MusicOff.transform).sizeDelta));
+            Assert.That(hud.ResultImage, Is.Not.Null);
+            Assert.That(hud.WinSprite, Is.Not.Null);
+            Assert.That(hud.LoseSprite, Is.Not.Null);
+            Assert.That(hud.WinSprite.name, Is.EqualTo("YOU WIN"));
+            Assert.That(hud.LoseSprite.name, Is.EqualTo("YOU LOSE"));
+            Assert.That(hud.CountdownImage, Is.Not.Null);
+            Assert.That(hud.CountdownZero, Is.Not.Null);
+            Assert.That(hud.CountdownOne, Is.Not.Null);
+            Assert.That(hud.CountdownTwo, Is.Not.Null);
+            Assert.That(hud.CountdownThree, Is.Not.Null);
 
             var compactRects = new[] { hud.StatsText.rectTransform, hud.CoreText.rectTransform,
-                hud.TimerText.rectTransform, hud.WeaponText.rectTransform, hud.CooldownsText.rectTransform };
+                hud.TimerText.rectTransform, hud.WeaponText.rectTransform, hud.CooldownsText.rectTransform,
+                hud.FeedbackText.rectTransform };
             foreach (var resolution in new[] { new Vector2(1280, 720), new Vector2(1920, 1080) })
             foreach (var rect in compactRects)
             {

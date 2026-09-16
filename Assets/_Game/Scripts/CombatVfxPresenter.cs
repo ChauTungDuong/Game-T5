@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace CoreGuard
@@ -12,6 +13,8 @@ namespace CoreGuard
         public Sprite MineFlash;
         public Sprite ShieldFlash;
         public Sprite EmpFlash;
+        public Sprite[] ExplosionFrames;
+        public float ExplosionFrameDuration = .06f;
 
         private WeaponController boundWeapon;
         private DefenseController boundDefense;
@@ -36,6 +39,7 @@ namespace CoreGuard
             if (boundDefense)
             {
                 boundDefense.ShieldActivated += HandleShield;
+                boundDefense.ShieldBlocked += HandleShieldBlocked;
                 boundDefense.EmpActivated += HandleEmp;
                 boundDefense.Changed += HandleDefenseChanged;
             }
@@ -60,6 +64,12 @@ namespace CoreGuard
             if (!Application.isPlaying) return;
             if (shieldIndicator) Destroy(shieldIndicator);
             shieldIndicator = CreateRing("Shield Indicator", 1f, new Color(.15f, 1f, .9f, .9f), 0f, null);
+        }
+
+        private void HandleShieldBlocked()
+        {
+            Spawn(ShieldFlash, transform.position, Quaternion.identity, .9f,
+                new Color(.35f, 1f, .95f, .95f), .14f);
         }
 
         private void HandleEmp()
@@ -128,12 +138,37 @@ namespace CoreGuard
             Destroy(effect, lifetime);
         }
 
+        public void SpawnExplosion(Vector3 position, float scale)
+        {
+            if (!Application.isPlaying || ExplosionFrames == null || ExplosionFrames.Length == 0) return;
+            var effect = new GameObject("Explosion VFX");
+            effect.transform.SetParent(transform.parent, true);
+            effect.transform.position = position;
+            effect.transform.localScale = Vector3.one * scale;
+            var renderer = effect.AddComponent<SpriteRenderer>();
+            renderer.sortingOrder = 9;
+            StartCoroutine(AnimateExplosion(effect, renderer));
+        }
+
+        private IEnumerator AnimateExplosion(GameObject effect, SpriteRenderer renderer)
+        {
+            var frameDuration = Mathf.Max(.01f, ExplosionFrameDuration);
+            foreach (var frame in ExplosionFrames)
+            {
+                if (!effect || !renderer) yield break;
+                if (frame) renderer.sprite = frame;
+                yield return new WaitForSeconds(frameDuration);
+            }
+            if (effect) Destroy(effect);
+        }
+
         private void Unbind()
         {
             if (boundWeapon) boundWeapon.AttackAccepted -= HandleAttack;
             if (boundDefense)
             {
                 boundDefense.ShieldActivated -= HandleShield;
+                boundDefense.ShieldBlocked -= HandleShieldBlocked;
                 boundDefense.EmpActivated -= HandleEmp;
                 boundDefense.Changed -= HandleDefenseChanged;
             }
