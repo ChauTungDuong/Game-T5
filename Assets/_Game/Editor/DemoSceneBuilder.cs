@@ -1072,6 +1072,7 @@ public static class DemoSceneBuilder
     {
         var wall = Visual(parent, name, sprite, position, size, new Color(.11f, .38f, .45f), 0);
         wall.layer = LayerMask.NameToLayer("Arena"); GetOrAdd<BoxCollider2D>(wall);
+        wall.SetActive(false);
     }
     private static void BuildGroundTiles(Transform parent, Sprite tileSprite)
     {

@@ -260,6 +260,13 @@ namespace CoreGuard
             var fitter = arena.GetComponent<ArenaBackgroundFitter>();
             if (!fitter) fitter = arena.AddComponent<ArenaBackgroundFitter>();
             fitter.Fit();
+
+            // Deactivate border walls so player can move across the full screen
+            foreach (var wallName in new[] { "North wall", "South wall", "East wall", "West wall" })
+            {
+                var wall = arena.transform.Find(wallName);
+                if (wall) wall.gameObject.SetActive(false);
+            }
         }
 
         private void EnsureHomeScreen()

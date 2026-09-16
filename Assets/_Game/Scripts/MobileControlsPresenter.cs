@@ -69,13 +69,13 @@ namespace CoreGuard
             dpadRt.anchorMin = Vector2.zero;
             dpadRt.anchorMax = Vector2.zero;
             dpadRt.pivot = Vector2.zero;
-            dpadRt.anchoredPosition = new Vector2(24, 24);
-            dpadRt.sizeDelta = new Vector2(170, 170);
+            dpadRt.anchoredPosition = new Vector2(28, 28);
+            dpadRt.sizeDelta = new Vector2(220, 220);
 
-            if (!UpButton) UpButton = EnsureDpadButton(dpadT, "Dpad Up", "▲", new Vector2(0, 52), new Vector2(50, 48), Vector2.up);
-            if (!DownButton) DownButton = EnsureDpadButton(dpadT, "Dpad Down", "▼", new Vector2(0, -52), new Vector2(50, 48), Vector2.down);
-            if (!LeftButton) LeftButton = EnsureDpadButton(dpadT, "Dpad Left", "◄", new Vector2(-52, 0), new Vector2(48, 50), Vector2.left);
-            if (!RightButton) RightButton = EnsureDpadButton(dpadT, "Dpad Right", "►", new Vector2(52, 0), new Vector2(48, 50), Vector2.right);
+            UpButton = EnsureDpadButton(dpadT, "Dpad Up", "▲", new Vector2(0, 68), new Vector2(68, 64), Vector2.up);
+            DownButton = EnsureDpadButton(dpadT, "Dpad Down", "▼", new Vector2(0, -68), new Vector2(68, 64), Vector2.down);
+            LeftButton = EnsureDpadButton(dpadT, "Dpad Left", "◄", new Vector2(-68, 0), new Vector2(64, 68), Vector2.left);
+            RightButton = EnsureDpadButton(dpadT, "Dpad Right", "►", new Vector2(68, 0), new Vector2(64, 68), Vector2.right);
 
             // Clean up obsolete rectangular button if present
             var oldWeapon = transform.Find("Mobile Weapon Switch");
@@ -89,18 +89,9 @@ namespace CoreGuard
             var circleSprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(s => s && s.name == "button_circle");
 
             // 3 Round Action Buttons at Bottom-Right: Q (Shield), E (EMP), R (Weapon)
-            if (!ShieldButton)
-            {
-                ShieldButton = EnsureCircularButton("Mobile Shield Button", "Q\nSHIELD", new Vector2(-135, 120), new Vector2(62, 62), new Color(.12f, .48f, .68f, .55f), circleSprite, out ShieldLabel);
-            }
-            if (!EmpButton)
-            {
-                EmpButton = EnsureCircularButton("Mobile Emp Button", "E\nEMP", new Vector2(-55, 120), new Vector2(62, 62), new Color(.48f, .20f, .65f, .55f), circleSprite, out EmpLabel);
-            }
-            if (!WeaponCycleButton)
-            {
-                WeaponCycleButton = EnsureCircularButton("Mobile Weapon Button", "R\n[BULLET]", new Vector2(-95, 48), new Vector2(68, 68), new Color(.13f, .45f, .48f, .55f), circleSprite, out WeaponCycleLabel);
-            }
+            ShieldButton = EnsureCircularButton("Mobile Shield Button", "Q\nSHIELD", new Vector2(-175, 145), new Vector2(80, 80), new Color(.12f, .48f, .68f, .65f), circleSprite, out ShieldLabel);
+            EmpButton = EnsureCircularButton("Mobile Emp Button", "E\nEMP", new Vector2(-70, 145), new Vector2(80, 80), new Color(.48f, .20f, .65f, .65f), circleSprite, out EmpLabel);
+            WeaponCycleButton = EnsureCircularButton("Mobile Weapon Button", "R\n[BULLET]", new Vector2(-122, 52), new Vector2(88, 88), new Color(.13f, .45f, .48f, .65f), circleSprite, out WeaponCycleLabel);
         }
 
         private VirtualDirectionalButton EnsureDpadButton(Transform parent, string name, string arrow, Vector2 position, Vector2 size, Vector2 direction)
@@ -125,13 +116,13 @@ namespace CoreGuard
             rt.sizeDelta = size;
 
             var img = go.GetComponent<Image>() ?? go.AddComponent<Image>();
-            img.color = new Color(.12f, .38f, .44f, .4f);
+            img.color = new Color(.12f, .42f, .50f, .55f);
 
             var btn = go.GetComponent<VirtualDirectionalButton>() ?? go.AddComponent<VirtualDirectionalButton>();
             btn.Direction = direction;
             btn.Presenter = this;
-            btn.NormalAlpha = .4f;
-            btn.PressedAlpha = .85f;
+            btn.NormalAlpha = .55f;
+            btn.PressedAlpha = .9f;
             btn.BackgroundImage = img;
 
             var labelT = go.transform.Find("Label");
@@ -149,7 +140,6 @@ namespace CoreGuard
                 var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 if (!font) font = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 label.font = font;
-                label.fontSize = 22;
                 label.alignment = TextAnchor.MiddleCenter;
                 label.color = Color.white;
             }
@@ -157,6 +147,7 @@ namespace CoreGuard
             {
                 label = labelT.GetComponent<Text>();
             }
+            label.fontSize = 28;
             label.text = arrow;
             btn.LabelText = label;
 
@@ -205,7 +196,6 @@ namespace CoreGuard
                 var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 if (!font) font = Resources.GetBuiltinResource<Font>("Arial.ttf");
                 label.font = font;
-                label.fontSize = 11;
                 label.alignment = TextAnchor.MiddleCenter;
                 label.lineSpacing = 0.9f;
                 label.color = Color.white;
@@ -214,7 +204,8 @@ namespace CoreGuard
             {
                 label = labelT.GetComponent<Text>();
             }
-            label.text = defaultText;
+            label.fontSize = 14;
+            if (string.IsNullOrEmpty(label.text)) label.text = defaultText;
 
             return btn;
         }

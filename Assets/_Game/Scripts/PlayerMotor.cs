@@ -7,8 +7,8 @@ namespace CoreGuard
         public GameSession Session;
         public Transform Turret;
         public Vector2 SpawnPosition = new Vector2(-3, 0);
-        public Vector2 MinBounds = new Vector2(-7.5f, -3.7f);
-        public Vector2 MaxBounds = new Vector2(7.5f, 3.7f);
+        public Vector2 MinBounds = new Vector2(-12f, -4.5f);
+        public Vector2 MaxBounds = new Vector2(12f, 4.5f);
         public StatusEffects Effects;
         public float BaseSpeed = 4f;
         public float CurrentSpeed => Effects ? Effects.CurrentSpeed : BaseSpeed;
@@ -20,11 +20,27 @@ namespace CoreGuard
             body.gravityScale = 0;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             if (!Effects) Effects = GetComponent<StatusEffects>();
+            UpdateBoundsFromCamera();
         }
+
+        public void UpdateBoundsFromCamera()
+        {
+            var cam = Camera.main;
+            if (cam && cam.orthographic)
+            {
+                var vertExtent = cam.orthographicSize;
+                var horzExtent = vertExtent * cam.aspect;
+                float padding = 0.5f;
+                MinBounds = new Vector2(-horzExtent + padding, -vertExtent + padding);
+                MaxBounds = new Vector2(horzExtent - padding, vertExtent - padding);
+            }
+        }
+
         public void Step(Vector2 movement, Vector2 aimWorld, float delta)
         {
-            if (Session.State != MatchState.Playing || delta <= 0) return;
+            if (Session && Session.State != MatchState.Playing || delta <= 0) return;
             if (!body) Awake();
+            UpdateBoundsFromCamera();
             var next = body.position + NormalizeMove(movement) * (CurrentSpeed * delta);
             next.x = Mathf.Clamp(next.x, MinBounds.x, MaxBounds.x);
             next.y = Mathf.Clamp(next.y, MinBounds.y, MaxBounds.y);
