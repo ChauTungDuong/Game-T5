@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -80,7 +81,7 @@ namespace CoreGuard.Tests.Editor
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(played, Is.EqualTo(audio.GetInteractionClip(kind)));
 
-            var cue = Object.FindObjectsByType<InteractionFeedbackCue>(FindObjectsSortMode.None).FirstOrDefault();
+            var cue = Object.FindFirstObjectByType<InteractionFeedbackCue>();
             Assert.That(cue, Is.Not.Null);
             Assert.That(cue.Kind, Is.EqualTo(kind));
             Assert.That(cue.Message, Is.EqualTo(message));
