@@ -157,7 +157,7 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void Z_HealsCurrentHealthUpToMaximum()
+        public void Z_HealsCurrentHealth()
         {
             var session = MakeSession(out _, out _);
             session.Player.ApplyDamage(40f);
@@ -173,7 +173,18 @@ namespace CoreGuard.Tests.Editor
 
             var interaction3 = MakeInteraction(session, InteractionKind.Z);
             Assert.That(interaction3.ApplyTo(session.Player), Is.True);
-            Assert.That(session.Player.HP, Is.EqualTo(PlayerStats.MaxHP));
+            Assert.That(session.Player.HP, Is.EqualTo(120f));
+        }
+
+        [Test]
+        public void Z_IncreasesCurrentHealthFromFull()
+        {
+            var session = MakeSession(out _, out _);
+            Assert.That(session.Player.HP, Is.EqualTo(100f));
+
+            var interaction = MakeInteraction(session, InteractionKind.Z);
+            Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(120f));
         }
     }
 }

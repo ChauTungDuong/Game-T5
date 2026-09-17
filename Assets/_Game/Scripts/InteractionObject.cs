@@ -26,26 +26,31 @@ namespace CoreGuard
         {
             trigger = GetComponent<CircleCollider2D>();
             trigger.isTrigger = true;
-            trigger.radius = .45f;
+            trigger.radius = .6f;
         }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            var player = other ? other.GetComponentInParent<PlayerStats>() : null;
+            var player = other ? (other.GetComponent<PlayerStats>() ?? other.GetComponentInParent<PlayerStats>()) : null;
+            if (player && !(Kind == InteractionKind.Y && yTriggeredUntilExit)) ApplyTo(player);
+        }
+
+        private void OnTriggerStay2D(Collider2D other)
+        {
+            var player = other ? (other.GetComponent<PlayerStats>() ?? other.GetComponentInParent<PlayerStats>()) : null;
             if (player && !(Kind == InteractionKind.Y && yTriggeredUntilExit)) ApplyTo(player);
         }
 
         private void OnTriggerExit2D(Collider2D other)
         {
             if (Kind != InteractionKind.Y) return;
-            var player = other ? other.GetComponentInParent<PlayerStats>() : null;
+            var player = other ? (other.GetComponent<PlayerStats>() ?? other.GetComponentInParent<PlayerStats>()) : null;
             if (player && (!Player || player == Player)) yTriggeredUntilExit = false;
         }
 
         public bool ApplyTo(PlayerStats target)
         {
-            if (!target || IsConsumed || (Player && target != Player) ||
-                (Kind == InteractionKind.Y && yTriggeredUntilExit)) return false;
+            if (!target || IsConsumed || (Kind == InteractionKind.Y && yTriggeredUntilExit)) return false;
             Player = target;
             var applied = false;
             switch (Kind)

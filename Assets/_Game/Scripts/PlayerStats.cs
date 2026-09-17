@@ -40,7 +40,7 @@ namespace CoreGuard
         public void Heal(float amount)
         {
             if (amount <= 0 || float.IsNaN(amount) || HP <= 0) return;
-            HP = Mathf.Min(MaxHP, HP + amount);
+            HP = Mathf.Min(200f, HP + amount);
             NotifyChanged();
         }
         public bool CanUseSkill(float cost = SkillEnergyCost) => Energy >= cost;
