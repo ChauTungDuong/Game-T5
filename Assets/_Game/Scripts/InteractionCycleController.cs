@@ -242,19 +242,19 @@ namespace CoreGuard
             {
                 var existing = parent.Find("X_Energy");
                 if (existing) X_Energy = existing.GetComponent<InteractionObject>();
-                else if (X) X_Energy = SpawnVariant(X, "X_Energy", InteractionKind.X_Energy, new Vector2(-2.5f, 2.2f), new Color(1f, .55f, 0f), "X  -20 NL");
+                else if (X) X_Energy = SpawnVariant(X, "X_Energy", InteractionKind.X_Energy, new Vector2(-5f, -2.2f), new Color(1f, .55f, 0f), "-20 NL");
             }
             if (!Y_Shield)
             {
                 var existing = parent.Find("Y_Shield");
                 if (existing) Y_Shield = existing.GetComponent<InteractionObject>();
-                else if (Y) Y_Shield = SpawnVariant(Y, "Y_Shield", InteractionKind.Y_Shield, new Vector2(5f, -2.2f), new Color(.1f, .65f, 1f), "Y  PHÁ KHIÊN");
+                else if (Y) Y_Shield = SpawnVariant(Y, "Y_Shield", InteractionKind.Y_Shield, new Vector2(7f, -2.2f), new Color(.1f, .65f, 1f), "PHÁ KHIÊN");
             }
             if (!Z_Speed)
             {
                 var existing = parent.Find("Z_Speed");
                 if (existing) Z_Speed = existing.GetComponent<InteractionObject>();
-                else if (Z) Z_Speed = SpawnVariant(Z, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, .85f, .1f), "Z  TĂNG TỐC");
+                else if (Z) Z_Speed = SpawnVariant(Z, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, .85f, .1f), "TĂNG TỐC");
             }
         }
 

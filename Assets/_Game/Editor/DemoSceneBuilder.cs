@@ -539,12 +539,12 @@ public static class DemoSceneBuilder
 
     private static void EnsureInteractions(Transform parent, GameSession session, PlayerStats player, Sprite sprite)
     {
-        CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5, 2.2f), new Color(1f, 0.15f, 0.15f), "X  -20 HP", session, player, sprite);
-        CreateInteraction(parent, "X_Energy", InteractionKind.X_Energy, new Vector2(-2.5f, 2.2f), new Color(1f, 0.55f, 0f), "X  -20 NL", session, player, sprite);
-        CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(2.5f, -2.2f), new Color(0.7f, 0.2f, 1f), "Y  GIẢM TỐC", session, player, sprite);
-        CreateInteraction(parent, "Y_Shield", InteractionKind.Y_Shield, new Vector2(5f, -2.2f), new Color(0.1f, 0.65f, 1f), "Y  PHÁ KHIÊN", session, player, sprite);
-        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(4.5f, 2.2f), new Color(0.15f, 0.95f, 0.3f), "Z  +20 HP", session, player, sprite);
-        CreateInteraction(parent, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, 0.85f, 0.1f), "Z  TĂNG TỐC", session, player, sprite);
+        CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5f, 2.2f), new Color(1f, 0.15f, 0.15f), "-20 HP", session, player, sprite);
+        CreateInteraction(parent, "X_Energy", InteractionKind.X_Energy, new Vector2(-5f, -2.2f), new Color(1f, 0.55f, 0f), "-20 NL", session, player, sprite);
+        CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(4.5f, -2.2f), new Color(0.7f, 0.2f, 1f), "GIẢM TỐC", session, player, sprite);
+        CreateInteraction(parent, "Y_Shield", InteractionKind.Y_Shield, new Vector2(7f, -2.2f), new Color(0.1f, 0.65f, 1f), "PHÁ KHIÊN", session, player, sprite);
+        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(4.5f, 2.2f), new Color(0.15f, 0.95f, 0.3f), "+20 HP", session, player, sprite);
+        CreateInteraction(parent, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, 0.85f, 0.1f), "TĂNG TỐC", session, player, sprite);
     }
 
     private static void EnsureInteractionCycle(Scene scene, Transform parent, GameSession session, PlayerStats player, CoreHealth core)
