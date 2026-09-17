@@ -1002,10 +1002,10 @@ public static class DemoSceneBuilder
         Layout((RectTransform)go.transform, position, new Vector2(56, 56));
         StyleButton(go.GetComponent<Button>(), new Color(.13f, .43f, .46f));
         var iconPath = name == "Settings" ? SettingsIconPath :
-            name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
-            name == "SoundOn" ? "Assets/_Game/Art/Kenney/Icons/audioOn.png" :
-            name == "MusicOn" ? "Assets/_Game/Art/Kenney/Icons/musicOn.png" :
-            "Assets/_Game/Art/Kenney/Icons/musicOff.png";
+            name == "SoundOff" ? "Assets/_Game/Art/Kenney/Icons/audioOn.png" :
+            name == "SoundOn" ? "Assets/_Game/Art/Kenney/Icons/audioOff.png" :
+            name == "MusicOn" ? "Assets/_Game/Art/Kenney/Icons/musicOff.png" :
+            "Assets/_Game/Art/Kenney/Icons/musicOn.png";
         var icon = ImportedSprite(iconPath, null);
         if (icon)
         {

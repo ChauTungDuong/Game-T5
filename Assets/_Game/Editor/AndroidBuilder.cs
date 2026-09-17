@@ -37,10 +37,7 @@ namespace CoreGuard.Editor
                 return;
             }
 
-            EditorApplication.delayCall += () =>
-            {
-                BuildAndroidApk();
-            };
+            BuildAndroidApk();
         }
 
         [MenuItem("Core Guard/Build Android APK")]
