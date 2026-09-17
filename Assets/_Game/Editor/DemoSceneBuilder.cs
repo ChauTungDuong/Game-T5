@@ -539,9 +539,12 @@ public static class DemoSceneBuilder
 
     private static void EnsureInteractions(Transform parent, GameSession session, PlayerStats player, Sprite sprite)
     {
-        CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5, 2), new Color(1, .25f, .25f), "X  -20 HP / -10 ARMOR", session, player, sprite);
-        CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(3, -2), new Color(.7f, .3f, 1), "Y  SLOW / BREAK SHIELD", session, player, sprite);
-        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(5, 2), new Color(1, .75f, .15f), "Z  +20 HP / BOOST", session, player, sprite);
+        CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5, 2.2f), new Color(1f, 0.15f, 0.15f), "X  -20 HP", session, player, sprite);
+        CreateInteraction(parent, "X_Energy", InteractionKind.X_Energy, new Vector2(-2.5f, 2.2f), new Color(1f, 0.55f, 0f), "X  -20 NL", session, player, sprite);
+        CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(2.5f, -2.2f), new Color(0.7f, 0.2f, 1f), "Y  GIẢM TỐC", session, player, sprite);
+        CreateInteraction(parent, "Y_Shield", InteractionKind.Y_Shield, new Vector2(5f, -2.2f), new Color(0.1f, 0.65f, 1f), "Y  PHÁ KHIÊN", session, player, sprite);
+        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(4.5f, 2.2f), new Color(0.15f, 0.95f, 0.3f), "Z  +20 HP", session, player, sprite);
+        CreateInteraction(parent, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, 0.85f, 0.1f), "Z  TĂNG TỐC", session, player, sprite);
     }
 
     private static void EnsureInteractionCycle(Scene scene, Transform parent, GameSession session, PlayerStats player, CoreHealth core)
@@ -561,8 +564,11 @@ public static class DemoSceneBuilder
         var x = parent.Find("X") ? parent.Find("X").GetComponent<InteractionObject>() : null;
         var y = parent.Find("Y") ? parent.Find("Y").GetComponent<InteractionObject>() : null;
         var z = parent.Find("Z") ? parent.Find("Z").GetComponent<InteractionObject>() : null;
+        var x2 = parent.Find("X_Energy") ? parent.Find("X_Energy").GetComponent<InteractionObject>() : null;
+        var y2 = parent.Find("Y_Shield") ? parent.Find("Y_Shield").GetComponent<InteractionObject>() : null;
+        var z2 = parent.Find("Z_Speed") ? parent.Find("Z_Speed").GetComponent<InteractionObject>() : null;
         cycle.BlockedLayers = LayerMask.GetMask("Arena");
-        cycle.Configure(session, player, core, x, y, z);
+        cycle.Configure(session, player, core, x, y, z, x2, y2, z2);
         session.InteractionCycle = cycle;
     }
 
@@ -584,14 +590,15 @@ public static class DemoSceneBuilder
         if (!interaction.Session) interaction.Session = session;
         if (!interaction.Player) interaction.Player = player;
         var collider = GetOrAdd<CircleCollider2D>(objectRoot);
-        collider.isTrigger = true; collider.radius = .45f;
-        var markerPath = kind == InteractionKind.X ? XIconPath : kind == InteractionKind.Y ? YIconPath : ZIconPath;
+        collider.isTrigger = true; collider.radius = .6f;
+        var markerPath = (kind == InteractionKind.X || kind == InteractionKind.X_Energy) ? XIconPath :
+                         (kind == InteractionKind.Y || kind == InteractionKind.Y_Shield) ? YIconPath : ZIconPath;
         var markerSprite = ImportedSprite(markerPath, sprite);
         Visual(objectRoot.transform, "Marker", markerSprite, Vector2.zero, new Vector2(.8f, .8f), color, 2);
         ApplySprite(objectRoot.transform, "Marker", markerSprite);
         var textObject = Child(objectRoot.transform, "Label", typeof(TextMesh));
         var text = textObject.GetComponent<TextMesh>();
-        text.text = label; text.characterSize = .08f; text.fontSize = 32; text.anchor = TextAnchor.MiddleCenter; text.color = Color.white;
+        text.text = label; text.characterSize = .08f; text.fontSize = 32; text.anchor = TextAnchor.MiddleCenter; text.color = color;
         textObject.transform.localPosition = new Vector3(0, -.7f, 0);
     }
 

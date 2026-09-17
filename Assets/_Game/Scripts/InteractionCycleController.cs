@@ -22,6 +22,9 @@ namespace CoreGuard
         public InteractionObject X;
         public InteractionObject Y;
         public InteractionObject Z;
+        public InteractionObject X_Energy;
+        public InteractionObject Y_Shield;
+        public InteractionObject Z_Speed;
         public float VisibleDuration = 5f;
         public float HiddenDuration = 5f;
         public Vector2 PositionMin = new Vector2(-6.5f, -3f);
@@ -47,7 +50,8 @@ namespace CoreGuard
         private void OnDisable() => Unbind();
 
         public void Configure(GameSession session, PlayerStats player, CoreHealth core,
-            InteractionObject x, InteractionObject y, InteractionObject z)
+            InteractionObject x, InteractionObject y, InteractionObject z,
+            InteractionObject x2 = null, InteractionObject y2 = null, InteractionObject z2 = null)
         {
             Session = session;
             Player = player;
@@ -55,6 +59,9 @@ namespace CoreGuard
             X = x;
             Y = y;
             Z = z;
+            X_Energy = x2;
+            Y_Shield = y2;
+            Z_Speed = z2;
             Bind();
         }
 
@@ -226,9 +233,71 @@ namespace CoreGuard
             }
         }
 
+        public void EnsureAllVariants()
+        {
+            var parent = X ? X.transform.parent : (Y ? Y.transform.parent : (Z ? Z.transform.parent : null));
+            if (!parent) return;
+
+            if (!X_Energy)
+            {
+                var existing = parent.Find("X_Energy");
+                if (existing) X_Energy = existing.GetComponent<InteractionObject>();
+                else if (X) X_Energy = SpawnVariant(X, "X_Energy", InteractionKind.X_Energy, new Vector2(-2.5f, 2.2f), new Color(1f, .55f, 0f), "X  -20 NL");
+            }
+            if (!Y_Shield)
+            {
+                var existing = parent.Find("Y_Shield");
+                if (existing) Y_Shield = existing.GetComponent<InteractionObject>();
+                else if (Y) Y_Shield = SpawnVariant(Y, "Y_Shield", InteractionKind.Y_Shield, new Vector2(5f, -2.2f), new Color(.1f, .65f, 1f), "Y  PHÁ KHIÊN");
+            }
+            if (!Z_Speed)
+            {
+                var existing = parent.Find("Z_Speed");
+                if (existing) Z_Speed = existing.GetComponent<InteractionObject>();
+                else if (Z) Z_Speed = SpawnVariant(Z, "Z_Speed", InteractionKind.Z_Speed, new Vector2(7f, 2.2f), new Color(1f, .85f, .1f), "Z  TĂNG TỐC");
+            }
+        }
+
+        private InteractionObject SpawnVariant(InteractionObject template, string name, InteractionKind kind, Vector2 position, Color color, string label)
+        {
+            if (!template) return null;
+            var go = Instantiate(template.gameObject, template.transform.parent);
+            go.name = name;
+            go.transform.localPosition = position;
+            var obj = go.GetComponent<InteractionObject>();
+            if (obj)
+            {
+                obj.Kind = kind;
+                obj.Session = Session ? Session : template.Session;
+                obj.Player = Player ? Player : template.Player;
+            }
+            var marker = go.transform.Find("Marker")?.GetComponent<SpriteRenderer>();
+            if (marker) marker.color = color;
+            var text = go.transform.Find("Label")?.GetComponent<TextMesh>();
+            if (text)
+            {
+                text.text = label;
+                text.color = color;
+            }
+            return obj;
+        }
+
+        private InteractionObject[] GetCurrentInteractions()
+        {
+            var list = new List<InteractionObject>();
+            if (X) list.Add(X);
+            if (Y) list.Add(Y);
+            if (Z) list.Add(Z);
+            if (X_Energy && !list.Contains(X_Energy)) list.Add(X_Energy);
+            if (Y_Shield && !list.Contains(Y_Shield)) list.Add(Y_Shield);
+            if (Z_Speed && !list.Contains(Z_Speed)) list.Add(Z_Speed);
+            return list.ToArray();
+        }
+
         private void Bind()
         {
-            var current = new[] { X, Y, Z };
+            EnsureAllVariants();
+            var current = GetCurrentInteractions();
             if (bound != null && Same(bound, current)) return;
             Unbind();
             bound = current;
@@ -249,7 +318,7 @@ namespace CoreGuard
 
         private void EnsureSlots()
         {
-            var current = new[] { X, Y, Z };
+            var current = GetCurrentInteractions();
             if (slots == null || slots.Length != current.Length)
             {
                 slots = new Slot[current.Length];

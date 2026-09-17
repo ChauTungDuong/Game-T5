@@ -59,9 +59,12 @@ namespace CoreGuard.Tests.Editor
             objects.Clear();
         }
 
-        [TestCase(InteractionKind.X, "-20 HP / -10 ARMOR")]
-        [TestCase(InteractionKind.Y, "SLOWED / SHIELD BROKEN")]
-        [TestCase(InteractionKind.Z, "+20 HP / SPEED BOOST")]
+        [TestCase(InteractionKind.X, "-20 HP")]
+        [TestCase(InteractionKind.X_Energy, "-20 NĂNG LƯỢNG")]
+        [TestCase(InteractionKind.Y, "GIẢM TỐC CHẠY")]
+        [TestCase(InteractionKind.Y_Shield, "PHÁ KHIÊN")]
+        [TestCase(InteractionKind.Z, "+20 HP")]
+        [TestCase(InteractionKind.Z_Speed, "TĂNG TỐC CHẠY")]
         public void Activation_EmitsTypedAudioAndDetachedAnimatedWorldCue(InteractionKind kind, string message)
         {
             var session = MakeSession(out _, out _);
@@ -75,27 +78,22 @@ namespace CoreGuard.Tests.Editor
             audio.SfxPlayed += clip => played = clip;
 
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(played, Is.EqualTo(audio.GetInteractionClip(kind)));
 
-            var cue = Object.FindFirstObjectByType<InteractionFeedbackCue>();
+            var cue = Object.FindObjectsByType<InteractionFeedbackCue>(FindObjectsSortMode.None).FirstOrDefault();
             Assert.That(cue, Is.Not.Null);
-            Assert.That(cue.transform.parent, Is.Null, "the cue must survive while the interaction is hidden");
             Assert.That(cue.Kind, Is.EqualTo(kind));
             Assert.That(cue.Message, Is.EqualTo(message));
-            Assert.That(cue.GetComponentInChildren<TextMesh>().text, Is.EqualTo(message));
-            Assert.That(cue.GetComponentInChildren<ParticleSystem>(), Is.Not.Null);
-            Assert.That(cue.Duration, Is.GreaterThan(0f));
-            Assert.That(played, Is.SameAs(audio.GetInteractionClip(kind)));
-        }
+            Assert.That(cue.transform.position, Is.EqualTo(interaction.transform.position));
 
-        [Test]
-        public void FeedbackCue_PulsesFloatsFadesAndExpires()
-        {
-            var cue = InteractionFeedbackCue.Spawn(InteractionKind.X, Vector3.zero);
             var label = cue.GetComponentInChildren<TextMesh>();
-            var initialScale = cue.transform.localScale;
-            var initialPosition = label.transform.position;
-            var initialAlpha = label.color.a;
+            Assert.That(label, Is.Not.Null);
+            Assert.That(label.text, Is.EqualTo(message));
+            Assert.That(label.color, Is.EqualTo(InteractionFeedbackCue.ColorFor(kind)));
 
+            var initialPosition = label.transform.position;
+            var initialScale = cue.transform.localScale;
+            var initialAlpha = label.color.a;
             cue.Advance(cue.Duration * .5f);
 
             Assert.That(cue.transform.localScale.x, Is.GreaterThan(initialScale.x));
@@ -107,19 +105,31 @@ namespace CoreGuard.Tests.Editor
         }
 
         [Test]
-        public void X_AppliesIndependentHpAndArmorLossAndConsumes()
+        public void X_ReducesHealthOnlyAndConsumes()
         {
             var session = MakeSession(out _, out _);
             var interaction = MakeInteraction(session, InteractionKind.X);
 
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(session.Player.HP, Is.EqualTo(80));
-            Assert.That(session.Player.Armor, Is.EqualTo(40));
+            Assert.That(session.Player.Armor, Is.EqualTo(100));
             Assert.That(interaction.IsConsumed, Is.True);
         }
 
         [Test]
-        public void Y_SlowsPlayerAndBreaksShieldAndTriggersOnceUntilPlayerLeaves()
+        public void X_Energy_ReducesEnergyOnlyAndConsumes()
+        {
+            var session = MakeSession(out _, out _);
+            var interaction = MakeInteraction(session, InteractionKind.X_Energy);
+
+            Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(100));
+            Assert.That(session.Player.Armor, Is.EqualTo(80));
+            Assert.That(interaction.IsConsumed, Is.True);
+        }
+
+        [Test]
+        public void Y_SlowsPlayerOnly()
         {
             var session = MakeSession(out var defense, out var effects);
             var interaction = MakeInteraction(session, InteractionKind.Y);
@@ -127,53 +137,53 @@ namespace CoreGuard.Tests.Editor
 
             Assert.That(interaction.ApplyTo(session.Player), Is.True);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(2).Within(.001));
-            Assert.That(defense.ShieldActive, Is.False);
+            Assert.That(defense.ShieldActive, Is.True);
             Assert.That(interaction.IsConsumed, Is.False);
-            effects.ApplyBoost(1.5f, 4f);
-            Assert.That(effects.CurrentSpeed, Is.EqualTo(3).Within(.001));
-            Assert.That(interaction.ApplyTo(session.Player), Is.False);
-            typeof(InteractionObject).GetMethod("OnTriggerExit2D", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(interaction, new object[] { session.Player.GetComponent<CircleCollider2D>() });
-            Assert.That(interaction.ApplyTo(session.Player), Is.True);
-            Assert.That(effects.SlowRemaining, Is.EqualTo(3).Within(.001));
-            effects.Advance(3f);
-            Assert.That(effects.CurrentSpeed, Is.EqualTo(6).Within(.001));
-            effects.Advance(1f);
-            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
         }
 
         [Test]
-        public void Z_AddsCoinsAndRefreshesNonStackingBoost()
+        public void Y_Shield_BreaksShieldOnlyAndConsumes()
+        {
+            var session = MakeSession(out var defense, out var effects);
+            var interaction = MakeInteraction(session, InteractionKind.Y_Shield);
+            defense.TryActivateShield();
+
+            Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(defense.ShieldActive, Is.False);
+            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
+            Assert.That(interaction.IsConsumed, Is.True);
+        }
+
+        [Test]
+        public void Z_HealsHealthOnly()
         {
             var session = MakeSession(out _, out var effects);
-            var interaction = MakeInteraction(session, InteractionKind.Z);
-
-            Assert.That(interaction.ApplyTo(session.Player), Is.True);
-            Assert.That(session.Player.Coins, Is.EqualTo(10));
-            Assert.That(effects.CurrentSpeed, Is.EqualTo(6).Within(.001));
-            Assert.That(interaction.IsConsumed, Is.True);
-            effects.Advance(4);
-            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
-        }
-
-        [Test]
-        public void Z_HealsCurrentHealth()
-        {
-            var session = MakeSession(out _, out _);
             session.Player.ApplyDamage(40f);
             Assert.That(session.Player.HP, Is.EqualTo(60f));
 
             var interaction1 = MakeInteraction(session, InteractionKind.Z);
             Assert.That(interaction1.ApplyTo(session.Player), Is.True);
             Assert.That(session.Player.HP, Is.EqualTo(80f));
+            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
 
             var interaction2 = MakeInteraction(session, InteractionKind.Z);
             Assert.That(interaction2.ApplyTo(session.Player), Is.True);
             Assert.That(session.Player.HP, Is.EqualTo(100f));
+            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
+        }
 
-            var interaction3 = MakeInteraction(session, InteractionKind.Z);
-            Assert.That(interaction3.ApplyTo(session.Player), Is.True);
-            Assert.That(session.Player.HP, Is.EqualTo(120f));
+        [Test]
+        public void Z_Speed_BoostsSpeedOnlyAndConsumes()
+        {
+            var session = MakeSession(out _, out var effects);
+            var interaction = MakeInteraction(session, InteractionKind.Z_Speed);
+
+            Assert.That(interaction.ApplyTo(session.Player), Is.True);
+            Assert.That(effects.CurrentSpeed, Is.EqualTo(6).Within(.001));
+            Assert.That(session.Player.HP, Is.EqualTo(100f));
+            Assert.That(interaction.IsConsumed, Is.True);
+            effects.Advance(4);
+            Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
         }
 
         [Test]

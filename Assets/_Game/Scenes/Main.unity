@@ -76180,7 +76180,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1692254828}
-  m_Text: Y  SLOW / BREAK SHIELD
+  m_Text: Y  GIẢM TỐC
   m_OffsetZ: 0
   m_CharacterSize: 0.08
   m_LineSpacing: 1
@@ -79461,7 +79461,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1768455818}
-  m_Text: X  -20 HP / -10 ARMOR
+  m_Text: X  -20 HP
   m_OffsetZ: 0
   m_CharacterSize: 0.08
   m_LineSpacing: 1
@@ -90625,7 +90625,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1992182700}
-  m_Text: Z  +20 HP / BOOST
+  m_Text: Z  +20 HP
   m_OffsetZ: 0
   m_CharacterSize: 0.08
   m_LineSpacing: 1

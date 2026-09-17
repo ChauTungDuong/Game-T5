@@ -99,10 +99,17 @@ namespace CoreGuard
             EnsureClips();
             switch (kind)
             {
-                case InteractionKind.X: return InteractionDamage;
-                case InteractionKind.Y: return InteractionEmp;
-                case InteractionKind.Z: return InteractionBoost;
-                default: return null;
+                case InteractionKind.X:
+                case InteractionKind.X_Energy:
+                    return InteractionDamage;
+                case InteractionKind.Y:
+                case InteractionKind.Y_Shield:
+                    return InteractionEmp;
+                case InteractionKind.Z:
+                case InteractionKind.Z_Speed:
+                    return InteractionBoost;
+                default:
+                    return null;
             }
         }
 
