@@ -27,6 +27,8 @@ namespace CoreGuard
         public AudioClip Victory;
         public AudioClip Defeat;
         public AudioClip MusicLoop;
+        public const float DefaultSfxVolume = .35f;
+        public const float DefaultMusicVolume = .25f;
         public bool SfxEnabled { get; private set; } = true;
         public bool MusicEnabled { get; private set; }
         public int AlertBeepsPlayed { get; private set; }
@@ -232,9 +234,9 @@ namespace CoreGuard
             MusicSource = MusicSource ? MusicSource : gameObject.AddComponent<AudioSource>();
             SfxSource = SfxSource ? SfxSource : gameObject.AddComponent<AudioSource>();
             AlertSource = AlertSource ? AlertSource : gameObject.AddComponent<AudioSource>();
-            MusicSource.playOnAwake = false; MusicSource.spatialBlend = 0; MusicSource.loop = true; MusicSource.volume = .16f;
-            SfxSource.playOnAwake = false; SfxSource.spatialBlend = 0; SfxSource.volume = 1f;
-            AlertSource.playOnAwake = false; AlertSource.spatialBlend = 0; AlertSource.volume = 1f;
+            MusicSource.playOnAwake = false; MusicSource.spatialBlend = 0; MusicSource.loop = true; MusicSource.volume = DefaultMusicVolume;
+            SfxSource.playOnAwake = false; SfxSource.spatialBlend = 0; SfxSource.volume = DefaultSfxVolume;
+            AlertSource.playOnAwake = false; AlertSource.spatialBlend = 0; AlertSource.volume = DefaultSfxVolume;
         }
 
         private void EnsureClips()
