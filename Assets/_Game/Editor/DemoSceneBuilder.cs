@@ -541,7 +541,7 @@ public static class DemoSceneBuilder
     {
         CreateInteraction(parent, "X", InteractionKind.X, new Vector2(-5, 2), new Color(1, .25f, .25f), "X  -20 HP / -10 ARMOR", session, player, sprite);
         CreateInteraction(parent, "Y", InteractionKind.Y, new Vector2(3, -2), new Color(.7f, .3f, 1), "Y  SLOW / BREAK SHIELD", session, player, sprite);
-        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(5, 2), new Color(1, .75f, .15f), "Z  +10 COINS / BOOST", session, player, sprite);
+        CreateInteraction(parent, "Z", InteractionKind.Z, new Vector2(5, 2), new Color(1, .75f, .15f), "Z  +20 HP / BOOST", session, player, sprite);
     }
 
     private static void EnsureInteractionCycle(Scene scene, Transform parent, GameSession session, PlayerStats player, CoreHealth core)

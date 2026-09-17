@@ -89,7 +89,7 @@ namespace CoreGuard
             {
                 case InteractionKind.X: return "-20 HP / -10 ARMOR";
                 case InteractionKind.Y: return "SLOWED / SHIELD BROKEN";
-                case InteractionKind.Z: return "+10 COINS / SPEED BOOST";
+                case InteractionKind.Z: return "+20 HP / SPEED BOOST";
                 default: return string.Empty;
             }
         }

@@ -61,7 +61,7 @@ namespace CoreGuard.Tests.Editor
 
         [TestCase(InteractionKind.X, "-20 HP / -10 ARMOR")]
         [TestCase(InteractionKind.Y, "SLOWED / SHIELD BROKEN")]
-        [TestCase(InteractionKind.Z, "+10 COINS / SPEED BOOST")]
+        [TestCase(InteractionKind.Z, "+20 HP / SPEED BOOST")]
         public void Activation_EmitsTypedAudioAndDetachedAnimatedWorldCue(InteractionKind kind, string message)
         {
             var session = MakeSession(out _, out _);
@@ -154,6 +154,26 @@ namespace CoreGuard.Tests.Editor
             Assert.That(interaction.IsConsumed, Is.True);
             effects.Advance(4);
             Assert.That(effects.CurrentSpeed, Is.EqualTo(4).Within(.001));
+        }
+
+        [Test]
+        public void Z_HealsCurrentHealthUpToMaximum()
+        {
+            var session = MakeSession(out _, out _);
+            session.Player.ApplyDamage(40f);
+            Assert.That(session.Player.HP, Is.EqualTo(60f));
+
+            var interaction1 = MakeInteraction(session, InteractionKind.Z);
+            Assert.That(interaction1.ApplyTo(session.Player), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(80f));
+
+            var interaction2 = MakeInteraction(session, InteractionKind.Z);
+            Assert.That(interaction2.ApplyTo(session.Player), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(100f));
+
+            var interaction3 = MakeInteraction(session, InteractionKind.Z);
+            Assert.That(interaction3.ApplyTo(session.Player), Is.True);
+            Assert.That(session.Player.HP, Is.EqualTo(PlayerStats.MaxHP));
         }
     }
 }

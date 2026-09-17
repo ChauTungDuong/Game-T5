@@ -90625,7 +90625,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1992182700}
-  m_Text: Z  +10 COINS / BOOST
+  m_Text: Z  +20 HP / BOOST
   m_OffsetZ: 0
   m_CharacterSize: 0.08
   m_LineSpacing: 1

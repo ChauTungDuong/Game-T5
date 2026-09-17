@@ -63,6 +63,7 @@ namespace CoreGuard
                     break;
 
                 case InteractionKind.Z:
+                    target.Heal(20f);
                     target.AddCoins(10);
                     var boost = target.GetComponent<StatusEffects>();
                     if (boost) boost.ApplyBoost(1.5f, 4f);

@@ -37,6 +37,12 @@ namespace CoreGuard
             Energy = Mathf.Max(0, Energy - Mathf.Max(0, armorLoss));
             NotifyChanged();
         }
+        public void Heal(float amount)
+        {
+            if (amount <= 0 || float.IsNaN(amount) || HP <= 0) return;
+            HP = Mathf.Min(MaxHP, HP + amount);
+            NotifyChanged();
+        }
         public bool CanUseSkill(float cost = SkillEnergyCost) => Energy >= cost;
         public bool TryConsumeEnergy(float amount = SkillEnergyCost)
         {
